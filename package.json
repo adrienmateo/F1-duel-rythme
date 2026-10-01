@@ -1,0 +1,12 @@
+{
+  "name": "f1-duel-rythme",
+  "private": true,
+  "type": "module",
+  "description": "Dashboard et compte rendu automatique des écarts de rythme en F1 (OpenF1)",
+  "scripts": {
+    "report": "node report.mjs",
+    "report:preview": "node report.mjs --dry-run --force"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "nodemailer": "^6.9.16" }
+}

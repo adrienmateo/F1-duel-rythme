@@ -1,0 +1,84 @@
+# Duel de rythme F1
+
+Deux usages, un seul calcul (dans `index.html`) :
+
+- **Dashboard** (`index.html`) : tu choisis un GP et des pilotes, la page appelle OpenF1 et trace les écarts.
+- **Compte rendu par mail** (`report.mjs`) : **à la demande**, un clic dans GitHub Actions analyse le GP de ton choix (aucune exécution automatique, donc aucun coût caché).
+  - **Avec Make** (recommandé) : les données partent vers un scénario Make. Claude rédige le résumé, Make envoie le mail et ajoute les duels dans un Google Sheet (historique de la saison). Guide : `make/GUIDE-MAKE.md`.
+  - **Sans Make**, ou si Make est injoignable : GitHub envoie directement le mail factuel.
+
+`report.mjs` lit le calcul directement dans `index.html` : si tu modifies une règle (seuil 107 %, tours exclus…), le mail suit automatiquement. Les deux fichiers doivent rester dans le même dossier.
+
+---
+
+## Mettre en place le compte rendu (≈ 15 min, une seule fois)
+
+### 1. Créer un mot de passe d'application Gmail
+1. Va sur <https://myaccount.google.com/apppasswords> (la validation en 2 étapes doit être activée sur ton compte).
+2. Nom : `F1 compte rendu` → **Créer**.
+3. Copie le code de 16 lettres. Il ne sera plus affiché ensuite.
+
+Ce code permet seulement d'envoyer des mails depuis ce script. Tu peux le révoquer à tout moment sur la même page.
+
+### 2. Mettre le projet sur GitHub
+1. Crée un dépôt **privé** sur GitHub (ex. `f1-duel-rythme`).
+2. Envoie-y tout le contenu de ce dossier, y compris le dossier caché `.github/` (glisser-déposer dans « Add file → Upload files » fonctionne).
+
+### 3. Ajouter les secrets
+Dans le dépôt : **Settings → Secrets and variables → Actions**.
+
+Onglet **Secrets** → *New repository secret* :
+
+| Nom | Valeur |
+|---|---|
+| `GMAIL_USER` | ton adresse Gmail |
+| `GMAIL_APP_PASSWORD` | le code de 16 lettres (sans espaces) |
+| `MAIL_TO` | destinataire(s), séparés par des virgules. Facultatif : par défaut, le mail t'est envoyé |
+| `MAKE_WEBHOOK_URL` | URL du webhook Make (voir `make/GUIDE-MAKE.md`). Facultatif : sans elle, le mail part directement de GitHub |
+
+Onglet **Variables** (facultatif) : `DASHBOARD_URL` = l'adresse Netlify du dashboard, pour avoir un bouton « Ouvrir le dashboard » dans le mail.
+
+### 4. Lancer un compte rendu
+**Actions → Compte rendu GP → Run workflow**, trois réglages :
+
+| Réglage | Effet |
+|---|---|
+| `session_key` | vide = dernier GP terminé ; sinon un GP précis |
+| Résumé rédigé par Claude | coché : passe par Make et Claude (quelques centimes de crédit API) ; décoché : mail factuel envoyé directement par GitHub, **0 crédit** |
+| Aperçu seulement | rien n'est envoyé ; l'aperçu du mail est téléchargeable en bas de la page du run (« compte-rendu ») |
+
+Pour un premier essai, coche « Aperçu seulement ».
+
+Pour un GP précis, renseigne son `session_key` OpenF1 (visible dans l'URL des appels du dashboard, ou via `https://api.openf1.org/v1/sessions?year=2026&session_name=Race`).
+
+Rien ne tourne tout seul : chaque compte rendu correspond à un clic de ta part.
+
+### Coûts, et comment les garder sous contrôle
+- **GitHub Actions** : gratuit à ce volume (un run dure environ 1 minute).
+- **Make** : le scénario ne consomme des opérations que lorsqu'il reçoit des données, donc seulement à tes lancements (environ 15 par GP ; l'offre gratuite suffit).
+- **API Claude** : le seul poste payant, quelques centimes par résumé. Sur console.anthropic.com, partie facturation : fonctionne en **crédit prépayé**, **désactive le rechargement automatique** et fixe une **limite de dépense mensuelle**. Une fois le crédit épuisé, le mail part quand même, avec le texte de secours prévu dans Make.
+- Pour 0 € : décoche « Résumé rédigé par Claude » au lancement.
+
+---
+
+## Contenu du mail
+Points clés rédigés automatiquement · classement top 10 et abandons · remontées et chutes grille → arrivée · top 5 du rythme de course · les 10 duels entre coéquipiers (écart et écart à pneus égaux) · stratégies (arrêts et pneus).
+
+## En local
+```bash
+npm install
+node report.mjs --dry-run --force   # aperçu dans out/report.html, sans envoi
+```
+Options : `--session <key>` (GP précis), `--force` (ignore la vérification « GP de moins de 8 jours », toujours activée depuis GitHub), `--dry-run` (pas d'envoi).
+
+## Méthode
+Tours exclus : départ, entrée et sortie des stands, neutralisations (messages de la direction de course + détection du peloton ralenti), tours au-delà de 107 % du médian du pilote. Rythme = temps médian des tours restants. Moins de 10 tours propres : pilote exclu de la comparaison.
+
+## Tests (hors ligne, course simulée)
+```bash
+python3 test/fixture_data.py                                    # génère test/fixture/
+F1_FIXTURES=test/fixture node report.mjs --dry-run --force      # compte rendu
+python3 test/browser_test.py                                    # dashboard (Playwright)
+```
+
+`compute_gaps.mjs` : ancienne version ligne de commande (export JSON), conservée pour un futur suivi sur toute une saison.
