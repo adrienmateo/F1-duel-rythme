@@ -209,7 +209,7 @@ ${card(`${h2("Rythme de course", "Temps médian sur tours propres (hors départ,
 ${card(`${h2("Duels entre coéquipiers", "Écart de rythme médian · « À pneus égaux » : écart recalculé sur les gommes communes")}<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><th ${th}>Écurie</th><th ${th}>Duel</th><th ${thr}>Écart</th><th ${thr}>%</th><th ${thr}>Pneus égaux</th></tr>${duelRows}</table>`)}
 ${card(`${h2("Stratégies", stopsTxt)}<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><th ${th}>Pos.</th><th ${th}>Pilote</th><th ${thr}>Arrêts</th><th ${th}>Pneus</th></tr>${stratRows}</table>`)}
 ${dash ? `<tr><td align="center" style="padding:4px 0 16px"><a href="${esc(dash)}" style="display:inline-block;background:${C.accent};color:#ffffff;text-decoration:none;font:600 14px Arial,sans-serif;padding:10px 20px;border-radius:6px">Ouvrir le dashboard</a></td></tr>` : ""}
-<tr><td style="padding:4px;font:12px Arial,sans-serif;color:${C.muted}">Données <a href="https://openf1.org" style="color:${C.muted}">OpenF1</a> · généré automatiquement le ${new Date().toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}.</td></tr>
+<tr><td style="padding:4px;font:12px Arial,sans-serif;color:${C.muted}">Données <a href="https://openf1.org" style="color:${C.muted}">OpenF1</a> · généré automatiquement le ${new Date().toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}.${dash ? `<br>Tu reçois ce mail suite à ton inscription aux comptes rendus. <a href="${esc(dash.replace(/\/$/, ""))}/#desinscription" style="color:${C.muted}">Se désinscrire</a>` : ""}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 
@@ -222,15 +222,49 @@ function renderText(R) {
     "RYTHME DE COURSE (médian)", ...R.pace.slice(0, 5).map((p, i) => `${i + 1}. ${R.name(p.dn)}  ${lapTime(p.median)}${i ? `  +${fmt(p.gap, 3)} s` : ""}`), "",
     "DUELS ENTRE COÉQUIPIERS", ...R.duels.map((d) => d.valid ? `${d.team} : ${R.name(d.fast)} devant ${R.name(d.slow)} de ${fmt(d.gap, 3)} s/tour` : `${d.team} : pas comparable`),
     "", process.env.DASHBOARD_URL ? `Dashboard : ${process.env.DASHBOARD_URL}` : "", "Données OpenF1",
+    process.env.DASHBOARD_URL ? `Se désinscrire : ${process.env.DASHBOARD_URL.replace(/\/$/, "")}/#desinscription` : "",
   ].join("\n");
 }
 
 /* ---------- Destinataires choisis au lancement ---------- */
 // DESTINATAIRES = "a@x.fr, b@y.com" (champ du formulaire « Run workflow »). Ils reçoivent le mail en copie cachée.
-const RECIPIENTS = [...new Set((process.env.DESTINATAIRES || "").split(/[,;\s]+/).map((x) => x.trim().toLowerCase())
+const MANUAL_RECIPIENTS = [...new Set((process.env.DESTINATAIRES || "").split(/[,;\s]+/).map((x) => x.trim().toLowerCase())
   .filter((x) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)))];
-const ignored = (process.env.DESTINATAIRES || "").split(/[,;\s]+/).filter((x) => x.trim() && !RECIPIENTS.includes(x.trim().toLowerCase()));
+const ignored = (process.env.DESTINATAIRES || "").split(/[,;\s]+/).filter((x) => x.trim() && !MANUAL_RECIPIENTS.includes(x.trim().toLowerCase()));
 if (ignored.length) console.log(`⚠ Adresses ignorées (format invalide) : ${ignored.join(", ")}`);
+
+// Inscrits via le formulaire du dashboard (Netlify Forms). La dernière action de chaque adresse fait foi :
+// une inscription puis une désinscription = désinscrit.
+async function fetchSubscribers() {
+  const token = process.env.NETLIFY_TOKEN, site = process.env.NETLIFY_SITE;
+  if (process.env.ABONNES === "false") { console.log("Inscrits du site : non inclus (option décochée)."); return []; }
+  if (!token || !site) { console.log("Inscrits du site : NETLIFY_TOKEN / NETLIFY_SITE non configurés, ignorés."); return []; }
+  const base = process.env.NETLIFY_API_URL || "https://api.netlify.com/api/v1";
+  try {
+    const all = [];
+    for (let page = 1; page <= 50; page++) {
+      const res = await fetch(`${base}/sites/${encodeURIComponent(site)}/submissions?per_page=100&page=${page}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const batch = await res.json();
+      all.push(...batch);
+      if (batch.length < 100) break;
+    }
+    const state = new Map();
+    for (const sub of all.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))) {
+      const email = String(sub.data?.email || sub.email || "").trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) continue;
+      if (sub.form_name === "abonnement" && (sub.data?.consentement === "oui")) state.set(email, true);
+      else if (sub.form_name === "desabonnement") state.set(email, false);
+    }
+    const list = [...state].filter(([, on]) => on).map(([e]) => e);
+    console.log(`Inscrits du site : ${list.length}`);
+    return list;
+  } catch (e) {
+    console.log(`⚠ Impossible de lire les inscrits Netlify (${e.message}) : envoi sans eux.`);
+    return [];
+  }
+}
+let RECIPIENTS = MANUAL_RECIPIENTS;
 
 /* ---------- 5. Données pour Make (webhook) ---------- */
 const AI_PLACEHOLDER = "[[RESUME_IA]]";
@@ -328,6 +362,7 @@ if (!session) process.exit(0);
 console.log(`→ ${session.country_name} ${session.year} (session ${session.session_key})`);
 const R = buildReport(session, await fetchAll(session.session_key));
 const subject = `F1 · Compte rendu ${session.country_name} ${session.year}`;
+RECIPIENTS = [...new Set([...MANUAL_RECIPIENTS, ...(await fetchSubscribers())])];
 const html = renderHtml(R), text = renderText(R), payload = buildPayload(R);
 fs.mkdirSync(path.join(ROOT, "out"), { recursive: true });
 fs.writeFileSync(path.join(ROOT, "out", "report.html"), html);

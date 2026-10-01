@@ -50,6 +50,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font-body); }
 .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: grid; gap: 20px; }
@@ -141,6 +142,21 @@ circle.cdot { stroke: var(--surface); stroke-width: 1; }
 circle.cdot.SOFT { fill: var(--c-soft); } circle.cdot.MEDIUM { fill: var(--c-medium); } circle.cdot.HARD { fill: var(--c-hard); }
 circle.cdot.INTERMEDIATE { fill: var(--c-inter); } circle.cdot.WET { fill: var(--c-wet); } circle.cdot.UNKNOWN { fill: var(--muted); }
 .chart svg text.cbar-label { fill: #111110; font-weight: 600; }
+.subscribe { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px 28px; align-items: start; }
+.subscribe h2 { font: 700 20px/1.1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; margin: 0 0 4px; }
+.subscribe .sub { margin: 0; color: var(--fg-2); font-size: 13px; }
+.subscribe form { display: grid; gap: 8px; min-width: 0; }
+.sub-row { display: flex; gap: 8px; }
+.sub-row input { flex: 1; min-width: 0; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+.consent { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--fg-2); cursor: pointer; }
+.consent input { accent-color: var(--accent); margin-top: 3px; }
+.fine { margin: 0; font-size: 12px; color: var(--muted); }
+.sub-status { margin: 0; font-size: 13px; font-weight: 600; min-height: 1em; }
+.sub-status.ok { color: var(--fg); } .sub-status.err { color: var(--accent); }
+.linklike { justify-self: start; background: none; border: 0; padding: 0; color: var(--muted); font-size: 12px; text-decoration: underline; cursor: pointer; }
+.hp { position: absolute; left: -9999px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 720px) { .subscribe { grid-template-columns: 1fr; } }
 details { color: var(--fg-2); }
 details summary { cursor: pointer; font-weight: 600; color: var(--fg); }
 details ul { margin: 8px 0 0; padding-left: 18px; max-width: 75ch; }
@@ -183,6 +199,32 @@ details ul { margin: 8px 0 0; padding-left: 18px; max-width: 75ch; }
 
   <section class="results" id="results" aria-live="polite">
     <div class="card empty" id="placeholder">Choisis une course et des pilotes, puis clique sur « Analyser ».</div>
+  </section>
+
+  <section class="card subscribe" id="abonnement" aria-labelledby="sub-title">
+    <div class="sub-text">
+      <h2 id="sub-title">Recevoir le compte rendu</h2>
+      <p class="sub" id="sub-intro">Après chaque Grand Prix : le résumé de la course, les duels entre coéquipiers et les stratégies, par mail.</p>
+    </div>
+    <!-- Formulaire géré par Netlify Forms (aucun serveur). Les inscrits sont lus par le script d'envoi. -->
+    <form name="abonnement" id="sub-form" method="POST" data-netlify="true" netlify-honeypot="site_web" novalidate>
+      <input type="hidden" name="form-name" id="sub-form-name" value="abonnement">
+      <p class="hp" aria-hidden="true"><label>Ne pas remplir <input name="site_web" tabindex="-1" autocomplete="off"></label></p>
+      <div class="sub-row">
+        <label class="visually-hidden" for="sub-email">Adresse e-mail</label>
+        <input type="email" id="sub-email" name="email" required placeholder="ton.adresse@mail.com" autocomplete="email">
+        <button class="btn" type="submit" id="sub-btn">S'inscrire</button>
+      </div>
+      <label class="consent" id="sub-consent-wrap"><input type="checkbox" id="sub-consent" name="consentement" value="oui"> J'accepte de recevoir les comptes rendus par mail.</label>
+      <p class="fine" id="sub-fine">Ton adresse sert uniquement à t'envoyer ces comptes rendus. Elle n'est jamais partagée. Désinscription en un clic à tout moment.</p>
+      <p class="sub-status" id="sub-status" role="status" aria-live="polite"></p>
+      <button type="button" class="linklike" id="sub-switch">Se désinscrire</button>
+    </form>
+    <!-- Formulaire jumeau, caché : permet à Netlify de détecter le formulaire de désinscription au déploiement -->
+    <form name="desabonnement" data-netlify="true" netlify-honeypot="site_web" hidden>
+      <input type="hidden" name="form-name" value="desabonnement">
+      <input name="site_web"><input type="email" name="email">
+    </form>
   </section>
 
   <details>
@@ -839,6 +881,47 @@ function drawBars() {
     const v = el("text", { x: m.l + w + 6, y: yy + rowH / 2 + 4 }, svg); v.textContent = it.gap === 0 ? "réf." : `+${fmtNum(it.gap, 3)} s`; v.style.fill = "var(--fg-2)";
   });
 }
+
+/* ======================= Inscription aux comptes rendus (Netlify Forms) ======================= */
+(function subscription() {
+  const form = $("sub-form"), email = $("sub-email"), consent = $("sub-consent"), status = $("sub-status");
+  let mode = "abonnement";
+  const setMode = (m) => {
+    mode = m;
+    const unsub = m === "desabonnement";
+    $("sub-form-name").value = m;
+    $("sub-title").textContent = unsub ? "Se désinscrire" : "Recevoir le compte rendu";
+    $("sub-intro").textContent = unsub ? "Indique l'adresse inscrite : tu ne recevras plus les comptes rendus." : "Après chaque Grand Prix : le résumé de la course, les duels entre coéquipiers et les stratégies, par mail.";
+    $("sub-btn").textContent = unsub ? "Me désinscrire" : "S'inscrire";
+    $("sub-consent-wrap").hidden = unsub;
+    $("sub-fine").hidden = unsub;
+    $("sub-switch").textContent = unsub ? "Revenir à l'inscription" : "Se désinscrire";
+    status.textContent = ""; status.className = "sub-status";
+  };
+  $("sub-switch").addEventListener("click", () => setMode(mode === "abonnement" ? "desabonnement" : "abonnement"));
+  const fromHash = () => { if (location.hash === "#desinscription") { setMode("desabonnement"); $("abonnement").scrollIntoView(); } };
+  fromHash();
+  window.addEventListener("hashchange", fromHash);
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const say = (msg, ok) => { status.textContent = msg; status.className = `sub-status ${ok ? "ok" : "err"}`; };
+    const value = email.value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return say("Cette adresse e-mail n'a pas l'air valide.", false);
+    if (mode === "abonnement" && !consent.checked) return say("Coche la case pour confirmer ton inscription.", false);
+    if (location.protocol === "file:") return say("L'inscription fonctionne une fois le site en ligne (Netlify).", false);
+    $("sub-btn").disabled = true;
+    try {
+      const body = new URLSearchParams({ "form-name": mode, email: value, consentement: mode === "abonnement" ? "oui" : "", site_web: form.site_web.value });
+      const res = await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+      if (!res.ok) throw new Error(res.status);
+      form.reset();
+      say(mode === "abonnement" ? "C'est noté : tu recevras le prochain compte rendu." : "C'est fait : tu ne recevras plus les comptes rendus.", true);
+    } catch {
+      say("L'envoi a échoué. Réessaie dans un instant.", false);
+    } finally { $("sub-btn").disabled = false; }
+  });
+})();
 
 /* ======================= Orchestration ======================= */
 async function run() {
