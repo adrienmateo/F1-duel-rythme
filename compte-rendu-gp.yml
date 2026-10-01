@@ -1,0 +1,54 @@
+name: Compte rendu GP
+
+# Lancement à la demande uniquement (aucune exécution planifiée) :
+# onglet Actions → « Compte rendu GP » → Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      session_key:
+        description: "session_key OpenF1 d'un GP précis (vide = dernier GP terminé)"
+        required: false
+      destinataires:
+        description: "Destinataires en plus de toi, séparés par des virgules (vide = toi seul)"
+        required: false
+      resume_ia:
+        description: "Résumé rédigé par Claude via Make (consomme des crédits API)"
+        type: boolean
+        default: true
+      dry_run:
+        description: "Aperçu seulement : ne rien envoyer"
+        type: boolean
+        default: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Générer et envoyer le compte rendu
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+          DESTINATAIRES: ${{ inputs.destinataires }}
+          # Sans résumé IA : on n'appelle pas Make, le mail factuel part directement (0 crédit consommé)
+          MAKE_WEBHOOK_URL: ${{ inputs.resume_ia && secrets.MAKE_WEBHOOK_URL || '' }}
+        run: |
+          ARGS="--force"
+          if [ -n "${{ inputs.session_key }}" ]; then ARGS="$ARGS --session ${{ inputs.session_key }}"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          node report.mjs $ARGS
+      - name: Garder une copie du mail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compte-rendu
+          path: |
+            out/report.html
+            out/payload.json
+          if-no-files-found: ignore
