@@ -11,6 +11,10 @@ on:
       destinataires:
         description: "Destinataires en plus de toi, séparés par des virgules (vide = toi seul)"
         required: false
+      abonnes:
+        description: "Envoyer aussi aux inscrits du site (formulaire du dashboard)"
+        type: boolean
+        default: true
       resume_ia:
         description: "Résumé rédigé par Claude via Make (consomme des crédits API)"
         type: boolean
@@ -27,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - run: npm ci
       - name: Générer et envoyer le compte rendu
         env:
@@ -36,6 +40,9 @@ jobs:
           MAIL_TO: ${{ secrets.MAIL_TO }}
           DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
           DESTINATAIRES: ${{ inputs.destinataires }}
+          ABONNES: ${{ inputs.abonnes }}
+          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+          NETLIFY_SITE: ${{ vars.NETLIFY_SITE }}
           # Sans résumé IA : on n'appelle pas Make, le mail factuel part directement (0 crédit consommé)
           MAKE_WEBHOOK_URL: ${{ inputs.resume_ia && secrets.MAKE_WEBHOOK_URL || '' }}
         run: |
