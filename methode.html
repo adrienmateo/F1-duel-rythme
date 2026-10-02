@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ma méthode de travail — Adrien-Matéo Soules</title>
+  <meta name="description" content="Comment je mène un projet d'implémentation SaaS, de la conception à l'hypercare.">
+  <meta property="og:title" content="Ma méthode de travail — Adrien-Matéo Soules">
+  <meta property="og:description" content="Comment je mène un projet d'implémentation SaaS, de la conception à l'hypercare.">
+  <meta property="og:image" content="https://adrienmateo-soules.com/photo.jpg">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231F5E4E'/%3E%3Ctext x='16' y='21.5' font-family='Arial' font-weight='700' font-size='14' fill='white' text-anchor='middle'%3EAS%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="methode">
+  <a class="skip" href="#main" data-i18n="ui.skip">Aller au contenu</a>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="index.html" data-langlink="index.html">Adrien-Matéo Soules</a>
+      <a class="back" href="index.html" data-langlink="index.html" data-hash="#work" data-i18n="ui.back">Retour au portfolio</a>
+      <div class="lang" role="group" aria-label="Langue / Language">
+        <button type="button" data-lang="fr" aria-pressed="true">FR</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div id="me-root"></div>
+    <section class="wrap project-hero">
+      <span class="kind hero-in" data-i18n="methode.kind"></span>
+      <h1 class="hero-in" style="--i:1" data-i18n="methode.title"></h1>
+      <p class="pitch hero-in" style="--i:2" data-i18n="methode.lead"></p>
+    </section>
+
+    <section class="section wrap">
+      <h2 class="reveal" data-i18n="methode.phasesTitle"></h2>
+      <ol class="phases" id="me-phases"></ol>
+    </section>
+
+    <section class="section wrap">
+      <h2 class="reveal" data-i18n="methode.principlesTitle"></h2>
+      <ul class="principles reveal" id="me-principles"></ul>
+    </section>
+
+    <section class="section wrap">
+      <div class="reveal">
+        <h2 data-i18n="methode.demoTitle"></h2>
+        <p class="lead" data-i18n="methode.demoLead"></p>
+      </div>
+      <div class="console reveal" id="console">
+        <ol class="steps" id="demo-steps" role="tablist"></ol>
+        <div class="console-body" id="demo-body" aria-live="polite"></div>
+        <div class="console-foot">
+          <button type="button" class="btn small" id="demo-prev" data-i18n="demo.prev"></button>
+          <span class="note" data-i18n="demo.note"></span>
+          <button type="button" class="btn small primary" id="demo-next" data-i18n="demo.next"></button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap" data-i18n="footer"></div>
+  </footer>
+
+  <script src="content.js"></script>
+  <script src="tools.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
