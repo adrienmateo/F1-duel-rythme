@@ -420,17 +420,17 @@ details.method a { color: var(--ink); }
 main.loading .tower, main.loading .log, main.loading .kpis { min-height: 120px; }
 
 /* Classement : podium, puis le reste dans une liste dépliante */
-.tower { display: flex; flex-direction: column; gap: 2px; }
+.tower { display: flex; flex-direction: column; gap: calc(2px + var(--tg, 0px)); }
 .hero-grid.open { align-items: start; }
-.tower-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s cubic-bezier(.2,.8,.2,1); }
-.tower.open .tower-more { grid-template-rows: 1fr; }
-.tower-more > div { overflow: hidden; min-height: 0; display: grid; gap: 2px; }
-.tower-more .tower-row:first-child { margin-top: 6px; }
+.tower-more { overflow: hidden; transition: max-height .5s cubic-bezier(.2,.8,.2,1); }
+.tower-more > div { display: grid; gap: calc(2px + var(--tg, 0px)); }
+.tower-more .tower-row:first-child { margin-top: 4px; }
 .tower-toggle { margin-top: auto; align-self: stretch; display: flex; justify-content: center; align-items: center; gap: 6px; border: 1px dashed var(--line); background: transparent; border-radius: 12px; padding: 9px 12px; font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
 .tower-toggle:hover { background: var(--surface-2); color: var(--ink); border-color: var(--grey-line); }
 .tower-toggle svg { transition: transform .35s cubic-bezier(.2,.8,.2,1); }
 .tower.open .tower-toggle svg { transform: rotate(180deg); }
 .tower.open .tower-toggle { margin-top: 8px; }
+.tower.open { --tg: 0px !important; }
 .tower-row.compact { padding: 6px 14px; gap: 14px; }
 .tower-row.compact .name { font-size: 14px; font-weight: 600; }
 .tower-row.compact .pos { font-size: 13px; }
@@ -982,11 +982,13 @@ function renderHero() {
   $("#tower").innerHTML = all.slice(0, 3).map(row).join("") + (all.length > 3
     ? `<div class="tower-more" id="tower-more"><div>${all.slice(3).map((d, i) => row(d, i + 3)).join("")}</div></div>
        <button class="tower-toggle" id="tower-toggle" aria-expanded="false" aria-controls="tower-more"><span>Voir tout le classement (${all.length} pilotes)</span>${IC.chev}</button>` : "");
+  fitTower();
   $("#tower-toggle")?.addEventListener("click", () => {
-    const t = $("#tower"), open = !t.classList.contains("open");
+    const t = $("#tower"), more = $("#tower-more"), open = !t.classList.contains("open");
     t.classList.toggle("open", open); t.parentElement.classList.toggle("open", open);
+    more.style.maxHeight = (open ? more.scrollHeight : fitTower.h) + "px";
     $("#tower-toggle").setAttribute("aria-expanded", open);
-    $("#tower-toggle span").textContent = open ? "Replier le classement" : `Voir tout le classement (${all.length} pilotes)`;
+    labelTower();
     if (!open) t.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
   });
   const segs = []; let prev = 1;
@@ -1009,6 +1011,44 @@ function renderHero() {
   $$("#kpis .kpi").forEach((b) => b.addEventListener("click", () => kpis[+b.dataset.k].go()));
   $$("#tower .tower-row").forEach((b) => b.addEventListener("click", () => showDriver(b.dataset.driver)));
 }
+
+// Le classement remplit la hauteur de la carte « direction de course », puis le bouton déplie le reste
+function fitTower() {
+  const t = $("#tower"), more = $("#tower-more"), btn = $("#tower-toggle");
+  if (!more || t.classList.contains("open")) return;
+  const rows = [...more.querySelectorAll(".tower-row")];
+  more.style.transition = "none"; more.style.maxHeight = "0px"; void more.offsetHeight; // hauteur naturelle de la carte voisine
+  t.style.setProperty("--tg", "0px");
+  const side = t.parentElement.getBoundingClientRect().width > t.getBoundingClientRect().width * 1.5; // deux colonnes
+  const rowH = rows[0] ? rows[0].offsetHeight + 2 : 34;
+  let n;
+  if (side) {
+    const podium = [...t.querySelectorAll(":scope > .tower-row")].reduce((s, r) => s + r.offsetHeight + 2, 0);
+    const pad = parseFloat(getComputedStyle(t).paddingTop) + parseFloat(getComputedStyle(t).paddingBottom);
+    const free = $("#log").offsetHeight - pad - podium - btn.offsetHeight - 8;
+    n = Math.max(0, Math.floor(free / rowH));
+  } else n = 5;
+  n = Math.min(n, rows.length);
+  // L'espace restant (moins d'une ligne) est réparti entre les lignes : pas de trou en bas de la carte
+  t.style.setProperty("--tg", "0px");
+  if (side && n < rows.length) {
+    const podium = [...t.querySelectorAll(":scope > .tower-row")].reduce((s, r) => s + r.offsetHeight + 2, 0);
+    const pad = parseFloat(getComputedStyle(t).paddingTop) + parseFloat(getComputedStyle(t).paddingBottom);
+    const left = $("#log").offsetHeight - pad - podium - btn.offsetHeight - 8 - n * rowH;
+    t.style.setProperty("--tg", Math.max(0, Math.min(14, left / (n + 3))) + "px");
+  }
+  fitTower.h = n ? rows[n - 1].offsetTop + rows[n - 1].offsetHeight - rows[0].offsetTop + 6 : 0;
+  fitTower.hidden = rows.length - n;
+  more.style.maxHeight = fitTower.h + "px"; void more.offsetHeight; more.style.transition = "";
+  btn.hidden = fitTower.hidden === 0;
+  labelTower();
+}
+function labelTower() {
+  const open = $("#tower").classList.contains("open"), s = $("#tower-toggle span");
+  if (s) s.textContent = open ? "Replier le classement" : `Voir tout le classement (${fitTower.hidden} pilote${fitTower.hidden > 1 ? "s" : ""} de plus)`;
+}
+addEventListener("resize", () => { if ($("#tower-more")) fitTower(); });
+if (document.fonts) document.fonts.ready.then(() => $("#tower-more") && fitTower());
 
 /* ======================= Duels ======================= */
 function computeDuels() {
@@ -1826,7 +1866,7 @@ async function loadGP(sk) {
     first = false;
   } catch (e) {
     setStatus(e.message, "error");
-  } finally { $("main").classList.remove("loading"); }
+  } finally { $("main").classList.remove("loading"); fitTower(); }
 }
 function renderAll() {
   follow = []; $("#follow").classList.remove("on"); $("#follow").hidden = true; showField = false;

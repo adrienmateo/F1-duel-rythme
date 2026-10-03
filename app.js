@@ -337,11 +337,28 @@ function renderHero() {
   $("#gp-eyebrow").textContent = `Le GP en 30 secondes · ${new Date(RACE.date_start).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`;
   $("#gp-meta").textContent = `${LAPS} tours · ${RACE.location || RACE.circuit_short_name || ""}`;
   const fastest = paced[0];
-  $("#tower").innerHTML = [p1, p2, p3].filter(Boolean).map((d, i) => `<button class="tower-row ${i === 0 ? "p1" : ""}" data-driver="${d.code}">
-      <span class="pos">P${i + 1}</span><span class="bar" style="background:${d.color}"></span>
-      <span class="name">${esc(d.last)}</span>
-      ${i === 0 ? (d === fastest ? '<span class="tag">MEILLEUR RYTHME</span>' : `<span class="val mono">${d.result?.duration ? raceT(d.result.duration) : ""}</span>`) : `<span class="val mono">${esc(resultGap(d))}</span>`}
-    </button>`).join("");
+  // Classement complet : podium mis en valeur, puis le reste en lignes compactes, non classés à la fin
+  const move = (d) => { if (!d.grid || d.out) return ""; const m = d.grid - d.finish; return m ? `<span class="mv ${m > 0 ? "up" : "down"}" title="Parti P${d.grid}">${m > 0 ? "▲" : "▼"}${Math.abs(m)}</span>` : `<span class="mv" title="Parti P${d.grid}">=</span>`; };
+  const row = (d, i) => `<button class="tower-row ${i === 0 ? "p1" : ""} ${i > 2 ? "compact" : ""} ${d.out ? "is-out" : ""}" data-driver="${d.code}">
+      <span class="pos">${d.out ? "—" : "P" + d.finish}</span><span class="bar" style="background:${d.color}"></span>
+      <span class="name">${esc(d.last)}</span>${move(d)}
+      ${d.out ? `<span class="val mono">${d.status === "abandon" ? `abandon T${(d.outLap ?? 0) + 1}` : d.status}</span>`
+        : i === 0 ? (d === fastest ? '<span class="tag">MEILLEUR RYTHME</span>' : `<span class="val mono">${d.result?.duration ? raceT(d.result.duration) : ""}</span>`) : `<span class="val mono">${esc(resultGap(d))}</span>`}
+    </button>`;
+  const all = [...finishers, ...dnfs];
+  $("#tower").classList.remove("open"); $("#tower").parentElement.classList.remove("open");
+  $("#tower").innerHTML = all.slice(0, 3).map(row).join("") + (all.length > 3
+    ? `<div class="tower-more" id="tower-more"><div>${all.slice(3).map((d, i) => row(d, i + 3)).join("")}</div></div>
+       <button class="tower-toggle" id="tower-toggle" aria-expanded="false" aria-controls="tower-more"><span>Voir tout le classement (${all.length} pilotes)</span>${IC.chev}</button>` : "");
+  fitTower();
+  $("#tower-toggle")?.addEventListener("click", () => {
+    const t = $("#tower"), more = $("#tower-more"), open = !t.classList.contains("open");
+    t.classList.toggle("open", open); t.parentElement.classList.toggle("open", open);
+    more.style.maxHeight = (open ? more.scrollHeight : fitTower.h) + "px";
+    $("#tower-toggle").setAttribute("aria-expanded", open);
+    labelTower();
+    if (!open) t.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+  });
   const segs = []; let prev = 1;
   NEUTRAL.forEach((r) => { if (r.start > prev) segs.push(`<span style="flex:${r.start - prev}"></span>`); segs.push(`<span class="sc" style="flex:${r.end - r.start + 1}" title="${NKlong[r.kind]} T${r.start}–${r.end}"></span>`); prev = r.end + 1; });
   if (prev <= LAPS) segs.push(`<span style="flex:${LAPS - prev + 1}"></span>`);
@@ -362,6 +379,44 @@ function renderHero() {
   $$("#kpis .kpi").forEach((b) => b.addEventListener("click", () => kpis[+b.dataset.k].go()));
   $$("#tower .tower-row").forEach((b) => b.addEventListener("click", () => showDriver(b.dataset.driver)));
 }
+
+// Le classement remplit la hauteur de la carte « direction de course », puis le bouton déplie le reste
+function fitTower() {
+  const t = $("#tower"), more = $("#tower-more"), btn = $("#tower-toggle");
+  if (!more || t.classList.contains("open")) return;
+  const rows = [...more.querySelectorAll(".tower-row")];
+  more.style.transition = "none"; more.style.maxHeight = "0px"; void more.offsetHeight; // hauteur naturelle de la carte voisine
+  t.style.setProperty("--tg", "0px");
+  const side = t.parentElement.getBoundingClientRect().width > t.getBoundingClientRect().width * 1.5; // deux colonnes
+  const rowH = rows[0] ? rows[0].offsetHeight + 2 : 34;
+  let n;
+  if (side) {
+    const podium = [...t.querySelectorAll(":scope > .tower-row")].reduce((s, r) => s + r.offsetHeight + 2, 0);
+    const pad = parseFloat(getComputedStyle(t).paddingTop) + parseFloat(getComputedStyle(t).paddingBottom);
+    const free = $("#log").offsetHeight - pad - podium - btn.offsetHeight - 8;
+    n = Math.max(0, Math.floor(free / rowH));
+  } else n = 5;
+  n = Math.min(n, rows.length);
+  // L'espace restant (moins d'une ligne) est réparti entre les lignes : pas de trou en bas de la carte
+  t.style.setProperty("--tg", "0px");
+  if (side && n < rows.length) {
+    const podium = [...t.querySelectorAll(":scope > .tower-row")].reduce((s, r) => s + r.offsetHeight + 2, 0);
+    const pad = parseFloat(getComputedStyle(t).paddingTop) + parseFloat(getComputedStyle(t).paddingBottom);
+    const left = $("#log").offsetHeight - pad - podium - btn.offsetHeight - 8 - n * rowH;
+    t.style.setProperty("--tg", Math.max(0, Math.min(14, left / (n + 3))) + "px");
+  }
+  fitTower.h = n ? rows[n - 1].offsetTop + rows[n - 1].offsetHeight - rows[0].offsetTop + 6 : 0;
+  fitTower.hidden = rows.length - n;
+  more.style.maxHeight = fitTower.h + "px"; void more.offsetHeight; more.style.transition = "";
+  btn.hidden = fitTower.hidden === 0;
+  labelTower();
+}
+function labelTower() {
+  const open = $("#tower").classList.contains("open"), s = $("#tower-toggle span");
+  if (s) s.textContent = open ? "Replier le classement" : `Voir tout le classement (${fitTower.hidden} pilote${fitTower.hidden > 1 ? "s" : ""} de plus)`;
+}
+addEventListener("resize", () => { if ($("#tower-more")) fitTower(); });
+if (document.fonts) document.fonts.ready.then(() => $("#tower-more") && fitTower());
 
 /* ======================= Duels ======================= */
 function computeDuels() {
@@ -1179,7 +1234,7 @@ async function loadGP(sk) {
     first = false;
   } catch (e) {
     setStatus(e.message, "error");
-  } finally { $("main").classList.remove("loading"); }
+  } finally { $("main").classList.remove("loading"); fitTower(); }
 }
 function renderAll() {
   follow = []; $("#follow").classList.remove("on"); $("#follow").hidden = true; showField = false;
