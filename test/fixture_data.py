@@ -54,7 +54,8 @@ rc = [{"date":at(1),"lap_number":1,"flag":"GREEN","message":"GREEN LIGHT - PIT E
       {"date":at(20),"lap_number":20,"category":"SafetyCar","message":"SAFETY CAR IN THIS LAP"},
       {"date":at(40),"lap_number":None,"category":"SafetyCar","message":"VIRTUAL SAFETY CAR DEPLOYED"},
       {"date":at(41),"lap_number":None,"category":"SafetyCar","message":"VIRTUAL SAFETY CAR ENDING"},
-      {"date":"2026-03-15T18:00:00Z","lap_number":None,"flag":"RED","message":"PIT EXIT CLOSED"}]
+      {"date":"2026-03-15T18:00:00Z","lap_number":None,"flag":"RED","message":"PIT EXIT CLOSED"},
+      {"date":at(TOTAL),"lap_number":TOTAL,"flag":"RED","message":"RED FLAG"}]   # faux rouge au dernier tour (cas de Bakou 2026)
 DATA = {"sessions": sessions, "drivers": drivers, "laps": laps, "stints": stints, "pit": pits, "race_control": rc}
 
 # Classement final : temps total (abandon en dernier), grille de départ légèrement mélangée
@@ -71,6 +72,49 @@ grid_order = sorted(BASE, key=lambda dn: (BASE[dn] or 93.5) + random.uniform(-0.
 starting_grid = [{"position": i+1, "driver_number": dn} for i, dn in enumerate(grid_order)]
 DATA["session_result"] = session_result
 DATA["starting_grid"] = starting_grid
+
+# --- Enrichissements (site v2) : noms, secteurs, durées d'arrêt, écarts officiels, positions GPS ---
+import math
+NAMES = {"NOR":("Lando","NORRIS"),"PIA":("Oscar","PIASTRI"),"LEC":("Charles","LECLERC"),"HAM":("Lewis","HAMILTON"),"VER":("Max","VERSTAPPEN"),
+         "TSU":("Yuki","TSUNODA"),"RUS":("George","RUSSELL"),"ANT":("Andrea Kimi","ANTONELLI"),"ALO":("Fernando","ALONSO"),"STR":("Lance","STROLL"),
+         "GAS":("Pierre","GASLY"),"COL":("Franco","COLAPINTO"),"ALB":("Alexander","ALBON"),"SAI":("Carlos","SAINZ"),"HAD":("Isack","HADJAR"),
+         "LAW":("Liam","LAWSON"),"HUL":("Nico","HULKENBERG"),"BOR":("Gabriel","BORTOLETO"),"OCO":("Esteban","OCON"),"BEA":("Oliver","BEARMAN")}
+for d in drivers:
+    f, l = NAMES[d["name_acronym"]]; d["first_name"], d["last_name"] = f, l; d["full_name"] = f"{f} {l}"
+SPLIT = {}
+for d in drivers:
+    r = random.Random(d["driver_number"])
+    SPLIT[d["driver_number"]] = (0.31 + r.uniform(-0.004, 0.004), 0.38 + r.uniform(-0.004, 0.004))
+for l in laps:
+    t = l["lap_duration"]
+    if t is None: l["duration_sector_1"] = l["duration_sector_2"] = l["duration_sector_3"] = None; continue
+    a, b = SPLIT[l["driver_number"]]
+    l["duration_sector_1"] = round(t * a, 3); l["duration_sector_2"] = round(t * b, 3); l["duration_sector_3"] = round(t - round(t*a,3) - round(t*b,3), 3)
+for p in pits:
+    r = random.Random(p["driver_number"] * 7)
+    p["stop_duration"] = round(2.1 + r.uniform(0, 1.6), 2); p["lane_duration"] = round(19.5 + r.uniform(-0.8, 1.2), 1); p["pit_duration"] = p["lane_duration"]
+lead_t = finish[order[0]][0]
+for r in session_result:
+    if not r["dnf"]: r["gap_to_leader"] = 0 if r["position"] == 1 else round(finish[r["driver_number"]][0] - lead_t, 3); r["duration"] = round(finish[r["driver_number"]][0], 3)
+    else: r["gap_to_leader"] = "DNF"
+
+def _track(f):  # circuit fictif : courbe fermée, f ∈ [0,1)
+    a = 2 * math.pi * f
+    return (3000 * math.cos(a) + 900 * math.cos(3 * a), 1800 * math.sin(a) + 500 * math.sin(2 * a))
+import datetime as _dt
+def _parse(s): return _dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
+LAPS_BY = {}
+for l in laps:
+    if l["lap_duration"]: LAPS_BY.setdefault(l["driver_number"], []).append((_parse(l["date_start"]), l["lap_duration"]))
+def location(driver_number, t_from, t_to):
+    out = []
+    for ds, dur in LAPS_BY.get(driver_number, []):
+        n = int(dur * 3.7)
+        for k in range(n):
+            ts = ds + _dt.timedelta(seconds=dur * k / n)
+            if t_from <= ts <= t_to:
+                x, y = _track(k / n); out.append({"date": ts.isoformat().replace("+00:00", "Z"), "driver_number": driver_number, "x": round(x), "y": round(y), "z": 0})
+    return out
 
 def dump(directory):
     os.makedirs(directory, exist_ok=True)

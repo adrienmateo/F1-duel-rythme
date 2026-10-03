@@ -59,8 +59,11 @@ Coût : uniquement quand tu lances un compte rendu. Environ 15 opérations Make 
    Pour écrire la formule : ouvre l'onglet **fonctions texte** (icône *T*) du panneau de mapping, choisis `replace`, puis glisse les trois champs à leur place (séparés par des `;`). Ne tape pas les noms de champs à la main.
 
    La formule remplace le marqueur `[[RESUME_IA]]` du mail par le texte de Claude.
+3. **Destinataires choisis au lancement** : active *Show advanced settings*, puis dans **Bcc** (copie cachée) bascule l'interrupteur **Map** et mets `{{1.destinataires}}`. Les adresses saisies dans GitHub (« Run workflow » → *destinataires*) reçoivent le mail en copie cachée ; **To** reste ta propre adresse. Laisse le champ vide au lancement pour un envoi à toi seul.
 
 ## Étape 5 · Branche 2 : l'historique de la saison
+
+> **Mise à jour (écarts en secondes)** : les colonnes en pourcentage ont disparu. Dans ton Google Sheet, supprime les colonnes « Écart (%) » et « Pneus égaux (%) », ajoute « Pneus égaux (s/tour) » après « Écart (s/tour) », puis remappe le module Google Sheets selon le tableau ci-dessous (clique d'abord sur *Refresh* dans le module pour qu'il relise les en-têtes).
 
 1. Branche du bas → **Flow Control** → **Iterator** → *Array* : `{{1.duels}}`.
 2. **+** → **Google Sheets** → **Add a Row**.
@@ -76,15 +79,14 @@ Coût : uniquement quand tu lances un compte rendu. Environ 15 opérations Make 
 | Pilote rapide | `pilote_rapide` |
 | Pilote lent | `pilote_lent` |
 | Écart (s/tour) | `ecart_s_fr` |
-| Écart (%) | `ecart_pct_fr` |
-| Pneus égaux (%) | `pneus_egaux_pct_fr` |
+| Pneus égaux (s/tour) | `pneus_egaux_s_fr` |
 | Commentaire | `commentaire` |
 
 Utilise bien les champs `*_fr` (virgule décimale). Les champs sans `_fr` existent aussi si ta feuille est réglée en anglais.
 
 ## Étape 6 · Activer
 
-1. *Run once* puis renvoie l'exemple (Postman ou curl) : vérifie le mail reçu et les 10 lignes ajoutées. Supprime ensuite ces lignes de test dans le Sheet.
+1. *Run once* puis renvoie l'exemple (Postman ou curl) : vérifie le mail reçu et les lignes ajoutées (une par écurie). Supprime ensuite ces lignes de test dans le Sheet.
 2. Enregistre le scénario, *Scheduling* → **Immediately as data arrives**, puis bascule le scénario sur **ON**. Ce n'est pas une récurrence : le scénario dort et ne consomme rien tant que GitHub ne lui envoie pas de données, c'est-à-dire seulement quand tu lances le compte rendu.
 
 ## Étape 7 · Brancher GitHub sur Make

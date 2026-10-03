@@ -1,0 +1,24 @@
+
+/* ======== Site réel : compléments ======== */
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.gp-pick { gap: 6px; padding: 4px 6px 4px 10px; }
+.gp-pick select { max-width: 52vw; }
+.gp-pick #year { font: 500 12px var(--mono); color: var(--muted); padding-right: 0; }
+.status { border-radius: 14px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-sm); font-size: 14px; color: var(--ink-2); display: flex; gap: 10px; align-items: center; }
+.status.error { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--ink); }
+.status .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hp { position: absolute; left: -9999px; }
+.consent { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--ink-2); margin-top: 10px; cursor: pointer; }
+.consent input { margin-top: 3px; accent-color: var(--accent); }
+.sub-status { margin: 6px 0 0; font-size: 13px; font-weight: 600; min-height: 1em; }
+.sub-status.ok { color: var(--good); } .sub-status.err { color: var(--accent); }
+.linklike { border: 0; background: none; padding: 0; margin-top: 6px; color: var(--muted); font-size: 12px; text-decoration: underline; cursor: pointer; }
+details.method { padding: 16px 24px; color: var(--ink-2); font-size: 14px; }
+details.method summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+details.method ul { margin: 10px 0 0; padding-left: 18px; max-width: 80ch; display: grid; gap: 6px; }
+details.method a { color: var(--ink); }
+.circ-stage { position: relative; }
+.circ-msg { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; }
+.empty-note { color: var(--muted); font-size: 14px; padding: 12px 0; }
+main.loading .tower, main.loading .log, main.loading .kpis { min-height: 120px; }
