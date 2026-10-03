@@ -36,9 +36,9 @@ function loadAnalysis() {
   const a = html.indexOf("/* ======================= Calcul");
   const b = html.indexOf("/* ======================= Rendu");
   if (!cfg || !med || a < 0 || b < 0) throw new Error("Impossible de lire le calcul dans index.html (structure modifiée ?)");
-  return new Function(`${cfg}\n${med}\n${html.slice(a, b)}\nreturn { analyse, sameCompoundGap, compactRace, CFG, median };`)();
+  return new Function(`${cfg}\n${med}\n${html.slice(a, b)}\nreturn { analyse, sameCompoundGap, compactRace, gridFromPositions, CFG, median };`)();
 }
-const { analyse, sameCompoundGap, compactRace, CFG } = loadAnalysis();
+const { analyse, sameCompoundGap, compactRace, gridFromPositions, CFG } = loadAnalysis();
 
 /* ---------- 2. OpenF1 ---------- */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -81,6 +81,8 @@ async function fetchAll(sk) {
   for (const ep of ["drivers", "laps", "stints", "pit", "race_control", "session_result", "starting_grid"]) raw[ep] = await get(ep);
   // Même format allégé que le site (compactRace, lu dans index.html)
   const data = compactRace(raw);
+  // Grille absente d'OpenF1 (fréquent en 2026) : première position connue de chaque pilote
+  if (!raw.starting_grid.length) raw.starting_grid = gridFromPositions(FIXTURES ? [] : await get("position"));
   const seen = new Map();
   for (const d of raw.drivers) if (!seen.has(d.driver_number)) seen.set(d.driver_number, d);
   return { data, drivers: [...seen.values()], results: raw.session_result, grid: raw.starting_grid };
