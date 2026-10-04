@@ -908,6 +908,7 @@ const FUEL = 0.06; // s gagnées par tour grâce à l'allègement en carburant (
 /* ======================= Accès API (file d'attente + cache) ======================= */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let lastCall = 0;
+const calls = [];
 const memo = new Map();
 async function api(endpoint, params) {
   const qs = typeof params === "string" ? params : new URLSearchParams(params).toString();
@@ -916,12 +917,14 @@ async function api(endpoint, params) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     const wait = lastCall + CFG.gapMs - Date.now();
     if (wait > 0) await sleep(wait);
-    lastCall = Date.now();
+    // OpenF1 gratuit : 30 appels par minute au plus. On reste sous la barre en patientant en silence.
+    for (;;) { while (calls.length && Date.now() - calls[0] > 60000) calls.shift(); if (calls.length < 28) break; await sleep(60000 - (Date.now() - calls[0]) + 50); }
+    lastCall = Date.now(); calls.push(lastCall);
     let res;
     try { res = await fetch(url); }
     catch { throw new Error(navigator.onLine === false ? "Pas de connexion internet : impossible de joindre OpenF1." : "OpenF1 ne répond pas. Pendant une séance de F1 en direct (essais, qualifs ou course), OpenF1 réserve son accès aux abonnés : les GP s'afficheront de nouveau à la fin de la séance."); }
     if (res.ok) { const data = await res.json(); memo.set(url, data); return data; }
-    if (res.status === 429) { setStatus(`Limite d'appels OpenF1 atteinte, nouvelle tentative dans ${5 * attempt} s…`, "load"); await sleep(5000 * attempt); continue; }
+    if (res.status === 429) { await sleep(5000 * attempt); continue; } // trop d'appels : on attend sans rien afficher de plus
     if (res.status === 404) return [];
     if (res.status >= 500) { await sleep(2000 * attempt); continue; }
     throw new Error(`OpenF1 a répondu une erreur (HTTP ${res.status}) sur « ${endpoint} ».`);
