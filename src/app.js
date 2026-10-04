@@ -27,7 +27,7 @@ async function api(endpoint, params) {
   throw new Error("OpenF1 ne répond pas pour le moment. Réessaie dans une minute.");
 }
 const store = {
-  key: (sk) => `f1duel:v3:${sk}`,
+  key: (sk) => `f1duel:v4:${sk}`,
   get(sk) { try { const v = localStorage.getItem(this.key(sk)); return v ? JSON.parse(v) : null; } catch { return null; } },
   set(sk, data) {
     const v = JSON.stringify(data);
@@ -51,6 +51,13 @@ function compactRace(raw) {
     pits: raw.pit.map((p) => [p.driver_number, p.lap_number, num(p.lane_duration ?? p.pit_duration), num(p.stop_duration)]),
     rc: raw.race_control.map((m) => [m.date, m.lap_number ?? null, m.flag || "", m.message || "", m.category || ""]),
   };
+}
+
+// Grille de départ : quand OpenF1 n'a pas « starting_grid », on prend la première position connue de chaque pilote
+function gridFromPositions(positions) {
+  const first = new Map();
+  for (const p of [...positions].sort((a, b) => Date.parse(a.date) - Date.parse(b.date))) if (!first.has(p.driver_number) && p.position) first.set(p.driver_number, p.position);
+  return [...first].map(([driver_number, position]) => ({ driver_number, position }));
 }
 
 // 1) Messages de la direction de course → plages SC / VSC / drapeau rouge
@@ -302,8 +309,9 @@ function buildModel(session, raw) {
   dnfs.filter((d) => d.result && !d.result.dns).forEach((d) => { const l = Math.max(1, Math.min(LAPS, (d.outLap ?? 0) + 1)); if (!outByLap.has(l)) outByLap.set(l, []); outByLap.get(l).push(d); });
   for (const [lap, ds] of outByLap) {
     const names = ds.map((d) => d.last);
+    const de = (n) => (/^[aeiouyhàâéèêîôû]/i.test(n) ? "d'" : "de ") + n;
     const was = ds.length === 1 && ds[0].pos[ds[0].outLap - 1] ? ` Il était P${ds[0].pos[ds[0].outLap - 1]}.` : "";
-    ev.push({ lap, cls: "out", txt: ds.length === 1 ? `${ds[0].result.dsq ? "Disqualification" : "Abandon"} de ${names[0]}` : `${names.slice(0, -1).join(", ")} et ${names.at(-1)} : ${ds.length} abandons`,
+    ev.push({ lap, cls: "out", txt: ds.length === 1 ? `${ds[0].result.dsq ? "Disqualification" : "Abandon"} ${de(names[0])}` : `${names.slice(0, -1).join(", ")} et ${names.at(-1)} : ${ds.length} abandons`,
       detail: ds.length === 1 ? `${ds[0].team}, après ${plural(ds[0].outLap ?? 0, "tour")}.${was}` : `Après ${plural(lap - 1, "tour")}.` });
   }
   const [w, p2] = finishers;
@@ -329,11 +337,28 @@ function renderHero() {
   $("#gp-eyebrow").textContent = `Le GP en 30 secondes · ${new Date(RACE.date_start).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`;
   $("#gp-meta").textContent = `${LAPS} tours · ${RACE.location || RACE.circuit_short_name || ""}`;
   const fastest = paced[0];
-  $("#tower").innerHTML = [p1, p2, p3].filter(Boolean).map((d, i) => `<button class="tower-row ${i === 0 ? "p1" : ""}" data-driver="${d.code}">
-      <span class="pos">P${i + 1}</span><span class="bar" style="background:${d.color}"></span>
-      <span class="name">${esc(d.last)}</span>
-      ${i === 0 ? (d === fastest ? '<span class="tag">MEILLEUR RYTHME</span>' : `<span class="val mono">${d.result?.duration ? raceT(d.result.duration) : ""}</span>`) : `<span class="val mono">${esc(resultGap(d))}</span>`}
-    </button>`).join("");
+  // Classement complet : podium mis en valeur, puis le reste en lignes compactes, non classés à la fin
+  const move = (d) => { if (!d.grid || d.out) return ""; const m = d.grid - d.finish; return m ? `<span class="mv ${m > 0 ? "up" : "down"}" title="Parti P${d.grid}">${m > 0 ? "▲" : "▼"}${Math.abs(m)}</span>` : `<span class="mv" title="Parti P${d.grid}">=</span>`; };
+  const row = (d, i) => `<button class="tower-row ${i === 0 ? "p1" : ""} ${i > 2 ? "compact" : ""} ${d.out ? "is-out" : ""}" data-driver="${d.code}">
+      <span class="pos">${d.out ? "—" : "P" + d.finish}</span><span class="bar" style="background:${d.color}"></span>
+      <span class="name">${esc(d.last)}</span>${move(d)}
+      ${d.out ? `<span class="val mono">${d.status === "abandon" ? `abandon T${(d.outLap ?? 0) + 1}` : d.status}</span>`
+        : i === 0 ? (d === fastest ? '<span class="tag">MEILLEUR RYTHME</span>' : `<span class="val mono">${d.result?.duration ? raceT(d.result.duration) : ""}</span>`) : `<span class="val mono">${esc(resultGap(d))}</span>`}
+    </button>`;
+  const all = [...finishers, ...dnfs];
+  $("#tower").classList.remove("open"); $("#tower").parentElement.classList.remove("open");
+  $("#tower").innerHTML = all.slice(0, 3).map(row).join("") + (all.length > 3
+    ? `<div class="tower-more" id="tower-more"><div>${all.slice(3).map((d, i) => row(d, i + 3)).join("")}</div></div>
+       <button class="tower-toggle" id="tower-toggle" aria-expanded="false" aria-controls="tower-more"><span>Voir tout le classement (${all.length} pilotes)</span>${IC.chev}</button>` : "");
+  fitTower();
+  $("#tower-toggle")?.addEventListener("click", () => {
+    const t = $("#tower"), more = $("#tower-more"), open = !t.classList.contains("open");
+    t.classList.toggle("open", open); t.parentElement.classList.toggle("open", open);
+    more.style.maxHeight = (open ? more.scrollHeight : fitTower.h) + "px";
+    $("#tower-toggle").setAttribute("aria-expanded", open);
+    labelTower();
+    if (!open) t.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+  });
   const segs = []; let prev = 1;
   NEUTRAL.forEach((r) => { if (r.start > prev) segs.push(`<span style="flex:${r.start - prev}"></span>`); segs.push(`<span class="sc" style="flex:${r.end - r.start + 1}" title="${NKlong[r.kind]} T${r.start}–${r.end}"></span>`); prev = r.end + 1; });
   if (prev <= LAPS) segs.push(`<span style="flex:${LAPS - prev + 1}"></span>`);
@@ -354,6 +379,44 @@ function renderHero() {
   $$("#kpis .kpi").forEach((b) => b.addEventListener("click", () => kpis[+b.dataset.k].go()));
   $$("#tower .tower-row").forEach((b) => b.addEventListener("click", () => showDriver(b.dataset.driver)));
 }
+
+// Le classement remplit la hauteur de la carte « direction de course », puis le bouton déplie le reste
+function fitTower() {
+  const t = $("#tower"), more = $("#tower-more"), btn = $("#tower-toggle");
+  if (!more || t.classList.contains("open")) return;
+  const rows = [...more.querySelectorAll(".tower-row")];
+  more.style.transition = "none"; more.style.maxHeight = "0px"; void more.offsetHeight; // hauteur naturelle de la carte voisine
+  t.style.setProperty("--tg", "0px");
+  const side = t.parentElement.getBoundingClientRect().width > t.getBoundingClientRect().width * 1.5; // deux colonnes
+  const rowH = rows[0] ? rows[0].offsetHeight + 2 : 34;
+  let n;
+  if (side) {
+    const podium = [...t.querySelectorAll(":scope > .tower-row")].reduce((s, r) => s + r.offsetHeight + 2, 0);
+    const pad = parseFloat(getComputedStyle(t).paddingTop) + parseFloat(getComputedStyle(t).paddingBottom);
+    const free = $("#log").offsetHeight - pad - podium - btn.offsetHeight - 8;
+    n = Math.max(0, Math.floor(free / rowH));
+  } else n = 5;
+  n = Math.min(n, rows.length);
+  // L'espace restant (moins d'une ligne) est réparti entre les lignes : pas de trou en bas de la carte
+  t.style.setProperty("--tg", "0px");
+  if (side && n < rows.length) {
+    const podium = [...t.querySelectorAll(":scope > .tower-row")].reduce((s, r) => s + r.offsetHeight + 2, 0);
+    const pad = parseFloat(getComputedStyle(t).paddingTop) + parseFloat(getComputedStyle(t).paddingBottom);
+    const left = $("#log").offsetHeight - pad - podium - btn.offsetHeight - 8 - n * rowH;
+    t.style.setProperty("--tg", Math.max(0, Math.min(14, left / (n + 3))) + "px");
+  }
+  fitTower.h = n ? rows[n - 1].offsetTop + rows[n - 1].offsetHeight - rows[0].offsetTop + 6 : 0;
+  fitTower.hidden = rows.length - n;
+  more.style.maxHeight = fitTower.h + "px"; void more.offsetHeight; more.style.transition = "";
+  btn.hidden = fitTower.hidden === 0;
+  labelTower();
+}
+function labelTower() {
+  const open = $("#tower").classList.contains("open"), s = $("#tower-toggle span");
+  if (s) s.textContent = open ? "Replier le classement" : `Voir tout le classement (${fitTower.hidden} pilote${fitTower.hidden > 1 ? "s" : ""} de plus)`;
+}
+addEventListener("resize", () => { if ($("#tower-more")) fitTower(); });
+if (document.fonts) document.fonts.ready.then(() => $("#tower-more") && fitTower());
 
 /* ======================= Duels ======================= */
 function computeDuels() {
@@ -459,7 +522,7 @@ function applyFollow(announce) {
       : `<b>${follow.length} pilotes</b> suivis : ${follow.slice(0, 4).join(", ")}${follow.length > 4 ? "…" : ""}`;
     pill.hidden = false; requestAnimationFrame(() => pill.classList.add("on"));
   } else { pill.classList.remove("on"); setTimeout(() => { if (!follow.length) pill.hidden = true; }, 250); }
-  renderCourseChips();
+  renderCourseChips(); syncPickBtn();
   ["ch-course", "ch-rythme", "ch-strat", "ch-deg", "ch-drs"].forEach((id) => update(id, false));
   $$("#duel-list .duel[data-codes]").forEach((r) => { const has = follow.some((c) => r.dataset.codes.split(" ").includes(c)); r.classList.toggle("followed", follow.length > 0 && has); r.classList.toggle("dimmed", follow.length > 0 && !has); });
   if (follow.length >= 2 && follow.length <= 4) { exSel = [...follow]; renderExChips(); readEx(); update("ch-ex"); }
@@ -519,7 +582,7 @@ function readCourse() {
 function renderBoard() {
   const box = $("#board"); if (!box || !drivers.length) return;
   const lap = Math.max(1, replayLap);
-  const rows = matchMedia("(max-width: 860px)").matches ? 10 : Math.min(22, drivers.length);
+  const rows = MOB() ? (boardAll ? drivers.length : Math.min(8, drivers.length)) : matchMedia("(max-width: 860px)").matches ? 10 : Math.min(22, drivers.length);
   box.querySelector(".brows").style.height = rows * 26 + "px";
   const alive = drivers.filter((d) => d.pos[lap - 1] != null).sort((a, b) => a.pos[lap - 1] - b.pos[lap - 1]);
   $("#board-lap").textContent = `Tour ${lap}/${LAPS}`;
@@ -602,8 +665,8 @@ function bindCursor() {
 /* --- Le rythme : les points glissent du rang au rythme vers l'arrivée --- */
 function buildRythme(T) {
   const o = base(T);
-  const rows = [...paced].sort((a, b) => b.paceRank - a.paceRank);
-  const n = Math.max(drivers.length, ...rows.map((d) => d.finish));
+  const rows = rythmeRows();
+  const n = MOB() && !allRythme ? Math.max(...rows.map((d) => Math.max(d.paceRank, d.order))) + 1 : Math.max(drivers.length, ...rows.map((d) => d.finish));
   return {
     ...o, animationDurationUpdate: reduce ? 0 : 1200, animationEasingUpdate: "cubicInOut", grid: { left: 56, right: 24, top: 10, bottom: 36 },
     tooltip: { ...o.tooltip, trigger: "item", formatter: (p) => {
@@ -642,7 +705,7 @@ function readRythme() {
 /* --- Les stratégies --- */
 function buildStrat(T) {
   const o = base(T);
-  const rows = [...finishers, ...dnfs].reverse();
+  const rows = MOB() && !allStrat ? finishers.slice(0, 10).reverse() : [...finishers, ...dnfs].reverse();
   const data = [];
   rows.forEach((d, i) => d.stints.forEach(([c, a, b]) => { const end = Math.min(b ?? LAPS, DNF[d.code] || LAPS); if (end >= a) data.push([i, a, end, c, d.code]); }));
   return {
@@ -848,7 +911,7 @@ async function playCircuit() {
     const all = traces[0];
     const xs = all.map((p) => p.x), ys = all.map((p) => p.y);
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-    const W = 680, H = 400, pad = 34, sc = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1));
+    const W = 680, H = 400, pad = MOB() ? 16 : 34, sc = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1));
     const ox = (W - (x1 - x0) * sc) / 2, oy = (H - (y1 - y0) * sc) / 2;
     const P = (p) => [ox + (p.x - x0) * sc, H - (oy + (p.y - y0) * sc)];
     const path = (pts) => pts.map((p, i) => (i ? "L" : "M") + P(p).map((v) => v.toFixed(1)).join(" ")).join(" ");
@@ -863,7 +926,7 @@ async function playCircuit() {
     const [sx, sy] = P(all[0]); mk("circle", { cx: sx, cy: sy, r: 4, class: "sf-dot" });
     posOf = (k, t) => { const tr = traces[k]; let j = tr.findIndex((p) => p.t >= t); if (j < 0) j = tr.length - 1; if (j === 0) return P(tr[0]);
       const a = tr[j - 1], b = tr[j], f = (t - a.t) / ((b.t - a.t) || 1); return P({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f }); };
-    cars = D.map((x) => mk("circle", { r: 8, class: "car", fill: x.col, cx: sx, cy: sy }));
+    cars = D.map((x) => mk("circle", { r: MOB() ? 13 : 8, class: "car", fill: x.col, cx: sx, cy: sy }));
     tags = D.map((x, k) => { const t = mk("text", { class: "ctag", "text-anchor": "middle", fill: x.col, x: sx, y: sy + (k ? 26 : -16) }); t.textContent = x.d.code; return t; });
   }
   const done = [false, false, false], SCALE = 0.07; let t0 = null;
@@ -992,6 +1055,12 @@ let toastT;
 function toast(html) { const t = $("#toast"); t.innerHTML = html; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
 function setLevel(l) {
   const was = document.body.dataset.level;
+  if (was === l) return;
+  // Les cartes « Sous le capot » glissent en place (transition de vue native, si le navigateur la connaît)
+  if (document.startViewTransition && !reduce && was) { document.startViewTransition(() => applyLevel(l, was)); return; }
+  applyLevel(l, was);
+}
+function applyLevel(l, was) {
   document.body.dataset.level = l;
   $("#lvl-ess").setAttribute("aria-pressed", l === "essentiel"); $("#lvl-exp").setAttribute("aria-pressed", l === "expert");
   if (l === "expert" && was !== "expert") toast("Mode expert : <b>5 analyses</b> à déplier, signalées par « Sous le capot »");
@@ -1034,17 +1103,17 @@ function setupAccordions() {
 /* --- Indicateur glissant sous l'onglet actif --- */
 const indicators = [];
 function setupIndicators() {
-  $$(".tabs, .seg").forEach((box) => {
+  $$(".tabs, .seg, nav.sections").forEach((box) => {
     const ind = document.createElement("span"); ind.className = "ind"; ind.setAttribute("aria-hidden", "true");
     box.prepend(ind); indicators.push([box, ind]);
-    new MutationObserver(placeIndicators).observe(box, { attributes: true, subtree: true, attributeFilter: ["aria-selected", "aria-pressed"] });
+    new MutationObserver(placeIndicators).observe(box, { attributes: true, subtree: true, attributeFilter: ["aria-selected", "aria-pressed", "class"] });
   });
   placeIndicators(); addEventListener("resize", placeIndicators);
   if (document.fonts) document.fonts.ready.then(placeIndicators);
 }
 function placeIndicators() {
   indicators.forEach(([box, ind]) => {
-    const sel = box.querySelector('[aria-selected="true"], [aria-pressed="true"]');
+    const sel = box.querySelector('[aria-selected="true"], [aria-pressed="true"], a.on');
     if (!sel || !sel.offsetParent) { ind.style.opacity = 0; return; }
     ind.style.opacity = 1;
     ind.style.transform = `translate(${sel.offsetLeft}px, ${sel.offsetTop}px)`;
@@ -1068,7 +1137,7 @@ if (matchMedia("(hover: hover)").matches && !reduce) document.addEventListener("
   const r = c.getBoundingClientRect(); c.style.setProperty("--mx", e.clientX - r.left + "px"); c.style.setProperty("--my", e.clientY - r.top + "px");
 });
 function countUp() {
-  $$("#kpis .v").forEach((el) => {
+  $$("#kpis .v, #tower > .tower-row:not(.p1) .val").forEach((el) => {
     const txt = el.textContent, m = txt.match(/(\d+)(?:,(\d+))?/); if (!m || reduce) return;
     const dec = m[2] ? m[2].length : 0, target = parseFloat(m[1] + "." + (m[2] || "0")), t0 = performance.now(), dur = 1000;
     const step = (now) => { const p = Math.min(1, (now - t0) / dur), e2 = 1 - Math.pow(1 - p, 3);
@@ -1136,12 +1205,15 @@ async function loadRaces(year) {
 async function fetchRace(sk) {
   const cached = store.get(sk);
   if (cached) return cached;
-  const steps = [["drivers", "pilotes"], ["laps", "tours"], ["stints", "relais pneus"], ["pit", "arrêts aux stands"], ["race_control", "direction de course"], ["session_result", "résultats"], ["starting_grid", "grille de départ"]];
+  const steps = [["drivers", "des pilotes"], ["laps", "des tours"], ["stints", "des relais de pneus"], ["pit", "des arrêts aux stands"], ["race_control", "de la direction de course"], ["session_result", "du classement"], ["starting_grid", "de la grille de départ"]];
   const raw = {};
   for (const [i, [ep, label]] of steps.entries()) {
-    setStatus(`Chargement des ${label} (${i + 1}/${steps.length})…`, "load");
+    setStatus(`Chargement ${label} (${i + 1}/${steps.length})…`, "load");
+    hcProgress(i / (steps.length + 1));
     raw[ep] = await api(ep, { session_key: sk });
   }
+  hcProgress(steps.length / (steps.length + 1));
+  if (!raw.starting_grid.length) { setStatus("Chargement de la grille de départ…", "load"); raw.starting_grid = gridFromPositions(await api("position", { session_key: sk })); }
   const seen = new Map();
   for (const d of raw.drivers) if (!seen.has(d.driver_number)) seen.set(d.driver_number, d);
   const pack = {
@@ -1159,6 +1231,7 @@ async function loadGP(sk) {
   const session = RACES.find((r) => r.session_key === +sk);
   if (!session) return;
   $("main").classList.add("loading"); stopReplay();
+  const hTok = hcBegin();
   $("#round").textContent = "R" + String(RACES.indexOf(session) + 1).padStart(2, "0");
   try {
     const pack = await fetchRace(sk);
@@ -1166,11 +1239,12 @@ async function loadGP(sk) {
     buildModel(session, pack);
     setStatus("");
     renderAll();
+    hcRun(hTok);
     if (!first) toast(`${esc(session.country_name)} ${session.year} chargé`);
     first = false;
   } catch (e) {
-    setStatus(e.message, "error");
-  } finally { $("main").classList.remove("loading"); }
+    setStatus(e.message, "error"); hcFail();
+  } finally { $("main").classList.remove("loading"); fitTower(); }
 }
 function renderAll() {
   follow = []; $("#follow").classList.remove("on"); $("#follow").hidden = true; showField = false;
@@ -1192,7 +1266,7 @@ function renderAll() {
     mount("ch-strat", buildStrat); mount("ch-ex", buildEx);
     ["ch-drs", "ch-deg"].forEach((id, i) => (charts[id] = { el: document.getElementById(id), build: [buildDrs, buildDeg][i], inst: null }));
     charts["ch-course"].onClick = (p) => toggleFollow(p.seriesName);
-    charts["ch-rythme"].onClick = (p) => toggleFollow([...paced].sort((a, b) => b.paceRank - a.paceRank)[p.value[0]]?.code);
+    charts["ch-rythme"].onClick = (p) => toggleFollow(rythmeRows()[p.value[0]]?.code);
     charts["ch-strat"].onClick = (p) => toggleFollow(p.value[4]);
     charts["ch-deg"].onClick = (p) => toggleFollow(p.data.d.code);
     charts["ch-drs"].onClick = (p) => toggleFollow(p.name);
@@ -1207,6 +1281,7 @@ function renderAll() {
     if ($(".under.open #circ")) playCircuit();
   }
   placeCursor();
+  mobileRender();
 }
 
 /* ======================= Démarrage ======================= */

@@ -1,0 +1,37 @@
+
+/* ---------- Haut de page : tracé du GP, feux de départ, petite F1 ---------- */
+:root { --tarmac: #3a3f47; --tarmac-edge: #c9ced6; --skid: rgba(20,22,26,.35); --smoke: rgba(150,156,166,.55); }
+:root[data-theme="dark"] { --tarmac: #262c35; --tarmac-edge: #3a4554; --skid: rgba(0,0,0,.55); --smoke: rgba(170,178,190,.4); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tarmac: #262c35; --tarmac-edge: #3a4554; --skid: rgba(0,0,0,.55); --smoke: rgba(170,178,190,.4); } }
+#gp-section .sec-head { display: grid; grid-template-columns: minmax(0, auto) 1fr; align-items: center; }
+#gp-section .sec-tools { justify-self: center; flex-direction: column; align-items: stretch; gap: 2px; }
+.hc { position: relative; width: 340px; max-width: 100%; }
+.hc svg { display: block; width: 100%; height: auto; overflow: visible; }
+.hc.ready svg { cursor: pointer; }
+.hc.none { display: none; }
+.hc-edge { fill: none; stroke: var(--tarmac-edge); stroke-width: 14; stroke-linejoin: round; transition: stroke-dashoffset 1.1s cubic-bezier(.6,.05,.3,1); }
+.hc-road { fill: none; stroke: var(--tarmac); stroke-width: 10.5; stroke-linejoin: round; transition: stroke-dashoffset 1.1s cubic-bezier(.6,.05,.3,1); }
+.hc-mid { fill: none; stroke: rgba(255,255,255,.18); stroke-width: .6; stroke-dasharray: 3 4; }
+.hc-cap { display: flex; justify-content: space-between; gap: 10px; font: 600 11px var(--mono); color: var(--muted); }
+.hc-cap .hc-hint { opacity: 0; transition: opacity .3s; }
+.hc.parked:hover .hc-hint, .hc.parked:focus-within .hc-hint { opacity: 1; }
+.hc-lights { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); display: flex; gap: 8px; padding: 8px 10px; border-radius: 12px; background: #0d0f13; box-shadow: 0 8px 22px rgba(0,0,0,.25); opacity: 0; transition: opacity .25s; pointer-events: none; }
+.hc-lights.on { opacity: 1; }
+.hc-lights i { width: 16px; height: 16px; border-radius: 50%; background: #2a1414; transition: background .08s, box-shadow .08s; }
+.hc-lights i.lit { background: #ff2a1f; box-shadow: 0 0 12px 2px rgba(255,42,31,.7); }
+.hc:not(.ready) svg { min-height: 120px; }
+#hc-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; overflow: visible; }
+.hc-smoke { fill: var(--smoke); }
+.hc-skid { stroke: var(--skid); stroke-linecap: round; }
+@media (max-width: 720px) {
+  #gp-section .sec-head { grid-template-columns: 1fr; }
+  #gp-section .sec-tools { width: 66%; max-width: 250px; margin-top: 4px; }
+  .hc-cap { font-size: 9.5px; }
+  .hc-lights { gap: 6px; padding: 6px 8px; } .hc-lights i { width: 12px; height: 12px; }
+}
+/* Menu des rubriques : la pastille glisse d'une rubrique à l'autre */
+nav.sections { position: relative; isolation: isolate; }
+nav.sections .ind { position: absolute; left: 0; top: 0; z-index: -1; background: var(--ink); border-radius: 999px; transition: transform .38s cubic-bezier(.2,.8,.2,1), width .38s cubic-bezier(.2,.8,.2,1), opacity .2s; pointer-events: none; }
+nav.sections a.on { background: transparent; }
+/* Passage Essentiel / Expert */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }

@@ -22,3 +22,24 @@ details.method a { color: var(--ink); }
 .circ-msg { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; }
 .empty-note { color: var(--muted); font-size: 14px; padding: 12px 0; }
 main.loading .tower, main.loading .log, main.loading .kpis { min-height: 120px; }
+
+/* Classement : podium, puis le reste dans une liste dépliante */
+.tower { display: flex; flex-direction: column; gap: calc(2px + var(--tg, 0px)); }
+.hero-grid.open { align-items: start; }
+.tower-more { overflow: hidden; transition: max-height .5s cubic-bezier(.2,.8,.2,1); }
+.tower-more > div { display: grid; gap: calc(2px + var(--tg, 0px)); }
+.tower-more .tower-row:first-child { margin-top: 4px; }
+.tower-toggle { margin-top: auto; align-self: stretch; display: flex; justify-content: center; align-items: center; gap: 6px; border: 1px dashed var(--line); background: transparent; border-radius: 12px; padding: 9px 12px; font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+.tower-toggle:hover { background: var(--surface-2); color: var(--ink); border-color: var(--grey-line); }
+.tower-toggle svg { transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.tower.open .tower-toggle svg { transform: rotate(180deg); }
+.tower.open .tower-toggle { margin-top: 8px; }
+.tower.open { --tg: 0px !important; }
+.tower-row.compact { padding: 6px 14px; gap: 14px; }
+.tower-row.compact .name { font-size: 14px; font-weight: 600; }
+.tower-row.compact .pos { font-size: 13px; }
+.tower-row.compact .bar { height: 16px; }
+.tower-row.compact .val { font-size: 12.5px; color: var(--ink-2); }
+.tower-row.is-out .name, .tower-row.is-out .pos { color: var(--muted); }
+.tower-row .mv { font: 700 11px var(--mono); color: var(--muted); min-width: 28px; text-align: right; }
+.tower-row .mv.up { color: var(--good); } .tower-row .mv.down { color: var(--bad); }
