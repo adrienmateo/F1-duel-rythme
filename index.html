@@ -762,6 +762,42 @@ body.at-home { overflow: hidden; }
 .home-years { overflow-x: auto; scrollbar-width: none; max-width: 100%; }
 .home-years::-webkit-scrollbar { display: none; }
 @media (max-width: 640px) { .home-top .home-brand { font-size: 0; gap: 0; } .home-top .home-brand .logo { width: 32px; height: 32px; } }
+/* Le tracé du haut de page : pas de cadre de focus au clic (le tour se relance quand même au clavier) */
+#hc-svg:focus, #hc-svg:focus-visible { outline: none; }
+.hc:focus-within .hc-hint { opacity: 1; }
+
+/* ---------- Plus de mode Expert : les analyses détaillées sont dans « Pour aller plus loin » ---------- */
+.xdot, .x-badge { display: none !important; }
+.under { border-top-color: var(--line); }
+.card.under { border-color: var(--line); border-top-color: var(--line); }
+.under-head .lbl { color: var(--ink-2); }
+.under-head .lbl svg { stroke: var(--ink-2); }
+.howto { display: grid; gap: 4px; margin: 0 0 6px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.howto b { color: var(--ink); font-weight: 600; }
+@media (max-width: 640px) {
+  .under.in-slide { border-color: var(--line) !important; border-top: 1px solid var(--line) !important; }
+  .mtabs button.xs { color: var(--ink-2); border-color: var(--line); background: var(--surface); border-style: dashed; }
+  .mtabs button.xs[aria-selected="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); border-style: solid; }
+  .mdots i.xs { background: var(--line); } .mdots i.xs.on { background: var(--accent); }
+  .howto { font-size: 13px; padding: 9px 11px; }
+}
+.acc-cta { color: var(--ink-2); border-color: var(--line); background: var(--surface-2); }
+@media (max-width: 640px) {
+  /* « Où se joue l'écart » : deux menus Pilote A / Pilote B, plus simples qu'une rangée de pastilles */
+  .under.in-slide #circ-pick { display: none; }
+  .under.in-slide .circ-other { display: flex !important; margin: 0 0 8px; }
+  .under.in-slide .circ-other select { flex: 1; max-width: none; min-width: 0; }
+  .under.in-slide .circ-top { justify-content: flex-start; }
+}
+
+/* Les duels : la phrase « où se fait la différence », le circuit est dans l'Explorer */
+.dsect { display: grid; gap: 6px; justify-items: start; border-top: 1px dashed var(--line); padding-top: 14px; margin-top: 8px; }
+.dsect-k { font: 700 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.dsect .read { margin: 0; font-size: 15px; }
+.ex-circ { display: grid; gap: 12px; margin-top: 4px; }
+.ex-circ[hidden] { display: none; }
+@media (max-width: 640px) { .ex-circ { gap: 8px; } .ex-circ .circ-top { flex-wrap: wrap; } }
+#wander-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 65; overflow: visible; }
 
 </style>
 </head>
@@ -780,9 +816,6 @@ body.at-home { overflow: hidden; }
     <nav class="sections" aria-label="Sections">
       <a href="#gp-section">Le GP<i class="xdot" aria-hidden="true"></i></a><a href="#course">La course<i class="xdot" aria-hidden="true"></i></a><a href="#rythme">Le rythme<i class="xdot" aria-hidden="true"></i></a><a href="#duels">Les duels<i class="xdot" aria-hidden="true"></i></a><a href="#strategies">Stratégies<i class="xdot" aria-hidden="true"></i></a><a href="#explorer">Explorer</a>
     </nav>
-    <div class="seg" role="group" aria-label="Niveau de détail">
-      <button id="lvl-ess" aria-pressed="true">Essentiel</button><button id="lvl-exp" aria-pressed="false">Expert</button>
-    </div>
     <button class="mburger" id="mburger" aria-label="Menu" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <button class="icon-btn" id="theme" aria-label="Passer en mode sombre">
       <svg id="ico-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -823,8 +856,9 @@ body.at-home { overflow: hidden; }
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="card under x-grid x-only">
-      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Sous le capot</span><h3>Les arrêts aux stands chronométrés</h3></div>
+      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Les arrêts aux stands chronométrés</h3></div>
       <p class="read" id="read-pits" style="font-size:15px"></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands.</span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
       <div class="pitlist" id="pitlist"></div>
     </div>
   </section>
@@ -854,8 +888,9 @@ body.at-home { overflow: hidden; }
       <div class="board" id="board" aria-label="Classement au tour affiché"><div class="board-head"><span id="board-lap"></span><span class="board-sc" id="board-sc" hidden>SAFETY CAR</span></div><div class="brows"></div><button class="see-all" id="board-all">Voir tout le classement</button></div>
     </div>
     <div class="under x-grid x-only">
-      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Sous le capot</span><h3>Les batailles : tours passés à moins d'une seconde</h3></div>
+      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Les batailles : tours passés à moins d'une seconde</h3></div>
       <p class="read" id="read-drs" style="font-size:15px"></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> le nombre de tours où chaque pilote roulait à moins d'une seconde de la voiture devant, c'est-à-dire dans son aspiration, avec le DRS.</span><span><b>Comment le lire :</b> plus le nombre est grand, plus le pilote a passé sa course à attaquer… ou coincé derrière quelqu'un.</span></p>
       <div class="chart" id="ch-drs" style="height:360px" role="img" aria-label="Nombre de tours passés à moins d'une seconde de la voiture devant, par pilote"></div>
     </div>
   </section>
@@ -869,8 +904,9 @@ body.at-home { overflow: hidden; }
     <div class="legend-inline"><span><i class="dot" style="background:var(--purple)"></i>Rang au rythme de course</span><span><i class="dot" style="background:var(--ink)"></i>Position à l'arrivée</span><span><i class="dot" style="background:var(--good)"></i>a fait mieux que son rythme</span><span><i class="dot" style="background:var(--bad)"></i>a fait moins bien</span></div>
     <div class="chart tall" id="ch-rythme" role="img" aria-label="Rang au rythme comparé à la position finale, par pilote"></div>
     <div class="under x-grid x-only">
-      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Sous le capot</span><h3>Secteurs et tour idéal</h3></div>
+      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Secteurs et tour idéal</h3></div>
       <p class="read" id="read-sect" style="font-size:15px"></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> le meilleur temps de chaque pilote dans les trois parties du circuit, et le « tour idéal » qui les additionne.</span><span><b>Comment le lire :</b> violet = le plus rapide du plateau, vert = le point fort du pilote. L'écart au tour idéal montre ce qu'il a laissé sur la piste.</span></p>
       <div class="legend-inline"><span><i class="dot" style="background:var(--purple)"></i>meilleur temps du plateau</span><span><i class="dot" style="background:var(--good)"></i>point fort du pilote</span></div>
       <div class="scroll-x"><table class="x sect" id="tbl-sect"></table></div>
       <div class="scroll-x"><table class="x" id="tbl-rythme"></table></div>
@@ -885,16 +921,7 @@ body.at-home { overflow: hidden; }
     </div>
     <p class="read" id="read-duels"></p>
     <div id="duel-list" style="display:grid;gap:2px"></div>
-    <div class="under x-grid x-only">
-      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Sous le capot</span><h3>Où se joue l'écart : le duel secteur par secteur</h3></div>
-      <p class="read" id="read-dsect" style="font-size:15px"></p>
-      <div class="circ-top"><div class="chips" id="circ-pick" aria-label="Choisir le duel"></div><button class="btn ghost" id="cplay"></button></div>
-      <div class="circ-wrap">
-        <div><div class="circ-who" id="circ-who"></div><div class="circ-stage"><svg id="circ" viewBox="0 0 680 400" role="img" aria-label="Tracé du circuit découpé en trois secteurs : meilleur tour de chaque pilote du duel"></svg><p class="fine circ-msg" id="circ-msg" hidden></p></div></div>
-        <div class="circ-side" id="cside"></div>
-      </div>
-      <p class="fine">Meilleur tour de chaque pilote, joué en accéléré, sur le tracé réel (positions OpenF1). Chaque secteur prend la couleur de celui qui l'a gagné.</p>
-    </div>
+    <div class="dsect"><span class="dsect-k">Où se fait la différence</span><p class="read" id="read-dsect"></p><button class="linklike" id="dsect-go">Voir deux pilotes sur le circuit →</button></div>
   </section>
 
   <!-- 5. Les stratégies -->
@@ -906,8 +933,9 @@ body.at-home { overflow: hidden; }
     <div class="legend-inline" id="tyre-legend"></div>
     <div class="chart tall" id="ch-strat" role="img" aria-label="Relais de pneus de chaque pilote, tour par tour"></div>
     <div class="under x-grid x-only">
-      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Sous le capot</span><h3>L'usure des pneus : temps perdu par tour, relais par relais</h3></div>
+      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>L'usure des pneus : temps perdu par tour, relais par relais</h3></div>
       <p class="read" id="read-deg" style="font-size:15px"></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> combien de temps chaque pilote perdait à chaque tour au fil d'un relais, à cause de l'usure de ses pneus (l'allègement en essence est déjà retiré).</span><span><b>Comment le lire :</b> plus la valeur est grande, plus les pneus s'usaient vite. Près de zéro : des pneus bien préservés.</span></p>
       <div class="chart tall" id="ch-deg" role="img" aria-label="Dégradation en secondes par tour pour chaque relais de chaque pilote"></div>
     </div>
   </section>
@@ -921,14 +949,24 @@ body.at-home { overflow: hidden; }
       <div class="tabs" role="tablist" aria-label="Type de graphique">
         <button role="tab" aria-selected="true" data-ex="laps">Temps au tour</button>
         <button role="tab" aria-selected="false" data-ex="gap">Écart en piste</button>
-        <button role="tab" aria-selected="false" data-ex="box" class="x-flex x-only">Régularité <span class="x-badge">EXPERT</span></button>
-        <button role="tab" aria-selected="false" data-ex="tyre" class="x-flex x-only">Pneus <span class="x-badge">EXPERT</span></button>
+        <button role="tab" aria-selected="false" data-ex="box" class="x-flex x-only">Régularité</button>
+        <button role="tab" aria-selected="false" data-ex="tyre" class="x-flex x-only">Pneus</button>
+        <button role="tab" aria-selected="false" data-ex="circuit">Sur le circuit</button>
       </div>
       <span class="fine">Jusqu'à 4 pilotes</span>
     </div>
     <div class="chips" id="ex-chips"></div>
     <p class="read" id="read-ex"></p>
     <div class="chart mid" id="ch-ex" role="img" aria-label="Comparaison des pilotes sélectionnés"></div>
+    <div class="ex-circ" id="ex-circ" hidden>
+      <p class="howto"><span><b>Ce que ça montre :</b> les deux premiers pilotes choisis, rejoués sur leur meilleur tour, sur le vrai tracé.</span><span><b>Comment le lire :</b> chaque secteur prend la couleur du plus rapide, et le chiffre donne le temps qu'il y a gagné.</span></p>
+      <div class="circ-top"><span class="fine" id="circ-note"></span><button class="btn ghost" id="cplay"></button></div>
+      <div class="circ-wrap">
+        <div><div class="circ-who" id="circ-who"></div><div class="circ-stage"><svg id="circ" viewBox="0 0 680 400" role="img" aria-label="Tracé du circuit découpé en trois secteurs : meilleur tour de chaque pilote"></svg><p class="fine circ-msg" id="circ-msg" hidden></p></div></div>
+        <div class="circ-side" id="cside"></div>
+      </div>
+      <p class="fine">Meilleur tour de chaque pilote, joué en accéléré, sur le tracé réel (positions OpenF1).</p>
+    </div>
   </section>
 
   <!-- Inscription (Netlify Forms) -->
@@ -973,7 +1011,6 @@ body.at-home { overflow: hidden; }
 <div class="msheet" id="msheet-menu" role="dialog" aria-label="Menu">
   <span class="grab"></span>
   <h3>Affichage</h3>
-  <div class="row"><span>Niveau de détail</span><div class="seg"><button data-lv="essentiel">Essentiel</button><button data-lv="expert">Expert</button></div></div>
   <div class="row"><span>Mode sombre</span><button class="btn ghost" id="m-theme">Activer</button></div>
   <h3>Aller à</h3>
   <div class="chips"><a class="chip" href="#explorer">Explorer</a><a class="chip" href="#abonnement">Newsletter</a></div>
@@ -1537,7 +1574,7 @@ function applyFollow(announce) {
 }
 
 /* --- La course --- */
-const CAR_PATH = "path://M0,1 L5,1 L5,7 L9,7 L9,2 L15,2 L15,7 L22,7.5 L28,8.5 L30,4 L34,4 L34,8.6 L40,10 L34,11.4 L34,16 L30,16 L28,11.5 L22,12.5 L15,13 L15,18 L9,18 L9,13 L5,13 L5,19 L0,19 Z";
+const CAR_PATH = "path://M0,0 L0.01,0 L0.01,0.01 Z M40,20 L39.99,20 L39.99,19.99 Z M3.5,7.4 L11,5.6 L18.5,5.4 L21.5,7 L29,8.3 L36.5,9.2 L39.5,10 L36.5,10.8 L29,11.7 L21.5,13 L18.5,14.6 L11,14.4 L3.5,12.6 Z M15.5,8.7 L14,10 L15.5,11.3 L19.5,11 L19.5,9 Z", CAR_DARK = "path://M0,0 L0.01,0 L0.01,0.01 Z M40,20 L39.99,20 L39.99,19.99 Z M0,2 L3,2 L3,18 L0,18 Z M5,0.6 L11.5,0.6 L11.5,4.8 L5,4.8 Z M5,15.2 L11.5,15.2 L11.5,19.4 L5,19.4 Z M27,1.4 L32,1.4 L32,5 L27,5 Z M27,15 L32,15 L32,18.6 L27,18.6 Z M36,2.2 L38.4,2.2 L38.4,17.8 L36,17.8 Z";
 function buildCourse(T) {
   const o = base(T);
   const laps = Array.from({ length: LAPS }, (_, i) => i + 1);
@@ -1551,7 +1588,7 @@ function buildCourse(T) {
       silent: !(showField || !pins.length) && pin < 0,
       lineStyle: { width: pin >= 0 ? (pins.length > 6 ? 2.2 : 3) : 1.2, color: pin >= 0 ? d.color : T.grey, opacity: pin >= 0 ? 1 : showField || !pins.length ? 0.7 : 0, type: pin >= 0 ? dashIf(d, pins) : "solid" },
       emphasis: { focus: "series", lineStyle: { width: 3.5, color: pin >= 0 ? d.color : T.accent } },
-      endLabel: { show: pin >= 0, formatter: "{a}", color: T.ink, fontFamily: "JetBrains Mono, monospace", fontWeight: 700, fontSize: 12, distance: 16 },
+      endLabel: { show: pin >= 0, formatter: "{a}", color: T.ink, fontFamily: "JetBrains Mono, monospace", fontWeight: 700, fontSize: 12, distance: 22 },
       // Petite F1 aux couleurs de l'écurie en tête de ligne
 
       ...(n === 0 ? { markArea: neutralArea(T, replayLap) } : {}),
@@ -1559,9 +1596,13 @@ function buildCourse(T) {
   });
   // Petite F1 aux couleurs de l'écurie en tête de ligne de chaque pilote suivi
   const head = Math.min(replayLap, LAPS) - 1;
+  const heads = pins.map((c) => byCode[c]).filter((d) => d && (courseMode === "pos" ? d.pos : d.gapLead)[head] != null)
+    .map((d) => { const v = (courseMode === "pos" ? d.pos : d.gapLead)[head]; return { d, value: [head, courseMode === "pos" ? v : +v.toFixed(3)] }; });
+  // Deux couches alignées : roues et ailerons sombres, puis la carrosserie aux couleurs de l'écurie
   series.push({ type: "scatter", silent: true, z: 8, animation: false, tooltip: { show: false },
-    data: pins.map((c) => byCode[c]).filter((d) => d && (courseMode === "pos" ? d.pos : d.gapLead)[head] != null)
-      .map((d) => { const v = (courseMode === "pos" ? d.pos : d.gapLead)[head]; return { value: [head, courseMode === "pos" ? v : +v.toFixed(3)], symbol: CAR_PATH, symbolSize: [32, 15], itemStyle: { color: d.color, opacity: 1, borderColor: T.surface, borderWidth: 1 } }; }) });
+    data: heads.map(({ value }) => ({ value, symbol: CAR_DARK, symbolSize: [36, 18], itemStyle: { color: "#15171b", opacity: 1 } })) });
+  series.push({ type: "scatter", silent: true, z: 9, animation: false, tooltip: { show: false },
+    data: heads.map(({ d, value }) => ({ value, symbol: CAR_PATH, symbolSize: [36, 18], itemStyle: { color: d.color, opacity: 1 } })) });
   const pd = pins.map((c) => byCode[c]).filter(Boolean);
   const maxPos = showField || !pd.length ? drivers.length : Math.min(drivers.length, Math.max(1, ...pd.flatMap((d) => d.pos.filter((v) => v != null))) + 1);
   const gaps = pd.flatMap((d) => d.gapLead.filter((v) => v != null));
@@ -1796,7 +1837,7 @@ function renderExChips() {
   $$("#ex-chips .chip").forEach((b) => b.addEventListener("click", () => {
     const c = b.dataset.code, i = exSel.indexOf(c);
     if (i >= 0) { if (exSel.length > 1) exSel.splice(i, 1); } else { if (exSel.length >= 4) exSel.shift(); exSel.push(c); }
-    renderExChips(); readEx(); update("ch-ex");
+    renderExChips(); readEx(); update("ch-ex"); exCircuitRefresh();
   }));
 }
 function readEx() {
@@ -1887,35 +1928,25 @@ async function fetchTrace(d, lap) {
   return pts.filter((p) => p.x != null && p.y != null && !(p.x === 0 && p.y === 0)).map((p) => ({ t: (Date.parse(p.date) - lap.ds) / 1000, x: p.x, y: p.y })).sort((a, b) => a.t - b.t);
 }
 function setupCircuit() {
-  circ.duels = computeDuels().filter((x) => x.valid && bestLapOf(x.fast) && bestLapOf(x.slow));
-  const pick = $("#circ-pick");
-  if (!circ.duels.length) { pick.innerHTML = ""; $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = ""; msgCircuit("Pas de temps de secteur disponibles pour cette course."); return; }
-  const mixed = (x) => { const a = bestLapOf(x.fast).s, b = bestLapOf(x.slow).s; const w = [0, 1, 2].map((i) => a[i] <= b[i]); return w.some(Boolean) && w.some((v) => !v); };
-  const first = Math.max(0, circ.duels.findIndex(mixed));
-  pick.innerHTML = circ.duels.map((x, i) => `<button class="chip" data-i="${i}" aria-pressed="${i === first}"><span class="sw" style="background:${x.color};border-color:${x.color}"></span>${esc(x.team)}</button>`).join("") +
-    `<button class="chip chip-other" data-i="other" aria-pressed="false">＋ Autre duel</button>`;
-  // Duel libre : deux pilotes quelconques, choisis sur une seule ligne
-  let row = $("#circ-other");
-  if (!row) { row = document.createElement("div"); row.className = "circ-other"; row.id = "circ-other"; row.innerHTML = `<label class="visually-hidden" for="co-a">Pilote A</label><select id="co-a"></select><span class="fine">contre</span><label class="visually-hidden" for="co-b">Pilote B</label><select id="co-b"></select>`; $(".circ-top").after(row); }
-  row.hidden = true;
-  const pool = finishers.concat(dnfs).filter((d) => bestLapOf(d));
-  const opts = pool.map((d) => `<option value="${d.code}">${d.code} · ${esc(d.last)}</option>`).join("");
-  $("#co-a").innerHTML = opts; $("#co-b").innerHTML = opts;
-  if (pool[1]) { $("#co-a").value = pool[0].code; $("#co-b").value = pool[1].code; }
-  circ.custom = {};
-  const customDuel = () => {
-    const a = byCode[$("#co-a").value], b = byCode[$("#co-b").value]; if (!a || !b || a === b) return null;
-    const key = a.code + "-" + b.code;
-    return (circ.custom[key] ||= { team: a.team === b.team ? a.team : `${a.team} / ${b.team}`, color: a.color, valid: true, fast: a, slow: b });
-  };
-  ["co-a", "co-b"].forEach((id) => ($("#" + id).onchange = () => { const d = customDuel(); if (d) { circ.duel = d; playCircuit(); } }));
-  $$("#circ-pick .chip").forEach((b) => b.addEventListener("click", () => {
-    $$("#circ-pick .chip").forEach((x) => x.setAttribute("aria-pressed", x === b));
-    const other = b.dataset.i === "other"; row.hidden = !other;
-    const d = other ? customDuel() : circ.duels[+b.dataset.i]; if (d) { circ.duel = d; playCircuit(); }
-  }));
-  circ.duel = circ.duels[first];
-  $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = "";
+  // Le circuit vit dans l'Explorer : il rejoue les deux premiers pilotes choisis
+  circ.custom = {}; circ.duel = null;
+  $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = ""; msgCircuit("");
+  syncCircuitDuel();
+}
+function syncCircuitDuel() {
+  const pair = exSel.map((c) => byCode[c]).filter((d) => d && bestLapOf(d)).slice(0, 2);
+  const note = $("#circ-note");
+  if (pair.length < 2) { circ.duel = null; if (note) note.textContent = "Choisis au moins deux pilotes ci-dessus pour les voir sur le circuit."; return false; }
+  const [a, b] = pair, key = a.code + "-" + b.code;
+  circ.duel = (circ.custom[key] ||= { team: a.team === b.team ? a.team : `${a.team} / ${b.team}`, color: a.color, valid: true, fast: a, slow: b });
+  if (note) note.textContent = exSel.length > 2 ? `Les deux premiers pilotes choisis : ${a.code} et ${b.code}.` : "";
+  return true;
+}
+// L'onglet « Sur le circuit » de l'Explorer
+function exCircuitRefresh() { const was = circ.duel; syncCircuitDuel(); if (circ.duel && circ.duel !== was && $("#circ").closest("[hidden]") === null && $("#circ").offsetParent) playCircuit(); }
+function showExCircuit(on) {
+  $("#ex-circ").hidden = !on; $("#ch-ex").hidden = on; $("#read-ex").hidden = on;
+  if (on && syncCircuitDuel()) playCircuit(); else if (!on) { circ.token++; cancelAnimationFrame(circ.raf); }
 }
 function msgCircuit(t) { const m = $("#circ-msg"); m.textContent = t || ""; m.hidden = !t; }
 async function playCircuit() {
@@ -2096,16 +2127,18 @@ function setLevel(l) {
 }
 function applyLevel(l, was) {
   document.body.dataset.level = l;
-  $("#lvl-ess").setAttribute("aria-pressed", l === "essentiel"); $("#lvl-exp").setAttribute("aria-pressed", l === "expert");
+  $("#lvl-ess")?.setAttribute("aria-pressed", l === "essentiel"); $("#lvl-exp")?.setAttribute("aria-pressed", l === "expert");
   if (l === "expert" && was !== "expert") toast("Mode expert : <b>5 analyses</b> à déplier, signalées par « Sous le capot »");
   if (l !== "expert") { if (["box", "tyre"].includes(exMode)) selectEx("laps"); if (courseMode !== "pos") selectCourse("pos"); }
   setTimeout(() => { Object.values(charts).forEach((c) => c.inst && c.inst.resize()); placeIndicators(); placeCursor(); }, 60);
 }
-$("#lvl-ess").addEventListener("click", () => setLevel("essentiel"));
-$("#lvl-exp").addEventListener("click", () => setLevel("expert"));
 function selectCourse(m) { courseMode = m; $$("[data-course]").forEach((b) => b.setAttribute("aria-selected", b.dataset.course === m)); update("ch-course", true); }
 $$("[data-course]").forEach((b) => b.addEventListener("click", () => selectCourse(b.dataset.course)));
-function selectEx(m) { exMode = m; $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m)); update("ch-ex"); }
+function selectEx(m) {
+  $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m));
+  if (m === "circuit") { showExCircuit(true); return; }
+  showExCircuit(false); exMode = m; update("ch-ex");
+}
 $$("[data-ex]").forEach((b) => b.addEventListener("click", () => selectEx(b.dataset.ex)));
 
 const links = $$("nav.sections a");
@@ -2339,20 +2372,20 @@ function renderAll() {
     charts["ch-drs"].onClick = (p) => toggleFollow(p.name);
     whenVisible($("#kpis"), countUp);
     // Le circuit se joue quand il devient visible (accordéon ouvert)
-    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting && !$("#circ").childNodes.length) playCircuit(); }, { threshold: 0.3 }); io.observe($("#circ"));
+    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting && !$("#circ").childNodes.length && circ.duel) playCircuit(); }, { threshold: 0.3 }); io.observe($("#circ"));
   } else {
     rythmeReveal = false;
     Object.keys(charts).forEach((id) => { if (charts[id].inst && id !== "ch-dlg") draw(id); });
     if (charts["ch-rythme"].inst) setTimeout(() => { rythmeReveal = true; update("ch-rythme", false); }, reduce ? 0 : 700);
     countUp();
-    if ($(".under.open #circ")) playCircuit();
+    if (!$("#ex-circ").hidden && circ.duel) playCircuit();
   }
   placeCursor();
   mobileRender();
 }
 
 /* ======================= Démarrage ======================= */
-document.body.dataset.level = "essentiel";
+document.body.dataset.level = "expert"; // plus de mode Essentiel / Expert : toutes les analyses sont affichées, les plus détaillées en blocs dépliables
 setupAccordions(); setupIndicators();
 $("#play").innerHTML = IC.play + "Rejouer la course";
 $("#play").addEventListener("click", playReplay);
@@ -2360,7 +2393,14 @@ $("#lapr").addEventListener("input", (e) => setReplay(+e.target.value));
 $("#follow-x").innerHTML = IC.x;
 $("#follow-x").addEventListener("click", () => { follow = []; applyFollow(); });
 $("#cplay").innerHTML = IC.play + "Rejouer le tour";
-$("#cplay").addEventListener("click", playCircuit);
+$("#cplay").addEventListener("click", () => circ.duel && playCircuit());
+$("#dsect-go").addEventListener("click", () => {
+  // Le duel le plus serré entre coéquipiers, ouvert sur le circuit de l'Explorer
+  const d = computeDuels().filter((x) => x.valid && bestLapOf(x.fast) && bestLapOf(x.slow))[0];
+  if (d) { exSel = [d.fast.code, d.slow.code]; renderExChips(); readEx(); update("ch-ex"); }
+  selectEx("circuit");
+  if (MOB() && typeof navGo === "function") { const { g } = parseHash(); navGo(`#${g}/explorer`); } else $("#explorer").scrollIntoView({ behavior: "smooth" });
+});
 $("#gp").addEventListener("change", () => navGP($("#gp").value));
 $("#year").addEventListener("change", async () => {
   try { $("main").classList.add("loading"); if (await loadRaces(+$("#year").value)) navGP(RACES.at(-1).session_key); else setStatus(`Aucune course terminée pour ${$("#year").value}.`, "error"); }
@@ -2408,7 +2448,7 @@ function makeSwipe(anchor, slides) {
   slides.forEach(([label, els, xs], i) => {
     const sl = document.createElement("div"); sl.className = "mslide" + (xs ? " xs" : "");
     els.forEach((e) => e && sl.appendChild(e)); track.appendChild(sl);
-    const b = document.createElement("button"); b.innerHTML = xs ? `<span class="xs-ico">◆</span>${label}` : label; b.className = xs ? "xs" : ""; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === 0);
+    const b = document.createElement("button"); b.textContent = label; b.className = xs ? "xs" : ""; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === 0);
     b.addEventListener("click", () => track.scrollTo({ left: sl.offsetLeft - track.offsetLeft, behavior: reduce ? "auto" : "smooth" }));
     tabs.appendChild(b); const dot = document.createElement("i"); if (xs) dot.className = "xs"; dots.appendChild(dot);
   });
@@ -2466,7 +2506,7 @@ function renderKeep() {
 /* --- Explorer allégé --- */
 const EXM = [["laps", "Temps au tour"], ["gap", "Écart en piste"], ["box", "Régularité"], ["tyre", "Pneus"]];
 function exBuild(mode) { return (T) => { const m = exMode; exMode = mode; const o = buildEx(T); exMode = m; o.grid = { ...(o.grid || {}), left: 54, right: 12, top: 36, bottom: 28 }; if (o.legend) o.legend = { ...o.legend, top: 2, left: "center" }; return o; }; }
-function exRefresh() { EXM.forEach(([m]) => updateBase("ch-ex-" + m)); syncExPick(); }
+function exRefresh() { EXM.forEach(([m]) => updateBase("ch-ex-" + m)); syncExPick(); exCircuitRefresh(); }
 function syncExPick() {
   const el = $("#expick"); if (!el) return;
   el.innerHTML = `<span class="lbl">Pilotes</span>` + exSel.filter((c) => byCode[c]).map((c) => `<button class="pp" data-c="${c}" title="Retirer"><i style="background:${byCode[c].color}"></i>${c}${exSel.length > 1 ? '<span class="x">×</span>' : ""}</button>`).join("") + (exSel.length < 4 ? `<button class="add" id="ex-add">+ Ajouter</button>` : "");
@@ -2487,14 +2527,14 @@ function renderExQuick() {
 /* --- Les duels : groupes de 4 écuries, puis la carte Circuit --- */
 let duelSwipe = null;
 function buildDuelSwipe() {
-  const list = $("#duel-list"), under = $("#duels .under");
+  const list = $("#duel-list");
   const rows = [...list.querySelectorAll(".duel[data-codes]")], na = [...list.querySelectorAll(".na")];
   rows.forEach((r) => r.style.setProperty("--dot", byCode[r.dataset.codes.split(" ")[0]]?.color || "var(--muted)"));
   const groups = []; for (let i = 0; i < rows.length; i += 4) groups.push(rows.slice(i, i + 4));
   if (na.length) (groups.length ? groups[groups.length - 1] : (groups[0] = [])).push(...na);
   const anchor = document.createElement("div");
   if (duelSwipe) { duelSwipe.before(anchor); duelSwipe.remove(); } else list.before(anchor);
-  duelSwipe = makeSwipe(anchor, [...groups.map((g, i) => [i * 4 + 1 === Math.min(rows.length, i * 4 + 4) ? `${i * 4 + 1}` : `${i * 4 + 1}–${Math.min(rows.length, i * 4 + 4)}`, g]), ["Circuit", [under], true]]);
+  duelSwipe = makeSwipe(anchor, [...groups.map((g, i) => [i * 4 + 1 === Math.min(rows.length, i * 4 + 4) ? `${i * 4 + 1}` : `${i * 4 + 1}–${Math.min(rows.length, i * 4 + 4)}`, g])]);
   anchor.remove();
   list.style.display = "none";
 }
@@ -2535,16 +2575,16 @@ function setupMobileOnce() {
   swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Direction de course", [$("#log")]], ["Chiffres clés", [$("#kpis")]], ["Arrêts aux stands", [expertCard("#gp-section .under")], true]]));
   grid.remove();
   const cw = $("#course .course-wrap");
-  swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Batailles", [expertCard("#course .under")], true]]));
+  swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Les batailles", [expertCard("#course .under")], true]]));
   cw.remove();
   const rl = $("#rythme .legend-inline"), gaps = document.createElement("div"); gaps.className = "mlist"; gaps.id = "m-gaps";
   const aR = document.createElement("div"); rl.before(aR);
-  swipes.push(makeSwipe(aR, [["Rythme contre arrivée", [rl, $("#ch-rythme"), rAll]], ["Les écarts", [gaps]], ["Secteurs", [expertCard("#rythme .under")], true]]));
+  swipes.push(makeSwipe(aR, [["Rythme contre arrivée", [rl, $("#ch-rythme"), rAll]], ["Les écarts", [gaps]], ["Les secteurs", [expertCard("#rythme .under")], true]]));
   aR.remove();
   expertCard("#duels .under");
   const tl = $("#tyre-legend"), keep = document.createElement("div"); keep.className = "mstats"; keep.id = "m-keep";
   const aS = document.createElement("div"); tl.before(aS);
-  swipes.push(makeSwipe(aS, [["Les relais", [tl, $("#ch-strat"), sAll]], ["À retenir", [keep]], ["Usure", [expertCard("#strategies .under")], true]]));
+  swipes.push(makeSwipe(aS, [["Les relais", [tl, $("#ch-strat"), sAll]], ["À retenir", [keep]], ["L'usure", [expertCard("#strategies .under")], true]]));
   aS.remove();
   // Explorer allégé : raccourcis, pilotes sur une ligne, graphiques en cartes
   const sec = $("#explorer"), read = $("#read-ex");
@@ -2553,7 +2593,8 @@ function setupMobileOnce() {
   sec.querySelector(".ex-top").after(qr, pick);
   read.classList.remove("clamp"); if (read.nextElementSibling?.classList.contains("more-btn")) read.nextElementSibling.remove();
   const aE = document.createElement("div"); read.after(aE);
-  swipes.push(makeSwipe(aE, EXM.map(([m, label]) => { const d = document.createElement("div"); d.className = "chart exc"; d.id = "ch-ex-" + m; return [label, [d]]; })));
+  const exc = $("#ex-circ"); exc.hidden = false;
+  swipes.push(makeSwipe(aE, EXM.map(([m, label]) => { const d = document.createElement("div"); d.className = "chart exc"; d.id = "ch-ex-" + m; return [label, [d]]; }).concat([["Sur le circuit", [exc]]])));
   aE.remove();
   EXM.forEach(([m]) => { charts["ch-ex-" + m] = { el: $("#ch-ex-" + m), build: exBuild(m), inst: null }; });
   whenVisible(sec, () => EXM.forEach(([m]) => draw("ch-ex-" + m)));
@@ -2654,8 +2695,9 @@ function hcBuild(raw) {
 }
 
 /* --- La voiture, vue du dessus (avant = +x, 40 unités de long) --- */
-function hcDrawCar(color, num) {
-  const g = $("#hc-car"); g.innerHTML = "";
+function hcDrawCar(color, num) { const g = $("#hc-car"); g.innerHTML = ""; HC.car = drawTopCar(g, color, num); }
+// F1 vue du dessus (avant = +x, 40 unités de long), réutilisée par la voiture qui se balade
+function drawTopCar(g, color, num) {
   const car = hcEl("g", {}, g);
   hcEl("ellipse", { cx: 1.5, cy: 2, rx: 21, ry: 9, fill: "rgba(0,0,0,.22)" }, car);
   const tyre = (x, y, w, h) => hcEl("rect", { x: x - w / 2, y: y - h / 2, width: w, height: h, rx: 1.6, fill: "#14161a" }, car);
@@ -2670,7 +2712,7 @@ function hcDrawCar(color, num) {
   hcEl("circle", { cx: 0.2, cy: 0, r: 1.6, fill: "#f4f5f7" }, car);
   hcEl("path", { d: "M5.2,-2.4 C6.8,-1 6.8,1 5.2,2.4 M5.6,0 L2,0", stroke: "#2a2d33", "stroke-width": .9, fill: "none", "stroke-linecap": "round" }, car);
   hcEl("text", { x: 11, y: 1.25, "font-size": 3.4, "font-family": "Archivo, Arial Narrow, sans-serif", "font-weight": 800, fill: "#fff", "text-anchor": "middle", transform: "rotate(90 11 0)" }, car).textContent = num;
-  HC.car = car;
+  return car;
 }
 
 /* --- Mise en scène --- */
@@ -2908,6 +2950,78 @@ $$(".brand").forEach((b) => { b.style.cursor = "pointer"; b.addEventListener("cl
   ov.addEventListener("touchmove", (e) => { if (sx == null) return; const t = e.touches[0], dx = t.clientX - sx; if (dx > 0 && Math.abs(t.clientY - sy) < 70) ov.style.transform = `translateX(${dx}px)`; }, { passive: true });
   ov.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; ov.style.transform = ""; sx = null; if (dx > 90) $("#mchap-back").click(); });
 })();
+
+/* ======================= La F1 qui se balade ======================= */
+// Ordinateur : de temps en temps (au plus une fois par minute et quart, après un défilement), une F1 remonte la marge vide
+// à côté du contenu, avec un coup de glisse au milieu. Mobile : elle traverse le bouton « Chapitre suivant » quand on l'atteint.
+// Jamais par-dessus le texte, jamais pendant l'accueil, rien pour les personnes qui limitent les animations.
+const WANDER = { last: 0, t0: performance.now(), busy: false, chapSeen: null, layer: null };
+function wanderLayer() {
+  if (WANDER.layer) return WANDER.layer;
+  const svg = document.createElementNS(NS, "svg"); svg.id = "wander-fx"; svg.setAttribute("aria-hidden", "true");
+  document.body.appendChild(svg); WANDER.layer = svg; return svg;
+}
+function wanderCar() {
+  const pool = finishers.length ? finishers.slice(0, 10) : drivers;
+  const d = pool[Math.floor(Math.random() * pool.length)];
+  return d ? [d.color, String(d.dn)] : ["#e10600", "1"];
+}
+function wanderPuff(layer, x, y, r) {
+  const c = hcEl("circle", { cx: x, cy: y, r, class: "hc-smoke" }, layer);
+  c.style.transformBox = "fill-box"; c.style.transformOrigin = "center";
+  c.animate([{ opacity: .8, transform: "scale(1)" }, { opacity: 0, transform: "scale(3)" }], { duration: 800, easing: "ease-out" }).onfinish = () => c.remove();
+}
+// Trajet générique : pos(u) → [x, y], cap (rad) calculé sur la trajectoire, glisse(u) → angle ajouté
+function wanderDrive(pos, dur, slide, scale) {
+  if (WANDER.busy) return; WANDER.busy = true; WANDER.last = performance.now();
+  const layer = wanderLayer(), [col, num] = wanderCar(), car = drawTopCar(layer, col, num), t0 = performance.now();
+  let lastMark = null;
+  const frame = (now) => {
+    const u = Math.min(1, (now - t0) / dur), [x, y] = pos(u), [x2, y2] = pos(Math.min(1, u + 0.01)), a = Math.atan2(y2 - y, x2 - x) + slide(u);
+    car.setAttribute("transform", `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${(a * 180 / Math.PI).toFixed(1)}) scale(${scale})`);
+    if (Math.abs(slide(u)) > 0.25) {
+      const back = [x - Math.cos(a) * 16 * scale, y - Math.sin(a) * 16 * scale];
+      if (lastMark) { const l = hcEl("line", { x1: lastMark[0], y1: lastMark[1], x2: back[0], y2: back[1], class: "hc-skid", "stroke-width": 2.2 * scale }, layer); l.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1800 }).onfinish = () => l.remove(); }
+      lastMark = back; if (Math.random() < 0.35) wanderPuff(layer, back[0], back[1], 4 * scale);
+    } else lastMark = null;
+    if (u < 1) requestAnimationFrame(frame); else { car.remove(); WANDER.busy = false; }
+  };
+  requestAnimationFrame(frame);
+}
+const wanderOk = () => !reduce && !NAV.home && document.visibilityState === "visible" && !["in", "grid", "lap"].includes(HC.phase);
+
+// Ordinateur : la marge à côté du contenu
+function wanderMargin() {
+  const r = $("main").getBoundingClientRect(), left = r.left, right = innerWidth - r.right;
+  const m = Math.max(left, right); if (m < 72) return null;
+  return left >= right ? { x: left / 2, w: left } : { x: innerWidth - right / 2, w: right };
+}
+let wanderScrollT = 0;
+addEventListener("scroll", () => {
+  clearTimeout(wanderScrollT);
+  wanderScrollT = setTimeout(() => {
+    const now = performance.now();
+    if (MOB() || !wanderOk() || now - WANDER.t0 < 20000 || now - WANDER.last < 75000 || Math.random() < 0.35) return;
+    const m = wanderMargin(); if (!m) return;
+    const H = innerHeight, amp = Math.min(m.w * 0.22, 26);
+    // Remonte la marge en S, avec un coup de glisse au milieu
+    wanderDrive((u) => { const e = u * u * (3 - 2 * u); return [m.x + Math.sin(e * Math.PI * 2) * amp, H + 40 - e * (H + 80)]; }, 3400,
+      (u) => (u > 0.4 && u < 0.62 ? Math.sin(((u - 0.4) / 0.22) * Math.PI) * 0.6 : 0), 1);
+  }, 700);
+}, { passive: true });
+
+// Mobile : la traversée du bouton « Chapitre suivant »
+const wanderIO = new IntersectionObserver((es) => es.forEach((e) => {
+  if (!e.isIntersecting || e.intersectionRatio < 0.9 || !MOB() || !wanderOk() || WANDER.chapSeen === NAV.chap) return;
+  WANDER.chapSeen = NAV.chap;
+  setTimeout(() => {
+    const r = $("#mchap-next").getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return;
+    const y = r.top + r.height / 2, W = innerWidth;
+    wanderDrive((u) => { const e = 1 - Math.pow(1 - u, 1.6); return [-50 + e * (W + 100), y + Math.sin(u * Math.PI) * -6]; }, 1500,
+      (u) => (u > 0.55 && u < 0.85 ? Math.sin(((u - 0.55) / 0.3) * Math.PI) * -0.45 : 0), 0.85);
+  }, 250);
+}), { threshold: [0.9] });
+wanderIO.observe($("#mchap-next"));
 </script>
 </body>
 </html>

@@ -81,3 +81,39 @@ body.at-home { overflow: hidden; }
 .home-years { overflow-x: auto; scrollbar-width: none; max-width: 100%; }
 .home-years::-webkit-scrollbar { display: none; }
 @media (max-width: 640px) { .home-top .home-brand { font-size: 0; gap: 0; } .home-top .home-brand .logo { width: 32px; height: 32px; } }
+/* Le tracé du haut de page : pas de cadre de focus au clic (le tour se relance quand même au clavier) */
+#hc-svg:focus, #hc-svg:focus-visible { outline: none; }
+.hc:focus-within .hc-hint { opacity: 1; }
+
+/* ---------- Plus de mode Expert : les analyses détaillées sont dans « Pour aller plus loin » ---------- */
+.xdot, .x-badge { display: none !important; }
+.under { border-top-color: var(--line); }
+.card.under { border-color: var(--line); border-top-color: var(--line); }
+.under-head .lbl { color: var(--ink-2); }
+.under-head .lbl svg { stroke: var(--ink-2); }
+.howto { display: grid; gap: 4px; margin: 0 0 6px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.howto b { color: var(--ink); font-weight: 600; }
+@media (max-width: 640px) {
+  .under.in-slide { border-color: var(--line) !important; border-top: 1px solid var(--line) !important; }
+  .mtabs button.xs { color: var(--ink-2); border-color: var(--line); background: var(--surface); border-style: dashed; }
+  .mtabs button.xs[aria-selected="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); border-style: solid; }
+  .mdots i.xs { background: var(--line); } .mdots i.xs.on { background: var(--accent); }
+  .howto { font-size: 13px; padding: 9px 11px; }
+}
+.acc-cta { color: var(--ink-2); border-color: var(--line); background: var(--surface-2); }
+@media (max-width: 640px) {
+  /* « Où se joue l'écart » : deux menus Pilote A / Pilote B, plus simples qu'une rangée de pastilles */
+  .under.in-slide #circ-pick { display: none; }
+  .under.in-slide .circ-other { display: flex !important; margin: 0 0 8px; }
+  .under.in-slide .circ-other select { flex: 1; max-width: none; min-width: 0; }
+  .under.in-slide .circ-top { justify-content: flex-start; }
+}
+
+/* Les duels : la phrase « où se fait la différence », le circuit est dans l'Explorer */
+.dsect { display: grid; gap: 6px; justify-items: start; border-top: 1px dashed var(--line); padding-top: 14px; margin-top: 8px; }
+.dsect-k { font: 700 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.dsect .read { margin: 0; font-size: 15px; }
+.ex-circ { display: grid; gap: 12px; margin-top: 4px; }
+.ex-circ[hidden] { display: none; }
+@media (max-width: 640px) { .ex-circ { gap: 8px; } .ex-circ .circ-top { flex-wrap: wrap; } }
+#wander-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 65; overflow: visible; }

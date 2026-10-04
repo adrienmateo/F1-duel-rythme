@@ -534,7 +534,7 @@ function applyFollow(announce) {
 }
 
 /* --- La course --- */
-const CAR_PATH = "path://M0,1 L5,1 L5,7 L9,7 L9,2 L15,2 L15,7 L22,7.5 L28,8.5 L30,4 L34,4 L34,8.6 L40,10 L34,11.4 L34,16 L30,16 L28,11.5 L22,12.5 L15,13 L15,18 L9,18 L9,13 L5,13 L5,19 L0,19 Z";
+const CAR_PATH = "path://M0,0 L0.01,0 L0.01,0.01 Z M40,20 L39.99,20 L39.99,19.99 Z M3.5,7.4 L11,5.6 L18.5,5.4 L21.5,7 L29,8.3 L36.5,9.2 L39.5,10 L36.5,10.8 L29,11.7 L21.5,13 L18.5,14.6 L11,14.4 L3.5,12.6 Z M15.5,8.7 L14,10 L15.5,11.3 L19.5,11 L19.5,9 Z", CAR_DARK = "path://M0,0 L0.01,0 L0.01,0.01 Z M40,20 L39.99,20 L39.99,19.99 Z M0,2 L3,2 L3,18 L0,18 Z M5,0.6 L11.5,0.6 L11.5,4.8 L5,4.8 Z M5,15.2 L11.5,15.2 L11.5,19.4 L5,19.4 Z M27,1.4 L32,1.4 L32,5 L27,5 Z M27,15 L32,15 L32,18.6 L27,18.6 Z M36,2.2 L38.4,2.2 L38.4,17.8 L36,17.8 Z";
 function buildCourse(T) {
   const o = base(T);
   const laps = Array.from({ length: LAPS }, (_, i) => i + 1);
@@ -548,7 +548,7 @@ function buildCourse(T) {
       silent: !(showField || !pins.length) && pin < 0,
       lineStyle: { width: pin >= 0 ? (pins.length > 6 ? 2.2 : 3) : 1.2, color: pin >= 0 ? d.color : T.grey, opacity: pin >= 0 ? 1 : showField || !pins.length ? 0.7 : 0, type: pin >= 0 ? dashIf(d, pins) : "solid" },
       emphasis: { focus: "series", lineStyle: { width: 3.5, color: pin >= 0 ? d.color : T.accent } },
-      endLabel: { show: pin >= 0, formatter: "{a}", color: T.ink, fontFamily: "JetBrains Mono, monospace", fontWeight: 700, fontSize: 12, distance: 16 },
+      endLabel: { show: pin >= 0, formatter: "{a}", color: T.ink, fontFamily: "JetBrains Mono, monospace", fontWeight: 700, fontSize: 12, distance: 22 },
       // Petite F1 aux couleurs de l'écurie en tête de ligne
 
       ...(n === 0 ? { markArea: neutralArea(T, replayLap) } : {}),
@@ -556,9 +556,13 @@ function buildCourse(T) {
   });
   // Petite F1 aux couleurs de l'écurie en tête de ligne de chaque pilote suivi
   const head = Math.min(replayLap, LAPS) - 1;
+  const heads = pins.map((c) => byCode[c]).filter((d) => d && (courseMode === "pos" ? d.pos : d.gapLead)[head] != null)
+    .map((d) => { const v = (courseMode === "pos" ? d.pos : d.gapLead)[head]; return { d, value: [head, courseMode === "pos" ? v : +v.toFixed(3)] }; });
+  // Deux couches alignées : roues et ailerons sombres, puis la carrosserie aux couleurs de l'écurie
   series.push({ type: "scatter", silent: true, z: 8, animation: false, tooltip: { show: false },
-    data: pins.map((c) => byCode[c]).filter((d) => d && (courseMode === "pos" ? d.pos : d.gapLead)[head] != null)
-      .map((d) => { const v = (courseMode === "pos" ? d.pos : d.gapLead)[head]; return { value: [head, courseMode === "pos" ? v : +v.toFixed(3)], symbol: CAR_PATH, symbolSize: [32, 15], itemStyle: { color: d.color, opacity: 1, borderColor: T.surface, borderWidth: 1 } }; }) });
+    data: heads.map(({ value }) => ({ value, symbol: CAR_DARK, symbolSize: [36, 18], itemStyle: { color: "#15171b", opacity: 1 } })) });
+  series.push({ type: "scatter", silent: true, z: 9, animation: false, tooltip: { show: false },
+    data: heads.map(({ d, value }) => ({ value, symbol: CAR_PATH, symbolSize: [36, 18], itemStyle: { color: d.color, opacity: 1 } })) });
   const pd = pins.map((c) => byCode[c]).filter(Boolean);
   const maxPos = showField || !pd.length ? drivers.length : Math.min(drivers.length, Math.max(1, ...pd.flatMap((d) => d.pos.filter((v) => v != null))) + 1);
   const gaps = pd.flatMap((d) => d.gapLead.filter((v) => v != null));
@@ -793,7 +797,7 @@ function renderExChips() {
   $$("#ex-chips .chip").forEach((b) => b.addEventListener("click", () => {
     const c = b.dataset.code, i = exSel.indexOf(c);
     if (i >= 0) { if (exSel.length > 1) exSel.splice(i, 1); } else { if (exSel.length >= 4) exSel.shift(); exSel.push(c); }
-    renderExChips(); readEx(); update("ch-ex");
+    renderExChips(); readEx(); update("ch-ex"); exCircuitRefresh();
   }));
 }
 function readEx() {
@@ -884,35 +888,25 @@ async function fetchTrace(d, lap) {
   return pts.filter((p) => p.x != null && p.y != null && !(p.x === 0 && p.y === 0)).map((p) => ({ t: (Date.parse(p.date) - lap.ds) / 1000, x: p.x, y: p.y })).sort((a, b) => a.t - b.t);
 }
 function setupCircuit() {
-  circ.duels = computeDuels().filter((x) => x.valid && bestLapOf(x.fast) && bestLapOf(x.slow));
-  const pick = $("#circ-pick");
-  if (!circ.duels.length) { pick.innerHTML = ""; $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = ""; msgCircuit("Pas de temps de secteur disponibles pour cette course."); return; }
-  const mixed = (x) => { const a = bestLapOf(x.fast).s, b = bestLapOf(x.slow).s; const w = [0, 1, 2].map((i) => a[i] <= b[i]); return w.some(Boolean) && w.some((v) => !v); };
-  const first = Math.max(0, circ.duels.findIndex(mixed));
-  pick.innerHTML = circ.duels.map((x, i) => `<button class="chip" data-i="${i}" aria-pressed="${i === first}"><span class="sw" style="background:${x.color};border-color:${x.color}"></span>${esc(x.team)}</button>`).join("") +
-    `<button class="chip chip-other" data-i="other" aria-pressed="false">＋ Autre duel</button>`;
-  // Duel libre : deux pilotes quelconques, choisis sur une seule ligne
-  let row = $("#circ-other");
-  if (!row) { row = document.createElement("div"); row.className = "circ-other"; row.id = "circ-other"; row.innerHTML = `<label class="visually-hidden" for="co-a">Pilote A</label><select id="co-a"></select><span class="fine">contre</span><label class="visually-hidden" for="co-b">Pilote B</label><select id="co-b"></select>`; $(".circ-top").after(row); }
-  row.hidden = true;
-  const pool = finishers.concat(dnfs).filter((d) => bestLapOf(d));
-  const opts = pool.map((d) => `<option value="${d.code}">${d.code} · ${esc(d.last)}</option>`).join("");
-  $("#co-a").innerHTML = opts; $("#co-b").innerHTML = opts;
-  if (pool[1]) { $("#co-a").value = pool[0].code; $("#co-b").value = pool[1].code; }
-  circ.custom = {};
-  const customDuel = () => {
-    const a = byCode[$("#co-a").value], b = byCode[$("#co-b").value]; if (!a || !b || a === b) return null;
-    const key = a.code + "-" + b.code;
-    return (circ.custom[key] ||= { team: a.team === b.team ? a.team : `${a.team} / ${b.team}`, color: a.color, valid: true, fast: a, slow: b });
-  };
-  ["co-a", "co-b"].forEach((id) => ($("#" + id).onchange = () => { const d = customDuel(); if (d) { circ.duel = d; playCircuit(); } }));
-  $$("#circ-pick .chip").forEach((b) => b.addEventListener("click", () => {
-    $$("#circ-pick .chip").forEach((x) => x.setAttribute("aria-pressed", x === b));
-    const other = b.dataset.i === "other"; row.hidden = !other;
-    const d = other ? customDuel() : circ.duels[+b.dataset.i]; if (d) { circ.duel = d; playCircuit(); }
-  }));
-  circ.duel = circ.duels[first];
-  $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = "";
+  // Le circuit vit dans l'Explorer : il rejoue les deux premiers pilotes choisis
+  circ.custom = {}; circ.duel = null;
+  $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = ""; msgCircuit("");
+  syncCircuitDuel();
+}
+function syncCircuitDuel() {
+  const pair = exSel.map((c) => byCode[c]).filter((d) => d && bestLapOf(d)).slice(0, 2);
+  const note = $("#circ-note");
+  if (pair.length < 2) { circ.duel = null; if (note) note.textContent = "Choisis au moins deux pilotes ci-dessus pour les voir sur le circuit."; return false; }
+  const [a, b] = pair, key = a.code + "-" + b.code;
+  circ.duel = (circ.custom[key] ||= { team: a.team === b.team ? a.team : `${a.team} / ${b.team}`, color: a.color, valid: true, fast: a, slow: b });
+  if (note) note.textContent = exSel.length > 2 ? `Les deux premiers pilotes choisis : ${a.code} et ${b.code}.` : "";
+  return true;
+}
+// L'onglet « Sur le circuit » de l'Explorer
+function exCircuitRefresh() { const was = circ.duel; syncCircuitDuel(); if (circ.duel && circ.duel !== was && $("#circ").closest("[hidden]") === null && $("#circ").offsetParent) playCircuit(); }
+function showExCircuit(on) {
+  $("#ex-circ").hidden = !on; $("#ch-ex").hidden = on; $("#read-ex").hidden = on;
+  if (on && syncCircuitDuel()) playCircuit(); else if (!on) { circ.token++; cancelAnimationFrame(circ.raf); }
 }
 function msgCircuit(t) { const m = $("#circ-msg"); m.textContent = t || ""; m.hidden = !t; }
 async function playCircuit() {
@@ -1093,16 +1087,18 @@ function setLevel(l) {
 }
 function applyLevel(l, was) {
   document.body.dataset.level = l;
-  $("#lvl-ess").setAttribute("aria-pressed", l === "essentiel"); $("#lvl-exp").setAttribute("aria-pressed", l === "expert");
+  $("#lvl-ess")?.setAttribute("aria-pressed", l === "essentiel"); $("#lvl-exp")?.setAttribute("aria-pressed", l === "expert");
   if (l === "expert" && was !== "expert") toast("Mode expert : <b>5 analyses</b> à déplier, signalées par « Sous le capot »");
   if (l !== "expert") { if (["box", "tyre"].includes(exMode)) selectEx("laps"); if (courseMode !== "pos") selectCourse("pos"); }
   setTimeout(() => { Object.values(charts).forEach((c) => c.inst && c.inst.resize()); placeIndicators(); placeCursor(); }, 60);
 }
-$("#lvl-ess").addEventListener("click", () => setLevel("essentiel"));
-$("#lvl-exp").addEventListener("click", () => setLevel("expert"));
 function selectCourse(m) { courseMode = m; $$("[data-course]").forEach((b) => b.setAttribute("aria-selected", b.dataset.course === m)); update("ch-course", true); }
 $$("[data-course]").forEach((b) => b.addEventListener("click", () => selectCourse(b.dataset.course)));
-function selectEx(m) { exMode = m; $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m)); update("ch-ex"); }
+function selectEx(m) {
+  $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m));
+  if (m === "circuit") { showExCircuit(true); return; }
+  showExCircuit(false); exMode = m; update("ch-ex");
+}
 $$("[data-ex]").forEach((b) => b.addEventListener("click", () => selectEx(b.dataset.ex)));
 
 const links = $$("nav.sections a");
@@ -1336,20 +1332,20 @@ function renderAll() {
     charts["ch-drs"].onClick = (p) => toggleFollow(p.name);
     whenVisible($("#kpis"), countUp);
     // Le circuit se joue quand il devient visible (accordéon ouvert)
-    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting && !$("#circ").childNodes.length) playCircuit(); }, { threshold: 0.3 }); io.observe($("#circ"));
+    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting && !$("#circ").childNodes.length && circ.duel) playCircuit(); }, { threshold: 0.3 }); io.observe($("#circ"));
   } else {
     rythmeReveal = false;
     Object.keys(charts).forEach((id) => { if (charts[id].inst && id !== "ch-dlg") draw(id); });
     if (charts["ch-rythme"].inst) setTimeout(() => { rythmeReveal = true; update("ch-rythme", false); }, reduce ? 0 : 700);
     countUp();
-    if ($(".under.open #circ")) playCircuit();
+    if (!$("#ex-circ").hidden && circ.duel) playCircuit();
   }
   placeCursor();
   mobileRender();
 }
 
 /* ======================= Démarrage ======================= */
-document.body.dataset.level = "essentiel";
+document.body.dataset.level = "expert"; // plus de mode Essentiel / Expert : toutes les analyses sont affichées, les plus détaillées en blocs dépliables
 setupAccordions(); setupIndicators();
 $("#play").innerHTML = IC.play + "Rejouer la course";
 $("#play").addEventListener("click", playReplay);
@@ -1357,7 +1353,14 @@ $("#lapr").addEventListener("input", (e) => setReplay(+e.target.value));
 $("#follow-x").innerHTML = IC.x;
 $("#follow-x").addEventListener("click", () => { follow = []; applyFollow(); });
 $("#cplay").innerHTML = IC.play + "Rejouer le tour";
-$("#cplay").addEventListener("click", playCircuit);
+$("#cplay").addEventListener("click", () => circ.duel && playCircuit());
+$("#dsect-go").addEventListener("click", () => {
+  // Le duel le plus serré entre coéquipiers, ouvert sur le circuit de l'Explorer
+  const d = computeDuels().filter((x) => x.valid && bestLapOf(x.fast) && bestLapOf(x.slow))[0];
+  if (d) { exSel = [d.fast.code, d.slow.code]; renderExChips(); readEx(); update("ch-ex"); }
+  selectEx("circuit");
+  if (MOB() && typeof navGo === "function") { const { g } = parseHash(); navGo(`#${g}/explorer`); } else $("#explorer").scrollIntoView({ behavior: "smooth" });
+});
 $("#gp").addEventListener("change", () => navGP($("#gp").value));
 $("#year").addEventListener("change", async () => {
   try { $("main").classList.add("loading"); if (await loadRaces(+$("#year").value)) navGP(RACES.at(-1).session_key); else setStatus(`Aucune course terminée pour ${$("#year").value}.`, "error"); }

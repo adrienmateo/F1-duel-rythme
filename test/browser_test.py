@@ -37,6 +37,9 @@ with sync_playwright() as p:
         page.route("**/echarts.min.js", lambda r: r.fulfill(path=ECHARTS, content_type="application/javascript"))
         page.route("https://api.openf1.org/**", handle)
         page.goto(INDEX)
+        page.wait_for_selector("#home .hf", timeout=20000)
+        print("Accueil :", page.locator("#home .hf-name").inner_text(), "|", len(page.locator("#home .hr").all()), "autres GP")
+        page.click("#home .hf")
         page.wait_for_selector("#tower .tower-row", timeout=20000)
         page.wait_for_timeout(1500)
         if scheme == "light":
@@ -52,10 +55,9 @@ with sync_playwright() as p:
             page.screenshot(path=f"{SHOTS}/site_course.png")
             page.click("#course-chips [data-code='LEC']"); page.wait_for_timeout(500)
             print("Suivi :", page.locator("#follow-txt").inner_text())
-            page.click("#lvl-exp"); page.wait_for_timeout(400)
-            for sec in ["#gp-section", "#course", "#rythme", "#duels", "#strategies"]:
+            for sec in ["#gp-section", "#course", "#rythme", "#strategies"]:
                 page.locator(f"{sec} .acc-btn").scroll_into_view_if_needed(); page.click(f"{sec} .acc-btn"); page.wait_for_timeout(900)
-            page.locator("#circ").scroll_into_view_if_needed(); page.wait_for_timeout(9000)
+            page.click("[data-ex=circuit]"); page.locator("#circ").scroll_into_view_if_needed(); page.wait_for_timeout(9000)
             print("Circuit :", page.locator("#circ-who").inner_text().replace("\n", " "), "|", page.locator("#cside").inner_text().replace("\n", " "))
             print("Arrêts :", page.locator("#read-pits").inner_text())
             print("Secteurs :", page.locator("#read-sect").inner_text())
@@ -70,6 +72,15 @@ with sync_playwright() as p:
             print("Appels au rechargement (cache local) :", calls[n:])
         else:
             print("Mobile scrollWidth :", page.evaluate("document.documentElement.scrollWidth"))
+            page.screenshot(path=f"{SHOTS}/site_mobile_top.png")
+            page.locator("#mchaps .mc").first.scroll_into_view_if_needed(); page.screenshot(path=f"{SHOTS}/site_mobile_chaps.png")
+            page.click("#mchaps .mc[data-ch=course]"); page.wait_for_timeout(1500)
+            print("Chapitre ouvert :", page.evaluate("location.hash"), page.evaluate("!!document.querySelector('#mchap-body #course')"))
+            page.screenshot(path=f"{SHOTS}/site_mobile_course.png")
+            page.click("#mchap-next"); page.wait_for_timeout(1200); print("Suivant :", page.evaluate("location.hash"))
+            page.go_back(); page.wait_for_timeout(800)
+            print("Retour :", page.evaluate("location.hash"), "chapitre fermé :", page.evaluate("document.querySelector('#mchap').hidden"), "| section remise :", page.evaluate("document.querySelector('main > #rythme') !== null"))
+            page.go_back(); page.wait_for_timeout(800); print("Accueil revenu :", page.evaluate("!document.querySelector('#home').hidden"))
             page.screenshot(path=f"{SHOTS}/site_mobile_dark.png", full_page=True)
         ctx.close()
     b.close()

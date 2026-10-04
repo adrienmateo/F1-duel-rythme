@@ -73,8 +73,9 @@ function hcBuild(raw) {
 }
 
 /* --- La voiture, vue du dessus (avant = +x, 40 unités de long) --- */
-function hcDrawCar(color, num) {
-  const g = $("#hc-car"); g.innerHTML = "";
+function hcDrawCar(color, num) { const g = $("#hc-car"); g.innerHTML = ""; HC.car = drawTopCar(g, color, num); }
+// F1 vue du dessus (avant = +x, 40 unités de long), réutilisée par la voiture qui se balade
+function drawTopCar(g, color, num) {
   const car = hcEl("g", {}, g);
   hcEl("ellipse", { cx: 1.5, cy: 2, rx: 21, ry: 9, fill: "rgba(0,0,0,.22)" }, car);
   const tyre = (x, y, w, h) => hcEl("rect", { x: x - w / 2, y: y - h / 2, width: w, height: h, rx: 1.6, fill: "#14161a" }, car);
@@ -89,7 +90,7 @@ function hcDrawCar(color, num) {
   hcEl("circle", { cx: 0.2, cy: 0, r: 1.6, fill: "#f4f5f7" }, car);
   hcEl("path", { d: "M5.2,-2.4 C6.8,-1 6.8,1 5.2,2.4 M5.6,0 L2,0", stroke: "#2a2d33", "stroke-width": .9, fill: "none", "stroke-linecap": "round" }, car);
   hcEl("text", { x: 11, y: 1.25, "font-size": 3.4, "font-family": "Archivo, Arial Narrow, sans-serif", "font-weight": 800, fill: "#fff", "text-anchor": "middle", transform: "rotate(90 11 0)" }, car).textContent = num;
-  HC.car = car;
+  return car;
 }
 
 /* --- Mise en scène --- */

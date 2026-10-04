@@ -21,7 +21,7 @@ function makeSwipe(anchor, slides) {
   slides.forEach(([label, els, xs], i) => {
     const sl = document.createElement("div"); sl.className = "mslide" + (xs ? " xs" : "");
     els.forEach((e) => e && sl.appendChild(e)); track.appendChild(sl);
-    const b = document.createElement("button"); b.innerHTML = xs ? `<span class="xs-ico">◆</span>${label}` : label; b.className = xs ? "xs" : ""; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === 0);
+    const b = document.createElement("button"); b.textContent = label; b.className = xs ? "xs" : ""; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === 0);
     b.addEventListener("click", () => track.scrollTo({ left: sl.offsetLeft - track.offsetLeft, behavior: reduce ? "auto" : "smooth" }));
     tabs.appendChild(b); const dot = document.createElement("i"); if (xs) dot.className = "xs"; dots.appendChild(dot);
   });
@@ -79,7 +79,7 @@ function renderKeep() {
 /* --- Explorer allégé --- */
 const EXM = [["laps", "Temps au tour"], ["gap", "Écart en piste"], ["box", "Régularité"], ["tyre", "Pneus"]];
 function exBuild(mode) { return (T) => { const m = exMode; exMode = mode; const o = buildEx(T); exMode = m; o.grid = { ...(o.grid || {}), left: 54, right: 12, top: 36, bottom: 28 }; if (o.legend) o.legend = { ...o.legend, top: 2, left: "center" }; return o; }; }
-function exRefresh() { EXM.forEach(([m]) => updateBase("ch-ex-" + m)); syncExPick(); }
+function exRefresh() { EXM.forEach(([m]) => updateBase("ch-ex-" + m)); syncExPick(); exCircuitRefresh(); }
 function syncExPick() {
   const el = $("#expick"); if (!el) return;
   el.innerHTML = `<span class="lbl">Pilotes</span>` + exSel.filter((c) => byCode[c]).map((c) => `<button class="pp" data-c="${c}" title="Retirer"><i style="background:${byCode[c].color}"></i>${c}${exSel.length > 1 ? '<span class="x">×</span>' : ""}</button>`).join("") + (exSel.length < 4 ? `<button class="add" id="ex-add">+ Ajouter</button>` : "");
@@ -100,14 +100,14 @@ function renderExQuick() {
 /* --- Les duels : groupes de 4 écuries, puis la carte Circuit --- */
 let duelSwipe = null;
 function buildDuelSwipe() {
-  const list = $("#duel-list"), under = $("#duels .under");
+  const list = $("#duel-list");
   const rows = [...list.querySelectorAll(".duel[data-codes]")], na = [...list.querySelectorAll(".na")];
   rows.forEach((r) => r.style.setProperty("--dot", byCode[r.dataset.codes.split(" ")[0]]?.color || "var(--muted)"));
   const groups = []; for (let i = 0; i < rows.length; i += 4) groups.push(rows.slice(i, i + 4));
   if (na.length) (groups.length ? groups[groups.length - 1] : (groups[0] = [])).push(...na);
   const anchor = document.createElement("div");
   if (duelSwipe) { duelSwipe.before(anchor); duelSwipe.remove(); } else list.before(anchor);
-  duelSwipe = makeSwipe(anchor, [...groups.map((g, i) => [i * 4 + 1 === Math.min(rows.length, i * 4 + 4) ? `${i * 4 + 1}` : `${i * 4 + 1}–${Math.min(rows.length, i * 4 + 4)}`, g]), ["Circuit", [under], true]]);
+  duelSwipe = makeSwipe(anchor, [...groups.map((g, i) => [i * 4 + 1 === Math.min(rows.length, i * 4 + 4) ? `${i * 4 + 1}` : `${i * 4 + 1}–${Math.min(rows.length, i * 4 + 4)}`, g])]);
   anchor.remove();
   list.style.display = "none";
 }
@@ -148,16 +148,16 @@ function setupMobileOnce() {
   swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Direction de course", [$("#log")]], ["Chiffres clés", [$("#kpis")]], ["Arrêts aux stands", [expertCard("#gp-section .under")], true]]));
   grid.remove();
   const cw = $("#course .course-wrap");
-  swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Batailles", [expertCard("#course .under")], true]]));
+  swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Les batailles", [expertCard("#course .under")], true]]));
   cw.remove();
   const rl = $("#rythme .legend-inline"), gaps = document.createElement("div"); gaps.className = "mlist"; gaps.id = "m-gaps";
   const aR = document.createElement("div"); rl.before(aR);
-  swipes.push(makeSwipe(aR, [["Rythme contre arrivée", [rl, $("#ch-rythme"), rAll]], ["Les écarts", [gaps]], ["Secteurs", [expertCard("#rythme .under")], true]]));
+  swipes.push(makeSwipe(aR, [["Rythme contre arrivée", [rl, $("#ch-rythme"), rAll]], ["Les écarts", [gaps]], ["Les secteurs", [expertCard("#rythme .under")], true]]));
   aR.remove();
   expertCard("#duels .under");
   const tl = $("#tyre-legend"), keep = document.createElement("div"); keep.className = "mstats"; keep.id = "m-keep";
   const aS = document.createElement("div"); tl.before(aS);
-  swipes.push(makeSwipe(aS, [["Les relais", [tl, $("#ch-strat"), sAll]], ["À retenir", [keep]], ["Usure", [expertCard("#strategies .under")], true]]));
+  swipes.push(makeSwipe(aS, [["Les relais", [tl, $("#ch-strat"), sAll]], ["À retenir", [keep]], ["L'usure", [expertCard("#strategies .under")], true]]));
   aS.remove();
   // Explorer allégé : raccourcis, pilotes sur une ligne, graphiques en cartes
   const sec = $("#explorer"), read = $("#read-ex");
@@ -166,7 +166,8 @@ function setupMobileOnce() {
   sec.querySelector(".ex-top").after(qr, pick);
   read.classList.remove("clamp"); if (read.nextElementSibling?.classList.contains("more-btn")) read.nextElementSibling.remove();
   const aE = document.createElement("div"); read.after(aE);
-  swipes.push(makeSwipe(aE, EXM.map(([m, label]) => { const d = document.createElement("div"); d.className = "chart exc"; d.id = "ch-ex-" + m; return [label, [d]]; })));
+  const exc = $("#ex-circ"); exc.hidden = false;
+  swipes.push(makeSwipe(aE, EXM.map(([m, label]) => { const d = document.createElement("div"); d.className = "chart exc"; d.id = "ch-ex-" + m; return [label, [d]]; }).concat([["Sur le circuit", [exc]]])));
   aE.remove();
   EXM.forEach(([m]) => { charts["ch-ex-" + m] = { el: $("#ch-ex-" + m), build: exBuild(m), inst: null }; });
   whenVisible(sec, () => EXM.forEach(([m]) => draw("ch-ex-" + m)));
