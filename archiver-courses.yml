@@ -1,0 +1,39 @@
+name: Archiver les courses
+
+# Chaque lundi matin (aucune séance F1 en cours), et à la demande :
+# onglet Actions → « Archiver les courses » → Run workflow.
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      tout_refaire:
+        description: "Retélécharger toutes les courses déjà archivées"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Télécharger les courses terminées
+        run: node archive.mjs ${{ inputs.tout_refaire && '--force' || '' }}
+      - name: Enregistrer l'archive dans le dépôt
+        run: |
+          git add data
+          if git diff --cached --quiet; then echo "Rien de nouveau."; exit 0; fi
+          git config user.name "archive-bot"
+          git config user.email "archive-bot@users.noreply.github.com"
+          git commit -m "Archive des courses : mise à jour"
+          git push
+          # Republie le site GitHub Pages avec la nouvelle archive
+          curl -s -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds" || true

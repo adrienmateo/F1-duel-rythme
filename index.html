@@ -2093,15 +2093,29 @@ function setStatus(msg, kind) {
   el.hidden = false; el.classList.toggle("error", kind === "error");
   el.innerHTML = (kind === "load" ? '<span class="spin" aria-hidden="true"></span>' : "") + `<span>${esc(msg)}</span>`;
 }
-let RACES = [], offline = null;
+let RACES = [], offline = null, ARCH = new Set();
+// Archive publiée avec le site (dossier data/, mise à jour chaque lundi par GitHub Actions)
+async function fromArchive(file) {
+  if (location.protocol === "file:") return null;
+  try { const r = await fetch(`data/${file}`, { cache: "no-cache" }); return r.ok ? await r.json() : null; } catch { return null; }
+}
 async function loadRaces(year) {
   $("#gp").disabled = true; $("#gp").innerHTML = "<option>Chargement…</option>";
+  const arch = (await fromArchive(`races-${year}.json`)) || [];
+  ARCH = new Set(arch.map((s) => s.session_key));
   // La liste des courses est gardée dans le navigateur : pendant une séance en direct, OpenF1 coupe l'accès gratuit,
   // et les GP déjà consultés restent ainsi disponibles
   const listKey = `f1duel:v4:races:${year}`;
   let sessions;
   try { sessions = await api("sessions", { year, session_type: "Race" }); try { localStorage.setItem(listKey, JSON.stringify(sessions)); } catch {} }
-  catch (e) { const saved = (() => { try { return JSON.parse(localStorage.getItem(listKey)); } catch { return null; } })(); if (!saved) throw e; sessions = saved; offline = e.message; }
+  catch (e) {
+    // OpenF1 fermé : courses archivées + courses déjà consultées sur cet appareil
+    const saved = (() => { try { return JSON.parse(localStorage.getItem(listKey)); } catch { return null; } })() || [];
+    const byKey = new Map([...saved, ...arch].map((x) => [x.session_key, x]));
+    if (!byKey.size) throw e;
+    sessions = [...byKey.values()]; offline = arch.length ? null : e.message;
+    if (arch.length) sessions = sessions.filter((x) => ARCH.has(x.session_key) || store.get(x.session_key));
+  }
   const now = new Date();
   RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
@@ -2112,6 +2126,15 @@ async function loadRaces(year) {
 async function fetchRace(sk) {
   const cached = store.get(sk);
   if (cached) return cached;
+  if (ARCH.has(+sk)) {
+    setStatus("Chargement de la course…", "load");
+    const a = await fromArchive(`${sk}.json`);
+    if (a && a.pack) {
+      if (a.trace) try { localStorage.setItem(`f1duel:v4:trace:${sk}`, JSON.stringify(a.trace)); } catch {}
+      store.set(sk, a.pack);
+      return a.pack;
+    }
+  }
   const steps = [["drivers", "des pilotes"], ["laps", "des tours"], ["stints", "des relais de pneus"], ["pit", "des arrêts aux stands"], ["race_control", "de la direction de course"], ["session_result", "du classement"], ["starting_grid", "de la grille de départ"]];
   const raw = {};
   for (const [i, [ep, label]] of steps.entries()) {

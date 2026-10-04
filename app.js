@@ -17,7 +17,7 @@ async function api(endpoint, params) {
     lastCall = Date.now();
     let res;
     try { res = await fetch(url); }
-    catch { throw new Error("Impossible de joindre OpenF1. Vérifie ta connexion internet."); }
+    catch { throw new Error(navigator.onLine === false ? "Pas de connexion internet : impossible de joindre OpenF1." : "OpenF1 ne répond pas. Pendant une séance de F1 en direct (essais, qualifs ou course), OpenF1 réserve son accès aux abonnés : les GP s'afficheront de nouveau à la fin de la séance."); }
     if (res.ok) { const data = await res.json(); memo.set(url, data); return data; }
     if (res.status === 429) { setStatus(`Limite d'appels OpenF1 atteinte, nouvelle tentative dans ${5 * attempt} s…`, "load"); await sleep(5000 * attempt); continue; }
     if (res.status === 404) return [];
@@ -522,7 +522,7 @@ function applyFollow(announce) {
       : `<b>${follow.length} pilotes</b> suivis : ${follow.slice(0, 4).join(", ")}${follow.length > 4 ? "…" : ""}`;
     pill.hidden = false; requestAnimationFrame(() => pill.classList.add("on"));
   } else { pill.classList.remove("on"); setTimeout(() => { if (!follow.length) pill.hidden = true; }, 250); }
-  renderCourseChips();
+  renderCourseChips(); syncPickBtn();
   ["ch-course", "ch-rythme", "ch-strat", "ch-deg", "ch-drs"].forEach((id) => update(id, false));
   $$("#duel-list .duel[data-codes]").forEach((r) => { const has = follow.some((c) => r.dataset.codes.split(" ").includes(c)); r.classList.toggle("followed", follow.length > 0 && has); r.classList.toggle("dimmed", follow.length > 0 && !has); });
   if (follow.length >= 2 && follow.length <= 4) { exSel = [...follow]; renderExChips(); readEx(); update("ch-ex"); }
@@ -582,7 +582,7 @@ function readCourse() {
 function renderBoard() {
   const box = $("#board"); if (!box || !drivers.length) return;
   const lap = Math.max(1, replayLap);
-  const rows = matchMedia("(max-width: 860px)").matches ? 10 : Math.min(22, drivers.length);
+  const rows = MOB() ? (boardAll ? drivers.length : Math.min(8, drivers.length)) : matchMedia("(max-width: 860px)").matches ? 10 : Math.min(22, drivers.length);
   box.querySelector(".brows").style.height = rows * 26 + "px";
   const alive = drivers.filter((d) => d.pos[lap - 1] != null).sort((a, b) => a.pos[lap - 1] - b.pos[lap - 1]);
   $("#board-lap").textContent = `Tour ${lap}/${LAPS}`;
@@ -665,8 +665,8 @@ function bindCursor() {
 /* --- Le rythme : les points glissent du rang au rythme vers l'arrivée --- */
 function buildRythme(T) {
   const o = base(T);
-  const rows = [...paced].sort((a, b) => b.paceRank - a.paceRank);
-  const n = Math.max(drivers.length, ...rows.map((d) => d.finish));
+  const rows = rythmeRows();
+  const n = MOB() && !allRythme ? Math.max(...rows.map((d) => Math.max(d.paceRank, d.order))) + 1 : Math.max(drivers.length, ...rows.map((d) => d.finish));
   return {
     ...o, animationDurationUpdate: reduce ? 0 : 1200, animationEasingUpdate: "cubicInOut", grid: { left: 56, right: 24, top: 10, bottom: 36 },
     tooltip: { ...o.tooltip, trigger: "item", formatter: (p) => {
@@ -705,7 +705,7 @@ function readRythme() {
 /* --- Les stratégies --- */
 function buildStrat(T) {
   const o = base(T);
-  const rows = [...finishers, ...dnfs].reverse();
+  const rows = MOB() && !allStrat ? finishers.slice(0, 10).reverse() : [...finishers, ...dnfs].reverse();
   const data = [];
   rows.forEach((d, i) => d.stints.forEach(([c, a, b]) => { const end = Math.min(b ?? LAPS, DNF[d.code] || LAPS); if (end >= a) data.push([i, a, end, c, d.code]); }));
   return {
@@ -911,7 +911,7 @@ async function playCircuit() {
     const all = traces[0];
     const xs = all.map((p) => p.x), ys = all.map((p) => p.y);
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-    const W = 680, H = 400, pad = 34, sc = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1));
+    const W = 680, H = 400, pad = MOB() ? 16 : 34, sc = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1));
     const ox = (W - (x1 - x0) * sc) / 2, oy = (H - (y1 - y0) * sc) / 2;
     const P = (p) => [ox + (p.x - x0) * sc, H - (oy + (p.y - y0) * sc)];
     const path = (pts) => pts.map((p, i) => (i ? "L" : "M") + P(p).map((v) => v.toFixed(1)).join(" ")).join(" ");
@@ -926,7 +926,7 @@ async function playCircuit() {
     const [sx, sy] = P(all[0]); mk("circle", { cx: sx, cy: sy, r: 4, class: "sf-dot" });
     posOf = (k, t) => { const tr = traces[k]; let j = tr.findIndex((p) => p.t >= t); if (j < 0) j = tr.length - 1; if (j === 0) return P(tr[0]);
       const a = tr[j - 1], b = tr[j], f = (t - a.t) / ((b.t - a.t) || 1); return P({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f }); };
-    cars = D.map((x) => mk("circle", { r: 8, class: "car", fill: x.col, cx: sx, cy: sy }));
+    cars = D.map((x) => mk("circle", { r: MOB() ? 13 : 8, class: "car", fill: x.col, cx: sx, cy: sy }));
     tags = D.map((x, k) => { const t = mk("text", { class: "ctag", "text-anchor": "middle", fill: x.col, x: sx, y: sy + (k ? 26 : -16) }); t.textContent = x.d.code; return t; });
   }
   const done = [false, false, false], SCALE = 0.07; let t0 = null;
@@ -1055,6 +1055,12 @@ let toastT;
 function toast(html) { const t = $("#toast"); t.innerHTML = html; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
 function setLevel(l) {
   const was = document.body.dataset.level;
+  if (was === l) return;
+  // Les cartes « Sous le capot » glissent en place (transition de vue native, si le navigateur la connaît)
+  if (document.startViewTransition && !reduce && was) { document.startViewTransition(() => applyLevel(l, was)); return; }
+  applyLevel(l, was);
+}
+function applyLevel(l, was) {
   document.body.dataset.level = l;
   $("#lvl-ess").setAttribute("aria-pressed", l === "essentiel"); $("#lvl-exp").setAttribute("aria-pressed", l === "expert");
   if (l === "expert" && was !== "expert") toast("Mode expert : <b>5 analyses</b> à déplier, signalées par « Sous le capot »");
@@ -1097,17 +1103,17 @@ function setupAccordions() {
 /* --- Indicateur glissant sous l'onglet actif --- */
 const indicators = [];
 function setupIndicators() {
-  $$(".tabs, .seg").forEach((box) => {
+  $$(".tabs, .seg, nav.sections").forEach((box) => {
     const ind = document.createElement("span"); ind.className = "ind"; ind.setAttribute("aria-hidden", "true");
     box.prepend(ind); indicators.push([box, ind]);
-    new MutationObserver(placeIndicators).observe(box, { attributes: true, subtree: true, attributeFilter: ["aria-selected", "aria-pressed"] });
+    new MutationObserver(placeIndicators).observe(box, { attributes: true, subtree: true, attributeFilter: ["aria-selected", "aria-pressed", "class"] });
   });
   placeIndicators(); addEventListener("resize", placeIndicators);
   if (document.fonts) document.fonts.ready.then(placeIndicators);
 }
 function placeIndicators() {
   indicators.forEach(([box, ind]) => {
-    const sel = box.querySelector('[aria-selected="true"], [aria-pressed="true"]');
+    const sel = box.querySelector('[aria-selected="true"], [aria-pressed="true"], a.on');
     if (!sel || !sel.offsetParent) { ind.style.opacity = 0; return; }
     ind.style.opacity = 1;
     ind.style.transform = `translate(${sel.offsetLeft}px, ${sel.offsetTop}px)`;
@@ -1131,7 +1137,7 @@ if (matchMedia("(hover: hover)").matches && !reduce) document.addEventListener("
   const r = c.getBoundingClientRect(); c.style.setProperty("--mx", e.clientX - r.left + "px"); c.style.setProperty("--my", e.clientY - r.top + "px");
 });
 function countUp() {
-  $$("#kpis .v").forEach((el) => {
+  $$("#kpis .v, #tower > .tower-row:not(.p1) .val").forEach((el) => {
     const txt = el.textContent, m = txt.match(/(\d+)(?:,(\d+))?/); if (!m || reduce) return;
     const dec = m[2] ? m[2].length : 0, target = parseFloat(m[1] + "." + (m[2] || "0")), t0 = performance.now(), dur = 1000;
     const step = (now) => { const p = Math.min(1, (now - t0) / dur), e2 = 1 - Math.pow(1 - p, 3);
@@ -1185,13 +1191,32 @@ function setStatus(msg, kind) {
   el.hidden = false; el.classList.toggle("error", kind === "error");
   el.innerHTML = (kind === "load" ? '<span class="spin" aria-hidden="true"></span>' : "") + `<span>${esc(msg)}</span>`;
 }
-let RACES = [];
+let RACES = [], offline = null, ARCH = new Set();
+// Archive publiée avec le site (dossier data/, mise à jour chaque lundi par GitHub Actions)
+async function fromArchive(file) {
+  if (location.protocol === "file:") return null;
+  try { const r = await fetch(`data/${file}`, { cache: "no-cache" }); return r.ok ? await r.json() : null; } catch { return null; }
+}
 async function loadRaces(year) {
   $("#gp").disabled = true; $("#gp").innerHTML = "<option>Chargement…</option>";
-  const sessions = await api("sessions", { year, session_type: "Race" });
+  const arch = (await fromArchive(`races-${year}.json`)) || [];
+  ARCH = new Set(arch.map((s) => s.session_key));
+  // La liste des courses est gardée dans le navigateur : pendant une séance en direct, OpenF1 coupe l'accès gratuit,
+  // et les GP déjà consultés restent ainsi disponibles
+  const listKey = `f1duel:v4:races:${year}`;
+  let sessions;
+  try { sessions = await api("sessions", { year, session_type: "Race" }); try { localStorage.setItem(listKey, JSON.stringify(sessions)); } catch {} }
+  catch (e) {
+    // OpenF1 fermé : courses archivées + courses déjà consultées sur cet appareil
+    const saved = (() => { try { return JSON.parse(localStorage.getItem(listKey)); } catch { return null; } })() || [];
+    const byKey = new Map([...saved, ...arch].map((x) => [x.session_key, x]));
+    if (!byKey.size) throw e;
+    sessions = [...byKey.values()]; offline = arch.length ? null : e.message;
+    if (arch.length) sessions = sessions.filter((x) => ARCH.has(x.session_key) || store.get(x.session_key));
+  }
   const now = new Date();
-  RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
-  if (!RACES.length) { $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
+  RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
   $("#gp").innerHTML = RACES.map((r) => `<option value="${r.session_key}">${esc(r.country_name)} ${r.year}</option>`).join("");
   $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
   return true;
@@ -1199,12 +1224,23 @@ async function loadRaces(year) {
 async function fetchRace(sk) {
   const cached = store.get(sk);
   if (cached) return cached;
+  if (ARCH.has(+sk)) {
+    setStatus("Chargement de la course…", "load");
+    const a = await fromArchive(`${sk}.json`);
+    if (a && a.pack) {
+      if (a.trace) try { localStorage.setItem(`f1duel:v4:trace:${sk}`, JSON.stringify(a.trace)); } catch {}
+      store.set(sk, a.pack);
+      return a.pack;
+    }
+  }
   const steps = [["drivers", "des pilotes"], ["laps", "des tours"], ["stints", "des relais de pneus"], ["pit", "des arrêts aux stands"], ["race_control", "de la direction de course"], ["session_result", "du classement"], ["starting_grid", "de la grille de départ"]];
   const raw = {};
   for (const [i, [ep, label]] of steps.entries()) {
     setStatus(`Chargement ${label} (${i + 1}/${steps.length})…`, "load");
+    hcProgress(i / (steps.length + 1));
     raw[ep] = await api(ep, { session_key: sk });
   }
+  hcProgress(steps.length / (steps.length + 1));
   if (!raw.starting_grid.length) { setStatus("Chargement de la grille de départ…", "load"); raw.starting_grid = gridFromPositions(await api("position", { session_key: sk })); }
   const seen = new Map();
   for (const d of raw.drivers) if (!seen.has(d.driver_number)) seen.set(d.driver_number, d);
@@ -1223,17 +1259,19 @@ async function loadGP(sk) {
   const session = RACES.find((r) => r.session_key === +sk);
   if (!session) return;
   $("main").classList.add("loading"); stopReplay();
+  const hTok = hcBegin();
   $("#round").textContent = "R" + String(RACES.indexOf(session) + 1).padStart(2, "0");
   try {
     const pack = await fetchRace(sk);
     if (!pack.data.laps.length) throw new Error("OpenF1 n'a pas encore les temps au tour de cette course. Réessaie un peu plus tard.");
     buildModel(session, pack);
-    setStatus("");
+    setStatus(offline ? "OpenF1 est momentanément réservé aux abonnés (séance de F1 en direct) : seuls les GP déjà consultés sur cet appareil sont disponibles." : "");
     renderAll();
+    hcRun(hTok);
     if (!first) toast(`${esc(session.country_name)} ${session.year} chargé`);
     first = false;
   } catch (e) {
-    setStatus(e.message, "error");
+    setStatus(e.message, "error"); hcFail();
   } finally { $("main").classList.remove("loading"); fitTower(); }
 }
 function renderAll() {
@@ -1256,7 +1294,7 @@ function renderAll() {
     mount("ch-strat", buildStrat); mount("ch-ex", buildEx);
     ["ch-drs", "ch-deg"].forEach((id, i) => (charts[id] = { el: document.getElementById(id), build: [buildDrs, buildDeg][i], inst: null }));
     charts["ch-course"].onClick = (p) => toggleFollow(p.seriesName);
-    charts["ch-rythme"].onClick = (p) => toggleFollow([...paced].sort((a, b) => b.paceRank - a.paceRank)[p.value[0]]?.code);
+    charts["ch-rythme"].onClick = (p) => toggleFollow(rythmeRows()[p.value[0]]?.code);
     charts["ch-strat"].onClick = (p) => toggleFollow(p.value[4]);
     charts["ch-deg"].onClick = (p) => toggleFollow(p.data.d.code);
     charts["ch-drs"].onClick = (p) => toggleFollow(p.name);
@@ -1271,6 +1309,7 @@ function renderAll() {
     if ($(".under.open #circ")) playCircuit();
   }
   placeCursor();
+  mobileRender();
 }
 
 /* ======================= Démarrage ======================= */
