@@ -49,7 +49,7 @@ addEventListener("scroll", () => {
   clearTimeout(wanderScrollT);
   wanderScrollT = setTimeout(() => {
     const now = performance.now();
-    if (MOB() || !wanderOk() || now - WANDER.t0 < 20000 || now - WANDER.last < 75000 || Math.random() < 0.35) return;
+    if (MOB() || NAV.chap || !wanderOk() || now - WANDER.t0 < 20000 || now - WANDER.last < 75000 || Math.random() < 0.35) return;
     const m = wanderMargin(); if (!m) return;
     const H = innerHeight, amp = Math.min(m.w * 0.22, 26);
     // Remonte la marge en S, avec un coup de glisse au milieu

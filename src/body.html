@@ -51,12 +51,6 @@
       <div class="card log" id="log"></div>
     </div>
     <div class="kpis" id="kpis"></div>
-    <div class="card under x-grid x-only">
-      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Les arrêts aux stands chronométrés</h3></div>
-      <p class="read" id="read-pits" style="font-size:15px"></p>
-      <p class="howto"><span><b>Ce que ça montre :</b> le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands.</span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
-      <div class="pitlist" id="pitlist"></div>
-    </div>
   </section>
 
   <div class="mchaps" id="mchaps"></div>
@@ -128,11 +122,17 @@
     <p class="read" id="read-strat"></p>
     <div class="legend-inline" id="tyre-legend"></div>
     <div class="chart tall" id="ch-strat" role="img" aria-label="Relais de pneus de chaque pilote, tour par tour"></div>
-    <div class="under x-grid x-only">
+    <div class="under x-grid x-only" id="u-deg">
       <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>L'usure des pneus : temps perdu par tour, relais par relais</h3></div>
       <p class="read" id="read-deg" style="font-size:15px"></p>
       <p class="howto"><span><b>Ce que ça montre :</b> combien de temps chaque pilote perdait à chaque tour au fil d'un relais, à cause de l'usure de ses pneus (l'allègement en essence est déjà retiré).</span><span><b>Comment le lire :</b> plus la valeur est grande, plus les pneus s'usaient vite. Près de zéro : des pneus bien préservés.</span></p>
       <div class="chart tall" id="ch-deg" role="img" aria-label="Dégradation en secondes par tour pour chaque relais de chaque pilote"></div>
+    </div>
+    <div class="under x-grid x-only" id="u-pits">
+      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Les arrêts aux stands chronométrés</h3></div>
+      <p class="read" id="read-pits" style="font-size:15px"></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands.</span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
+      <div class="pitlist" id="pitlist"></div>
     </div>
   </section>
 
@@ -145,8 +145,7 @@
       <div class="tabs" role="tablist" aria-label="Type de graphique">
         <button role="tab" aria-selected="true" data-ex="laps">Temps au tour</button>
         <button role="tab" aria-selected="false" data-ex="gap">Écart en piste</button>
-        <button role="tab" aria-selected="false" data-ex="box" class="x-flex x-only">Régularité</button>
-        <button role="tab" aria-selected="false" data-ex="tyre" class="x-flex x-only">Pneus</button>
+        <button role="tab" aria-selected="false" data-ex="box">Régularité</button>
         <button role="tab" aria-selected="false" data-ex="circuit">Sur le circuit</button>
       </div>
       <span class="fine">Jusqu'à 4 pilotes</span>
@@ -227,8 +226,10 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="overlay" id="overlay" hidden><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title" id="dialog"></div></div>
 <svg id="hc-fx" aria-hidden="true"><g id="hc-marks"></g><g id="hc-puffs"></g><g id="hc-car"></g></svg>
-<div class="mchap" id="mchap" hidden role="dialog" aria-label="Chapitre">
-  <div class="mchap-bar"><button class="mchap-back" id="mchap-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg><span id="mchap-title"></span></button></div>
-  <div class="mchap-body" id="mchap-body"></div>
-  <button class="mchap-next" id="mchap-next"></button>
+<div class="mchap" id="mchap" hidden role="dialog" aria-modal="true" aria-label="Chapitre">
+  <div class="mchap-panel">
+    <div class="mchap-bar"><button class="mchap-back" id="mchap-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg><span id="mchap-title"></span></button><span class="mchap-k mono" id="mchap-k"></span><button class="mchap-x icon-btn" id="mchap-x" aria-label="Fermer le chapitre"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="mchap-body" id="mchap-body"></div>
+    <button class="mchap-next" id="mchap-next"></button>
+  </div>
 </div>

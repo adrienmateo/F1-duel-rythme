@@ -77,7 +77,7 @@ function renderKeep() {
 }
 
 /* --- Explorer allégé --- */
-const EXM = [["laps", "Temps au tour"], ["gap", "Écart en piste"], ["box", "Régularité"], ["tyre", "Pneus"]];
+const EXM = [["laps", "Temps au tour"], ["gap", "Écart en piste"], ["box", "Régularité"]];
 function exBuild(mode) { return (T) => { const m = exMode; exMode = mode; const o = buildEx(T); exMode = m; o.grid = { ...(o.grid || {}), left: 54, right: 12, top: 36, bottom: 28 }; if (o.legend) o.legend = { ...o.legend, top: 2, left: "center" }; return o; }; }
 function exRefresh() { EXM.forEach(([m]) => updateBase("ch-ex-" + m)); syncExPick(); exCircuitRefresh(); }
 function syncExPick() {
@@ -145,7 +145,7 @@ function setupMobileOnce() {
   });
   // Les sections en cartes
   const grid = $("#gp-section .hero-grid");
-  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Direction de course", [$("#log")]], ["Chiffres clés", [$("#kpis")]], ["Arrêts aux stands", [expertCard("#gp-section .under")], true]]));
+  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Direction de course", [$("#log")]], ["Chiffres clés", [$("#kpis")]]]));
   grid.remove();
   const cw = $("#course .course-wrap");
   swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Les batailles", [expertCard("#course .under")], true]]));
@@ -157,7 +157,7 @@ function setupMobileOnce() {
   expertCard("#duels .under");
   const tl = $("#tyre-legend"), keep = document.createElement("div"); keep.className = "mstats"; keep.id = "m-keep";
   const aS = document.createElement("div"); tl.before(aS);
-  swipes.push(makeSwipe(aS, [["Les relais", [tl, $("#ch-strat"), sAll]], ["À retenir", [keep]], ["L'usure", [expertCard("#strategies .under")], true]]));
+  swipes.push(makeSwipe(aS, [["Les relais", [tl, $("#ch-strat"), sAll]], ["À retenir", [keep]], ["L'usure", [expertCard("#u-deg")], true], ["Arrêts aux stands", [expertCard("#u-pits")], true]]));
   aS.remove();
   // Explorer allégé : raccourcis, pilotes sur une ligne, graphiques en cartes
   const sec = $("#explorer"), read = $("#read-ex");
@@ -188,7 +188,7 @@ function mobileRender() {
   if (!MOB()) return;
   if (!mobileReady) setupMobileOnce();
   buildDuelSwipe();
-  renderGaps(); renderKeep(); renderExQuick(); syncExPick(); syncPickBtn(); renderChapterCards();
+  renderGaps(); renderKeep(); renderExQuick(); syncExPick(); syncPickBtn();
   EXM.forEach(([m]) => { if (charts["ch-ex-" + m]?.inst) draw("ch-ex-" + m); });
   swipes.concat(duelSwipe ? [duelSwipe] : []).forEach((w) => w._reset());
   setTimeout(() => $$(".mswipe").forEach((w) => w._refit()), 300);

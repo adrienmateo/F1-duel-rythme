@@ -721,35 +721,81 @@ body.at-home { overflow: hidden; }
   .home-list { grid-template-columns: 1fr; max-height: 62vh; overflow: auto; padding-right: 4px; }
 }
 
-/* ---------- Mobile : sommaire en cartes, chapitres plein écran ---------- */
-.mchaps, .mchap { display: none; }
+/* ---------- Chapitres : sommaire en cartes partout, chapitre en plein écran (mobile) ou en grand panneau (ordinateur) ---------- */
+.mchap { display: none; }
+main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
+.mchaps { display: grid; gap: 10px; }
+.mc-title { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 4px 2px 0; }
+.mc { text-align: left; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-md); color: inherit; font: inherit; cursor: pointer; }
+.mc-k { display: flex; align-items: center; gap: 8px; font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.mc-n { font-family: var(--mono); color: var(--muted); letter-spacing: 0; }
+.mc b { display: block; line-height: 1.2; }
+.mc small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--ink-2); }
+.mc-sw { display: flex; flex-direction: column; gap: 4px; }
+.mc-sw i { display: block; width: 26px; height: 6px; border-radius: 3px; }
+.mc-chev { width: 18px; height: 18px; }
+.mc-prev .pv-line { fill: none; stroke-width: 2.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.mc-prev .pv-ghost { fill: none; stroke: var(--grey-line); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.mc-prev text { font: 600 11px var(--mono); fill: var(--ink-2); }
+.mc-prev .pv-code { font-weight: 700; fill: var(--ink); }
+.mchap-panel { min-height: 100%; }
+.mchap-k, .mchap-x { display: none; }
+body.in-chap { overflow: hidden; }
+.mchap-back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--ink-2); font: 600 15px var(--body); padding: 6px 8px 6px 0; cursor: pointer; }
+.mchap-back svg { width: 22px; height: 22px; }
+.mchap-body > section { margin: 0; }
+.mchap-next { display: flex; justify-content: space-between; align-items: center; gap: 18px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 13px 16px; color: inherit; font: inherit; cursor: pointer; }
+.mchap-next small { display: block; color: var(--muted); font-size: 12px; } .mchap-next b { font-size: 15.5px; }
+.mchap-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; background: var(--header); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+
 @media (max-width: 640px) {
   body { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .mbar { display: none !important; }
-  main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
-  .mchaps { display: grid; gap: 10px; }
-  .mc-title { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 4px 2px 0; }
-  .mc { display: grid; grid-template-columns: 1fr auto 18px; gap: 12px; align-items: center; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 13px 14px; box-shadow: var(--sh-md); color: inherit; font: inherit; cursor: pointer; transition: transform .12s; }
+  .mc { display: grid; grid-template-columns: 1fr auto 18px; gap: 12px; align-items: center; border-radius: 18px; padding: 13px 14px; transition: transform .12s; }
   .mc:active { transform: scale(.98); }
-  .mc-k { font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
-  .mc b { display: block; font-size: 15.5px; margin: 1px 0 3px; line-height: 1.25; }
-  .mc small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 13px; color: var(--ink-2); line-height: 1.35; }
-  .mc-sw { display: flex; flex-direction: column; gap: 4px; }
-  .mc-sw i { display: block; width: 26px; height: 6px; border-radius: 3px; }
-  .mc-chev { width: 18px; height: 18px; color: var(--muted); }
+  .mc b { font-size: 15.5px; margin: 1px 0 3px; line-height: 1.25; }
+  .mc small { font-size: 13px; line-height: 1.35; }
+  .mc-n, .mc-prev { display: none; }
+  .mc-go { font-size: 0; color: var(--muted); }
   .mchap { display: block; position: fixed; inset: 0; z-index: 60; overflow-y: auto; overflow-x: hidden; background: var(--page); transform: translateX(100%); transition: transform .36s cubic-bezier(.2,.8,.2,1); box-shadow: -14px 0 32px rgba(0,0,0,.14); padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
   .mchap[hidden] { display: none; }
   .mchap.on { transform: none; }
-  body.in-chap { overflow: hidden; }
-  .mchap-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: var(--header); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
-  .mchap-back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--ink-2); font: 600 15px var(--body); padding: 6px 8px 6px 0; cursor: pointer; }
-  .mchap-back svg { width: 22px; height: 22px; }
+  .mchap-bar { padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; }
   .mchap-body { padding: 14px 12px 4px; }
-  .mchap-body > section { margin: 0; }
-  .mchap-next { display: flex; justify-content: space-between; align-items: center; width: calc(100% - 24px); margin: 10px 12px 0; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 13px 16px; color: inherit; font: inherit; cursor: pointer; }
-  .mchap-next small { display: block; color: var(--muted); font-size: 12px; } .mchap-next b { font-size: 15.5px; }
+  .mchap-next { width: calc(100% - 24px); margin: 10px 12px 0; }
 }
-@media (prefers-reduced-motion: reduce) { .home, .mchap { transition: none; } }
+
+@media (min-width: 641px) {
+  /* Sommaire : de grandes cartes, une phrase et un aperçu, le détail s'ouvre au clic */
+  .mchaps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 26px 0 8px; }
+  .mc-title { grid-column: 1 / -1; font-size: 13px; margin: 0 2px; }
+  .mc { display: grid; grid-template-rows: auto 1fr auto; gap: 16px; border-radius: 24px; padding: 22px 24px 18px; min-height: 250px; transition: transform .18s, box-shadow .2s, border-color .2s; }
+  .mc:hover { transform: translateY(-3px); box-shadow: var(--sh-lg); border-color: var(--grey-line); }
+  .mc:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mc-txt { display: grid; gap: 6px; }
+  .mc b { font: 800 24px/1.12 var(--display); letter-spacing: -.01em; }
+  .mc small { font-size: 15px; line-height: 1.45; }
+  .mc-sw { display: none; }
+  .mc-prev { width: 100%; height: 92px; align-self: end; }
+  .mc-go { justify-self: end; display: inline-flex; align-items: center; gap: 4px; font: 700 13.5px var(--body); color: var(--ink-2); transition: color .2s, gap .2s; }
+  .mc:hover .mc-go { color: var(--accent); gap: 8px; }
+  .mc-explorer { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-rows: auto auto; min-height: 0; column-gap: 36px; }
+  .mc-explorer .mc-txt { grid-row: 1 / 3; align-self: center; }
+  /* Le chapitre ouvert : un grand panneau au-dessus du site, fermé par la croix, Échap ou un clic à côté */
+  .mchap { display: block; position: fixed; inset: 0; z-index: 60; overflow-y: auto; padding: 28px 24px 40px; background: rgba(12, 14, 18, .42); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); opacity: 0; transition: opacity .25s; }
+  .mchap[hidden] { display: none; }
+  .mchap.on { opacity: 1; }
+  .mchap-panel { min-height: 0; max-width: 1180px; margin: 0 auto; background: var(--page); border: 1px solid var(--line); border-radius: 26px; box-shadow: 0 30px 80px rgba(0, 0, 0, .28); padding-bottom: 22px; transform: translateY(22px) scale(.985); transition: transform .34s cubic-bezier(.2,.8,.2,1); }
+  .mchap.on .mchap-panel { transform: none; }
+  .mchap-bar { top: -28px; padding: 14px 18px 12px 22px; border-radius: 26px 26px 0 0; }
+  .mchap-k { display: block; margin-left: auto; font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+  .mchap-x { display: inline-flex; }
+  .mchap-body { padding: 18px 22px 4px; }
+  .mchap-body > section.card { box-shadow: none; }
+  .mchap-next { margin: 14px 22px 0 auto; min-width: 280px; }
+  .mchap-next:hover { border-color: var(--grey-line); }
+}
+@media (prefers-reduced-motion: reduce) { .home, .mchap, .mchap-panel, .mc { transition: none; } }
 /* Duel libre dans « Où se joue l'écart » */
 .chip-other { border-style: dashed !important; }
 .circ-other { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 2px; animation: coIn .25s ease-out; }
@@ -798,6 +844,11 @@ body.at-home { overflow: hidden; }
 .ex-circ[hidden] { display: none; }
 @media (max-width: 640px) { .ex-circ { gap: 8px; } .ex-circ .circ-top { flex-wrap: wrap; } }
 #wander-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 65; overflow: visible; }
+
+/* Régularité (Explorer) : la légende des cases sous la phrase */
+.reg-key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+.reg-key span { display: inline-flex; align-items: center; gap: 6px; }
+.reg-key i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
 
 </style>
 </head>
@@ -855,12 +906,6 @@ body.at-home { overflow: hidden; }
       <div class="card log" id="log"></div>
     </div>
     <div class="kpis" id="kpis"></div>
-    <div class="card under x-grid x-only">
-      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Les arrêts aux stands chronométrés</h3></div>
-      <p class="read" id="read-pits" style="font-size:15px"></p>
-      <p class="howto"><span><b>Ce que ça montre :</b> le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands.</span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
-      <div class="pitlist" id="pitlist"></div>
-    </div>
   </section>
 
   <div class="mchaps" id="mchaps"></div>
@@ -932,11 +977,17 @@ body.at-home { overflow: hidden; }
     <p class="read" id="read-strat"></p>
     <div class="legend-inline" id="tyre-legend"></div>
     <div class="chart tall" id="ch-strat" role="img" aria-label="Relais de pneus de chaque pilote, tour par tour"></div>
-    <div class="under x-grid x-only">
+    <div class="under x-grid x-only" id="u-deg">
       <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>L'usure des pneus : temps perdu par tour, relais par relais</h3></div>
       <p class="read" id="read-deg" style="font-size:15px"></p>
       <p class="howto"><span><b>Ce que ça montre :</b> combien de temps chaque pilote perdait à chaque tour au fil d'un relais, à cause de l'usure de ses pneus (l'allègement en essence est déjà retiré).</span><span><b>Comment le lire :</b> plus la valeur est grande, plus les pneus s'usaient vite. Près de zéro : des pneus bien préservés.</span></p>
       <div class="chart tall" id="ch-deg" role="img" aria-label="Dégradation en secondes par tour pour chaque relais de chaque pilote"></div>
+    </div>
+    <div class="under x-grid x-only" id="u-pits">
+      <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Les arrêts aux stands chronométrés</h3></div>
+      <p class="read" id="read-pits" style="font-size:15px"></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands.</span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
+      <div class="pitlist" id="pitlist"></div>
     </div>
   </section>
 
@@ -949,8 +1000,7 @@ body.at-home { overflow: hidden; }
       <div class="tabs" role="tablist" aria-label="Type de graphique">
         <button role="tab" aria-selected="true" data-ex="laps">Temps au tour</button>
         <button role="tab" aria-selected="false" data-ex="gap">Écart en piste</button>
-        <button role="tab" aria-selected="false" data-ex="box" class="x-flex x-only">Régularité</button>
-        <button role="tab" aria-selected="false" data-ex="tyre" class="x-flex x-only">Pneus</button>
+        <button role="tab" aria-selected="false" data-ex="box">Régularité</button>
         <button role="tab" aria-selected="false" data-ex="circuit">Sur le circuit</button>
       </div>
       <span class="fine">Jusqu'à 4 pilotes</span>
@@ -1031,10 +1081,12 @@ body.at-home { overflow: hidden; }
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="overlay" id="overlay" hidden><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title" id="dialog"></div></div>
 <svg id="hc-fx" aria-hidden="true"><g id="hc-marks"></g><g id="hc-puffs"></g><g id="hc-car"></g></svg>
-<div class="mchap" id="mchap" hidden role="dialog" aria-label="Chapitre">
-  <div class="mchap-bar"><button class="mchap-back" id="mchap-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg><span id="mchap-title"></span></button></div>
-  <div class="mchap-body" id="mchap-body"></div>
-  <button class="mchap-next" id="mchap-next"></button>
+<div class="mchap" id="mchap" hidden role="dialog" aria-modal="true" aria-label="Chapitre">
+  <div class="mchap-panel">
+    <div class="mchap-bar"><button class="mchap-back" id="mchap-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg><span id="mchap-title"></span></button><span class="mchap-k mono" id="mchap-k"></span><button class="mchap-x icon-btn" id="mchap-x" aria-label="Fermer le chapitre"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="mchap-body" id="mchap-body"></div>
+    <button class="mchap-next" id="mchap-next"></button>
+  </div>
 </div>
 
 <script>
@@ -1795,25 +1847,41 @@ function readStrat() {
 }
 
 /* --- Explorer --- */
+// Régularité d'un pilote : chaque tour comparé à son temps médian sur le même relais, carburant retiré.
+// 0 = dans son rythme (moins de 0,4 s au-dessus), 1 = un peu lent (jusqu'à 1 s), 2 = tour perdu, 3 = hors course (départ, stands, neutralisation)
+function regOf(d) {
+  const fc = (l) => l.t + FUEL * l.lap, all = median(d.clean.map(fc));
+  const ref = (lap) => { const st = d.stints.find(([, a, b]) => lap >= a && lap <= b); const ls = st ? d.clean.filter((l) => l.lap >= st[1] && l.lap <= st[2]) : []; return ls.length >= 4 ? median(ls.map(fc)) : all; };
+  const cells = []; let ok = 0, n = 0;
+  d.laps.forEach((l) => {
+    if (!l || l.t == null) return;
+    const slow = l.reason && /lent/i.test(l.reason);
+    if (l.reason && !slow) { cells.push({ lap: l.lap, k: 3, d: 0, t: l.t, why: l.reason }); return; }
+    const dl = +(fc(l) - ref(l.lap)).toFixed(3), k = slow || dl > 1 ? 2 : dl > 0.4 ? 1 : 0;
+    n++; if (!k) ok++;
+    cells.push({ lap: l.lap, k, d: dl, t: l.t, why: slow ? "lent" : "" });
+  });
+  return { cells, ok, n };
+}
 function buildEx(T) {
   const o = base(T);
   const sel = exSel.map((c) => byCode[c]).filter(Boolean);
   const col = (i) => sel[i].color;
   if (exMode === "box") {
-    const ok = sel.filter((d) => d.clean.length >= 3);
-    const stats = ok.map((d) => { const s = d.clean.map((l) => l.t).sort((a, b) => a - b); const q = (p) => s[Math.floor(p * (s.length - 1))]; return [s[0], q(0.25), q(0.5), q(0.75), s[s.length - 1]].map((v) => +v.toFixed(3)); });
-    return { ...o, tooltip: { ...o.tooltip, trigger: "item", formatter: (p) => `<b>${esc(ok[p.dataIndex].name)}</b><br>Médiane ${lapT(p.value[3])}<br>50 % des tours entre ${lapT(p.value[2])} et ${lapT(p.value[4])}` },
-      xAxis: { type: "category", data: ok.map((d) => d.code), ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, color: T.ink, fontWeight: 700 } },
-      yAxis: { type: "value", scale: true, ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => lapT(v).slice(0, -2) } },
-      series: [{ type: "boxplot", data: stats.map((s, i) => ({ value: s, itemStyle: { color: ok[i].color + "33", borderColor: ok[i].color, borderWidth: 2 } })), boxWidth: [24, 56] }] };
-  }
-  if (exMode === "tyre") {
-    return { ...o, legend: { top: 0, textStyle: { color: T.ink2 } }, tooltip: { ...o.tooltip, trigger: "item", formatter: (p) => `<b>${p.seriesName}</b> · tour ${p.value[0]}<br>${lapT(p.value[1])} · ${COMP[p.value[2]].name}` },
-      xAxis: { type: "value", min: 1, max: LAPS, name: "Tour", ...axisCommon(T) },
-      yAxis: { type: "value", scale: true, ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => lapT(v).slice(0, -2) } },
-      series: sel.map((d, i) => ({ name: d.code, type: "scatter", symbol: ["circle", "rect", "triangle", "diamond"][i], symbolSize: 9,
-        itemStyle: { color: (p) => COMP[p.value[2]].c, borderColor: col(i), borderWidth: 2 },
-        data: d.clean.map((l) => [l.lap, +l.t.toFixed(3), l.comp]) })) };
+    // Régularité : une case par tour, comparée au rythme du pilote sur le même relais (carburant retiré)
+    const rows = [...sel].reverse(), R = rows.map(regOf), AMB = "#e3a008";
+    const fill = (k) => [T.good, AMB, T.bad, T.track][k];
+    const data = []; R.forEach((r, y) => r.cells.forEach((c) => data.push([c.lap, y, c.k, c.d, c.t, c.why || ""])));
+    return { ...o, grid: { left: 48, right: 74, top: 30, bottom: 34 },
+      tooltip: { ...o.tooltip, trigger: "item", formatter: (p) => { const [lap, y, k, d, t, why] = p.value; return `<b>${esc(rows[y].name)}</b> · tour ${lap}<br>${lapT(t)}<br>${k === 3 ? esc(why) : k === 2 && why ? "Tour perdu" : d <= 0 ? `${gapS(d)} : plus vite que son rythme` : `${gapS(d)} sur son rythme`}`; } },
+      xAxis: { type: "value", min: 0.5, max: LAPS + 0.5, name: "Tour", nameLocation: "end", nameGap: 8, ...axisCommon(T), splitLine: { show: false }, axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => (Number.isInteger(v) && (v === 1 || v % 10 === 0) ? v : "") } },
+      yAxis: [{ type: "category", data: rows.map((d) => d.code), ...axisCommon(T), axisLine: { show: false }, splitLine: { show: false }, axisLabel: { ...axisCommon(T).axisLabel, color: T.ink, fontWeight: 700, fontSize: 12 } },
+        { type: "category", position: "right", data: R.map((r) => `${r.ok} / ${r.n}`), ...axisCommon(T), axisLine: { show: false }, splitLine: { show: false }, axisLabel: { ...axisCommon(T).axisLabel, color: T.ink2 } }],
+      series: [{ type: "custom", data, encode: { x: 0, y: 1 }, renderItem: (params, api) => {
+        const lap = api.value(0), y = api.value(1), k = api.value(2), a = api.coord([lap - 0.5, y]), b = api.coord([lap + 0.5, y]);
+        const h = Math.min(30, api.size([0, 1])[1] * 0.6), w = Math.max(1, b[0] - a[0] - 2);
+        return { type: "rect", shape: { x: a[0] + 1, y: a[1] - h / 2, width: w, height: h, r: Math.min(3, w / 3) }, style: { fill: fill(k), opacity: 0.92 } };
+      } }] };
   }
   if (exMode === "gap") {
     const ref = sel[0];
@@ -1837,10 +1905,16 @@ function renderExChips() {
   $$("#ex-chips .chip").forEach((b) => b.addEventListener("click", () => {
     const c = b.dataset.code, i = exSel.indexOf(c);
     if (i >= 0) { if (exSel.length > 1) exSel.splice(i, 1); } else { if (exSel.length >= 4) exSel.shift(); exSel.push(c); }
-    renderExChips(); readEx(); update("ch-ex"); exCircuitRefresh();
+    renderExChips(); readEx(); sizeEx(); update("ch-ex"); exCircuitRefresh();
   }));
 }
 function readEx() {
+  if (exMode === "box") {
+    const r = exSel.map((c) => byCode[c]).filter((d) => d && d.clean.length >= 3).map((d) => [d, regOf(d)]).sort((a, b) => b[1].ok / (b[1].n || 1) - a[1].ok / (a[1].n || 1));
+    if (!r.length) { $("#read-ex").textContent = "Pas assez de tours pour juger la régularité."; return; }
+    $("#read-ex").innerHTML = `<b>${r[0][0].last}</b> est le plus régulier de la sélection : ${r[0][1].ok} tours dans son rythme sur ${r[0][1].n}.` + (r.length > 1 ? " " + r.slice(1).map(([d, x]) => `${d.last} : ${x.ok} sur ${x.n}`).join(", ") + "." : "") + ` <span class="reg-key"><span><i style="background:var(--good)"></i>dans son rythme</span><span><i style="background:#e3a008"></i>un peu lent</span><span><i style="background:var(--bad)"></i>tour perdu</span><span><i style="background:var(--track)"></i>départ, stands ou safety car</span></span>`;
+    return;
+  }
   const sel = exSel.map((c) => byCode[c]).filter((d) => d && d.median != null);
   if (sel.length < 2) { $("#read-ex").textContent = "Ajoute un deuxième pilote avec assez de tours représentatifs pour comparer."; return; }
   const s = [...sel].sort((a, b) => a.median - b.median);
@@ -2129,15 +2203,17 @@ function applyLevel(l, was) {
   document.body.dataset.level = l;
   $("#lvl-ess")?.setAttribute("aria-pressed", l === "essentiel"); $("#lvl-exp")?.setAttribute("aria-pressed", l === "expert");
   if (l === "expert" && was !== "expert") toast("Mode expert : <b>5 analyses</b> à déplier, signalées par « Sous le capot »");
-  if (l !== "expert") { if (["box", "tyre"].includes(exMode)) selectEx("laps"); if (courseMode !== "pos") selectCourse("pos"); }
+  if (l !== "expert") { if (courseMode !== "pos") selectCourse("pos"); }
   setTimeout(() => { Object.values(charts).forEach((c) => c.inst && c.inst.resize()); placeIndicators(); placeCursor(); }, 60);
 }
 function selectCourse(m) { courseMode = m; $$("[data-course]").forEach((b) => b.setAttribute("aria-selected", b.dataset.course === m)); update("ch-course", true); }
 $$("[data-course]").forEach((b) => b.addEventListener("click", () => selectCourse(b.dataset.course)));
+// La régularité n'a besoin que d'une bande par pilote : graphique plus bas
+function sizeEx() { const el = $("#ch-ex"), h = exMode === "box" ? `${90 + exSel.length * 56}px` : ""; if (el.style.height !== h) { el.style.height = h; charts["ch-ex"]?.inst?.resize(); } }
 function selectEx(m) {
   $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m));
   if (m === "circuit") { showExCircuit(true); return; }
-  showExCircuit(false); exMode = m; update("ch-ex");
+  showExCircuit(false); exMode = m; readEx(); sizeEx(); update("ch-ex");
 }
 $$("[data-ex]").forEach((b) => b.addEventListener("click", () => selectEx(b.dataset.ex)));
 
@@ -2381,7 +2457,7 @@ function renderAll() {
     if (!$("#ex-circ").hidden && circ.duel) playCircuit();
   }
   placeCursor();
-  mobileRender();
+  mobileRender(); renderChapterCards();
 }
 
 /* ======================= Démarrage ======================= */
@@ -2399,7 +2475,7 @@ $("#dsect-go").addEventListener("click", () => {
   const d = computeDuels().filter((x) => x.valid && bestLapOf(x.fast) && bestLapOf(x.slow))[0];
   if (d) { exSel = [d.fast.code, d.slow.code]; renderExChips(); readEx(); update("ch-ex"); }
   selectEx("circuit");
-  if (MOB() && typeof navGo === "function") { const { g } = parseHash(); navGo(`#${g}/explorer`); } else $("#explorer").scrollIntoView({ behavior: "smooth" });
+  const { g } = parseHash(); navGo(`#${g}/explorer`, !!NAV.chap);
 });
 $("#gp").addEventListener("change", () => navGP($("#gp").value));
 $("#year").addEventListener("change", async () => {
@@ -2504,7 +2580,7 @@ function renderKeep() {
 }
 
 /* --- Explorer allégé --- */
-const EXM = [["laps", "Temps au tour"], ["gap", "Écart en piste"], ["box", "Régularité"], ["tyre", "Pneus"]];
+const EXM = [["laps", "Temps au tour"], ["gap", "Écart en piste"], ["box", "Régularité"]];
 function exBuild(mode) { return (T) => { const m = exMode; exMode = mode; const o = buildEx(T); exMode = m; o.grid = { ...(o.grid || {}), left: 54, right: 12, top: 36, bottom: 28 }; if (o.legend) o.legend = { ...o.legend, top: 2, left: "center" }; return o; }; }
 function exRefresh() { EXM.forEach(([m]) => updateBase("ch-ex-" + m)); syncExPick(); exCircuitRefresh(); }
 function syncExPick() {
@@ -2572,7 +2648,7 @@ function setupMobileOnce() {
   });
   // Les sections en cartes
   const grid = $("#gp-section .hero-grid");
-  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Direction de course", [$("#log")]], ["Chiffres clés", [$("#kpis")]], ["Arrêts aux stands", [expertCard("#gp-section .under")], true]]));
+  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Direction de course", [$("#log")]], ["Chiffres clés", [$("#kpis")]]]));
   grid.remove();
   const cw = $("#course .course-wrap");
   swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Les batailles", [expertCard("#course .under")], true]]));
@@ -2584,7 +2660,7 @@ function setupMobileOnce() {
   expertCard("#duels .under");
   const tl = $("#tyre-legend"), keep = document.createElement("div"); keep.className = "mstats"; keep.id = "m-keep";
   const aS = document.createElement("div"); tl.before(aS);
-  swipes.push(makeSwipe(aS, [["Les relais", [tl, $("#ch-strat"), sAll]], ["À retenir", [keep]], ["L'usure", [expertCard("#strategies .under")], true]]));
+  swipes.push(makeSwipe(aS, [["Les relais", [tl, $("#ch-strat"), sAll]], ["À retenir", [keep]], ["L'usure", [expertCard("#u-deg")], true], ["Arrêts aux stands", [expertCard("#u-pits")], true]]));
   aS.remove();
   // Explorer allégé : raccourcis, pilotes sur une ligne, graphiques en cartes
   const sec = $("#explorer"), read = $("#read-ex");
@@ -2615,7 +2691,7 @@ function mobileRender() {
   if (!MOB()) return;
   if (!mobileReady) setupMobileOnce();
   buildDuelSwipe();
-  renderGaps(); renderKeep(); renderExQuick(); syncExPick(); syncPickBtn(); renderChapterCards();
+  renderGaps(); renderKeep(); renderExQuick(); syncExPick(); syncPickBtn();
   EXM.forEach(([m]) => { if (charts["ch-ex-" + m]?.inst) draw("ch-ex-" + m); });
   swipes.concat(duelSwipe ? [duelSwipe] : []).forEach((w) => w._reset());
   setTimeout(() => $$(".mswipe").forEach((w) => w._refit()), 300);
@@ -2805,7 +2881,7 @@ async function hcRun(tok) {
 /* ======================= Parcours : accueil « Choisis ton Grand Prix », adresses, chapitres plein écran sur mobile ======================= */
 // Adresses : #<lieu>-<année> pour un GP, #<lieu>-<année>/<chapitre> pour un chapitre (mobile).
 // Le bouton retour du navigateur ou du téléphone suit toujours le parcours.
-const NAV = { home: false, homeWait: [], chap: null, slot: null };
+const NAV = { home: false, homeWait: [], chap: null, slot: null, pushed: false };
 const CHAPTERS = [
   { id: "course", sec: "course", k: "La course" },
   { id: "rythme", sec: "rythme", k: "Le rythme" },
@@ -2816,7 +2892,8 @@ const CHAPTERS = [
 const slugify = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const slugOf = (r) => `${slugify(r.location || r.circuit_short_name || r.country_name)}-${r.year}`;
 const parseHash = () => { const [g, c] = decodeURIComponent(location.hash.slice(1)).split("/"); return { g: g || "", c: c || "" }; };
-function navGo(hash, replace) { if (location.hash !== hash) history[replace ? "replaceState" : "pushState"](null, "", hash || location.pathname); navRoute(); }
+function navGo(hash, replace) { if (NAV.chap && hash.includes("/") && location.hash.includes("/")) replace = true; // un seul chapitre dans l'historique
+  if (location.hash !== hash) { history[replace ? "replaceState" : "pushState"](null, "", hash || location.pathname); if (!replace) NAV.pushed = hash.includes("/"); } navRoute(); }
 const navGP = (sk, replace) => { const r = RACES.find((x) => x.session_key === +sk); if (r) navGo("#" + slugOf(r), replace); };
 // La voiture du haut de page attend que l'accueil soit refermé
 const homeClosed = () => (NAV.home ? new Promise((r) => NAV.homeWait.push(r)) : Promise.resolve());
@@ -2873,10 +2950,47 @@ function showHome(on) {
   else { el.classList.remove("on"); setTimeout(() => { if (!NAV.home) el.hidden = true; }, 320); NAV.homeWait.splice(0).forEach((r) => r()); }
 }
 
-/* --- Chapitres plein écran (mobile) --- */
-function mobileNav() { return MOB(); }
+/* --- Chapitres : sommaire en cartes, chapitre ouvert en plein écran (mobile) ou en grand panneau (ordinateur) --- */
+function mobileNav() { return true; }
+// Petit aperçu dessiné à partir des données de la course, pour la carte du chapitre (ordinateur)
+function chapPreview(id) {
+  const W = id === "course" ? 300 : 520, H = 92, svg = (inner) => `<svg class="mc-prev" viewBox="0 0 ${W} ${H}" preserveAspectRatio="${id === "course" ? "none" : "xMinYMid meet"}" aria-hidden="true">${inner}</svg>`;
+  const t = (x, y, txt, cls = "pv-t", anchor = "start") => `<text x="${x}" y="${y}" class="${cls}" text-anchor="${anchor}" dominant-baseline="middle">${esc(txt)}</text>`;
+  try {
+    if (id === "course") {
+      const N = Math.max(2, drivers.length), X = (lap) => 4 + ((lap - 1) / Math.max(1, LAPS - 1)) * (W - 8), Y = (p) => 6 + ((p - 1) / (N - 1)) * (H - 12);
+      const line = (d, cls, col) => { const pts = d.pos.map((p, k) => (p ? `${X(k + 1).toFixed(1)},${Y(p).toFixed(1)}` : null)).filter(Boolean); return pts.length > 1 ? `<polyline points="${pts.join(" ")}" class="${cls}"${col ? ` stroke="${col}"` : ""}/>` : ""; };
+      return svg(finishers.slice(3, 10).map((d) => line(d, "pv-ghost")).join("") + finishers.slice(0, 3).reverse().map((d) => line(d, "pv-line", d.color)).join(""));
+    }
+    if (id === "rythme") {
+      const top = paced.slice(0, 4); if (!top.length) return "";
+      const span = Math.max(0.3, (top[top.length - 1].median - top[0].median) * 1.4), rh = H / 4;
+      return svg(top.map((d, i) => { const y = i * rh + rh / 2, w = (W - 120) * (1 - (d.median - top[0].median) / span);
+        return t(0, y, d.code, "pv-code") + `<rect x="46" y="${y - 7}" width="${w.toFixed(1)}" height="14" rx="4" fill="${d.color}"/>` + t(W, y, i ? gapS(d.median - top[0].median) : "réf.", "pv-t", "end"); }).join(""));
+    }
+    if (id === "duels") {
+      const ds = computeDuels().filter((d) => d.valid).slice(0, 3); if (!ds.length) return "";
+      const rh = H / 3, max = ds[0].gap || 1;
+      return svg(ds.map((d, i) => { const y = i * rh + rh / 2, w = 30 + (W - 210) * (d.gap / max);
+        return t(0, y, d.fast.code, "pv-code") + `<rect x="46" y="${y - 6}" width="${w.toFixed(1)}" height="12" rx="4" fill="${d.color}"/>` + t(52 + w, y, d.slow.code, "pv-t") + t(W, y, gapS(d.gap), "pv-t", "end"); }).join(""));
+    }
+    if (id === "pneus") {
+      const rows = finishers.slice(0, 5), rh = H / 5, X = (lap) => 46 + ((lap - 1) / Math.max(1, LAPS)) * (W - 46);
+      return svg(rows.map((d, i) => { const y = i * rh + rh / 2;
+        return t(0, y, d.code, "pv-code") + d.stints.map(([c, a, b]) => `<rect x="${(X(a) + 1).toFixed(1)}" y="${y - 6}" width="${Math.max(2, X(Math.min(b, LAPS) + 1) - X(a) - 3).toFixed(1)}" height="12" rx="4" fill="${(COMP[c] || COMP.U || { c: "#999" }).c}"/>`).join(""); }).join(""));
+    }
+    if (id === "explorer") {
+      const two = finishers.slice(0, 2).filter((d) => d.clean.length >= 3); if (!two.length) return "";
+      const rh = H / 2, X = (lap) => 46 + ((lap - 1) / Math.max(1, LAPS)) * (W - 46), cw = Math.max(1.5, (W - 46) / Math.max(1, LAPS) - 1.5);
+      const col = ["var(--good)", "#e3a008", "var(--bad)", "var(--track)"];
+      return svg(two.map((d, i) => { const y = i * rh + rh / 2;
+        return t(0, y, d.code, "pv-code") + regOf(d).cells.map((c) => `<rect x="${X(c.lap).toFixed(1)}" y="${y - 9}" width="${cw.toFixed(1)}" height="18" rx="2" fill="${col[c.k]}"/>`).join(""); }).join(""));
+    }
+  } catch (e) { return ""; }
+  return "";
+}
 function renderChapterCards() {
-  const box = $("#mchaps"); if (!box) return;
+  const box = $("#mchaps"); if (!box || !drivers.length) return;
   const first = (id) => ($("#" + id)?.textContent || "").replace(/\s+/g, " ").trim().split(/(?<=\.)\s/)[0] || "";
   const duels = computeDuels().filter((d) => d.valid);
   const sw = (cols) => `<span class="mc-sw">${cols.slice(0, 4).map((c) => `<i style="background:${c}"></i>`).join("")}</span>`;
@@ -2885,14 +2999,15 @@ function renderChapterCards() {
     rythme: [first("read-rythme"), sw(paced.slice(0, 3).map((d) => d.color))],
     duels: [first("read-duels"), sw(duels.slice(0, 3).map((d) => d.color))],
     pneus: [first("read-strat"), `<span class="mc-sw">${["S", "M", "H"].map((c) => `<i style="background:${COMP[c].c}"></i>`).join("")}</span>`],
-    explorer: ["Compare jusqu'à 4 pilotes : temps au tour, écart en piste.", sw(finishers.slice(0, 2).map((d) => d.color))],
+    explorer: ["Choisis jusqu'à 4 pilotes : temps au tour, écart en piste, régularité, et leur meilleur tour sur le circuit.", sw(finishers.slice(0, 2).map((d) => d.color))],
   };
-  box.innerHTML = `<div class="mc-title">Comprendre la course</div>` + CHAPTERS.map((c) => {
+  box.innerHTML = `<div class="mc-title">Comprendre la course</div>` + CHAPTERS.map((c, i) => {
     const h2 = $(`#${c.sec} h2`)?.textContent || c.k, [txt, prev] = info[c.id];
-    return `<button class="mc" data-ch="${c.id}"><span class="mc-txt"><span class="mc-k">${c.k}</span><b>${esc(h2)}</b><small>${esc(txt)}</small></span>${prev}<svg class="mc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>`;
+    return `<button class="mc mc-${c.id}" data-ch="${c.id}"><span class="mc-txt"><span class="mc-k"><span class="mc-n">0${i + 1}</span>${c.k}</span><b>${esc(h2)}</b><small>${esc(txt)}</small></span>${prev}${chapPreview(c.id)}<span class="mc-go">Ouvrir<svg class="mc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span></button>`;
   }).join("");
   $$("#mchaps .mc").forEach((b) => b.addEventListener("click", () => { const { g } = parseHash(); navGo(`#${g}/${b.dataset.ch}`); }));
 }
+function markNav(sec) { $$("nav.sections a").forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + sec)); }
 function openChapter(id) {
   const c = CHAPTERS.find((x) => x.id === id); if (!c) return closeChapter();
   const ov = $("#mchap"), body = $("#mchap-body");
@@ -2904,10 +3019,11 @@ function openChapter(id) {
     const i = CHAPTERS.indexOf(c), nx = CHAPTERS[(i + 1) % CHAPTERS.length];
     $("#mchap-next").innerHTML = `<span><small>Chapitre suivant</small><b>${nx.k}</b></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>`;
     $("#mchap-next").onclick = () => { const { g } = parseHash(); navGo(`#${g}/${nx.id}`, true); };
-    $("#mchap-title").textContent = RACE ? `${RACE.country_name} ${RACE.year}` : "";
+    $("#mchap-title").textContent = RACE ? `${typeof paysFr === "function" ? paysFr(RACE) : RACE.country_name} ${RACE.year}` : "";
+    $("#mchap-k").textContent = `${String(i + 1).padStart(2, "0")} · ${c.k}`;
     ov.scrollTop = 0;
   }
-  ov.hidden = false; document.body.classList.add("in-chap");
+  ov.hidden = false; document.body.classList.add("in-chap"); markNav(c.sec);
   requestAnimationFrame(() => ov.classList.add("on"));
   setTimeout(() => {
     Object.values(charts).forEach((ch) => { if (ch.el && body.contains(ch.el)) { if (ch.inst) ch.inst.resize(); else if (ch.el.offsetParent) draw(ch.el.id); } });
@@ -2917,9 +3033,11 @@ function openChapter(id) {
 function putBack() { if (NAV.chap && NAV.slot) { const c = CHAPTERS.find((x) => x.id === NAV.chap), sec = $("#" + c.sec); NAV.slot.replaceWith(sec); } NAV.chap = null; NAV.slot = null; }
 function closeChapter() {
   const ov = $("#mchap"); if (!ov || ov.hidden) return;
-  ov.classList.remove("on"); document.body.classList.remove("in-chap");
-  setTimeout(() => { if (!ov.classList.contains("on")) { ov.hidden = true; putBack(); stopReplay(); } }, 360);
+  ov.classList.remove("on"); document.body.classList.remove("in-chap"); markNav("gp-section");
+  setTimeout(() => { if (!ov.classList.contains("on")) { ov.hidden = true; putBack(); stopReplay(); placeIndicators(); } }, 360);
 }
+// Revenir au sommaire : on dépile l'historique si le chapitre a été ouvert depuis le site, sinon on remplace l'adresse
+function chapBack() { const { g } = parseHash(); if (NAV.pushed) { NAV.pushed = false; history.back(); } else navGo("#" + g, true); }
 
 /* --- Routeur --- */
 let navLoading = null;
@@ -2937,11 +3055,24 @@ async function navRoute() {
     $("#gp").value = r.session_key;
     if (!(navLoading && navLoading.sk === r.session_key)) { navLoading = { sk: r.session_key, p: loadGP(r.session_key) }; navLoading.p.finally(() => { if (navLoading?.sk === r.session_key) navLoading = null; }); }
   }
-  if (c && mobileNav()) openChapter(c);
-  else { closeChapter(); if (c) { const ch = CHAPTERS.find((x) => x.id === c); ch && $("#" + ch.sec)?.scrollIntoView({ behavior: "smooth" }); } }
+  if (c) openChapter(c); else closeChapter();
 }
 addEventListener("popstate", navRoute);
-$("#mchap-back").addEventListener("click", () => { const { g } = parseHash(); if (history.length > 1) history.back(); else navGo("#" + g); });
+$("#mchap-back").addEventListener("click", chapBack);
+$("#mchap-x").addEventListener("click", chapBack);
+$("#mchap").addEventListener("click", (e) => { if (e.target === e.currentTarget) chapBack(); }); // clic à côté du panneau (ordinateur)
+addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.chap && !document.querySelector(".msheet.on, .overlay:not([hidden])")) chapBack(); });
+// Liens internes (menu du haut, raccourcis) : un chapitre s'ouvre, le reste défile jusqu'à la bonne partie
+document.addEventListener("click", (e) => {
+  const a = e.target.closest('a[href^="#"]'); if (!a || a.closest("#home")) return;
+  const id = a.getAttribute("href").slice(1), ch = CHAPTERS.find((x) => x.sec === id), el = document.getElementById(id);
+  if (!ch && !el) return;
+  e.preventDefault(); if (typeof closeSheets === "function") closeSheets();
+  const { g } = parseHash();
+  if (ch) { navGo(`#${g}/${ch.id}`, !!NAV.chap); return; }
+  if (NAV.chap) navGo("#" + g, true);
+  setTimeout(() => (id === "gp-section" ? scrollTo({ top: 0, behavior: "smooth" }) : el.scrollIntoView({ behavior: "smooth" })), NAV.chap ? 380 : 0);
+}, true);
 $$(".brand").forEach((b) => { b.style.cursor = "pointer"; b.addEventListener("click", () => navGo("")); });
 // Glisser depuis le bord gauche pour revenir (comme une app)
 (() => {
@@ -3001,7 +3132,7 @@ addEventListener("scroll", () => {
   clearTimeout(wanderScrollT);
   wanderScrollT = setTimeout(() => {
     const now = performance.now();
-    if (MOB() || !wanderOk() || now - WANDER.t0 < 20000 || now - WANDER.last < 75000 || Math.random() < 0.35) return;
+    if (MOB() || NAV.chap || !wanderOk() || now - WANDER.t0 < 20000 || now - WANDER.last < 75000 || Math.random() < 0.35) return;
     const m = wanderMargin(); if (!m) return;
     const H = innerHeight, amp = Math.min(m.w * 0.22, 26);
     // Remonte la marge en S, avec un coup de glisse au milieu

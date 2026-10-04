@@ -755,25 +755,41 @@ function readStrat() {
 }
 
 /* --- Explorer --- */
+// Régularité d'un pilote : chaque tour comparé à son temps médian sur le même relais, carburant retiré.
+// 0 = dans son rythme (moins de 0,4 s au-dessus), 1 = un peu lent (jusqu'à 1 s), 2 = tour perdu, 3 = hors course (départ, stands, neutralisation)
+function regOf(d) {
+  const fc = (l) => l.t + FUEL * l.lap, all = median(d.clean.map(fc));
+  const ref = (lap) => { const st = d.stints.find(([, a, b]) => lap >= a && lap <= b); const ls = st ? d.clean.filter((l) => l.lap >= st[1] && l.lap <= st[2]) : []; return ls.length >= 4 ? median(ls.map(fc)) : all; };
+  const cells = []; let ok = 0, n = 0;
+  d.laps.forEach((l) => {
+    if (!l || l.t == null) return;
+    const slow = l.reason && /lent/i.test(l.reason);
+    if (l.reason && !slow) { cells.push({ lap: l.lap, k: 3, d: 0, t: l.t, why: l.reason }); return; }
+    const dl = +(fc(l) - ref(l.lap)).toFixed(3), k = slow || dl > 1 ? 2 : dl > 0.4 ? 1 : 0;
+    n++; if (!k) ok++;
+    cells.push({ lap: l.lap, k, d: dl, t: l.t, why: slow ? "lent" : "" });
+  });
+  return { cells, ok, n };
+}
 function buildEx(T) {
   const o = base(T);
   const sel = exSel.map((c) => byCode[c]).filter(Boolean);
   const col = (i) => sel[i].color;
   if (exMode === "box") {
-    const ok = sel.filter((d) => d.clean.length >= 3);
-    const stats = ok.map((d) => { const s = d.clean.map((l) => l.t).sort((a, b) => a - b); const q = (p) => s[Math.floor(p * (s.length - 1))]; return [s[0], q(0.25), q(0.5), q(0.75), s[s.length - 1]].map((v) => +v.toFixed(3)); });
-    return { ...o, tooltip: { ...o.tooltip, trigger: "item", formatter: (p) => `<b>${esc(ok[p.dataIndex].name)}</b><br>Médiane ${lapT(p.value[3])}<br>50 % des tours entre ${lapT(p.value[2])} et ${lapT(p.value[4])}` },
-      xAxis: { type: "category", data: ok.map((d) => d.code), ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, color: T.ink, fontWeight: 700 } },
-      yAxis: { type: "value", scale: true, ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => lapT(v).slice(0, -2) } },
-      series: [{ type: "boxplot", data: stats.map((s, i) => ({ value: s, itemStyle: { color: ok[i].color + "33", borderColor: ok[i].color, borderWidth: 2 } })), boxWidth: [24, 56] }] };
-  }
-  if (exMode === "tyre") {
-    return { ...o, legend: { top: 0, textStyle: { color: T.ink2 } }, tooltip: { ...o.tooltip, trigger: "item", formatter: (p) => `<b>${p.seriesName}</b> · tour ${p.value[0]}<br>${lapT(p.value[1])} · ${COMP[p.value[2]].name}` },
-      xAxis: { type: "value", min: 1, max: LAPS, name: "Tour", ...axisCommon(T) },
-      yAxis: { type: "value", scale: true, ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => lapT(v).slice(0, -2) } },
-      series: sel.map((d, i) => ({ name: d.code, type: "scatter", symbol: ["circle", "rect", "triangle", "diamond"][i], symbolSize: 9,
-        itemStyle: { color: (p) => COMP[p.value[2]].c, borderColor: col(i), borderWidth: 2 },
-        data: d.clean.map((l) => [l.lap, +l.t.toFixed(3), l.comp]) })) };
+    // Régularité : une case par tour, comparée au rythme du pilote sur le même relais (carburant retiré)
+    const rows = [...sel].reverse(), R = rows.map(regOf), AMB = "#e3a008";
+    const fill = (k) => [T.good, AMB, T.bad, T.track][k];
+    const data = []; R.forEach((r, y) => r.cells.forEach((c) => data.push([c.lap, y, c.k, c.d, c.t, c.why || ""])));
+    return { ...o, grid: { left: 48, right: 74, top: 30, bottom: 34 },
+      tooltip: { ...o.tooltip, trigger: "item", formatter: (p) => { const [lap, y, k, d, t, why] = p.value; return `<b>${esc(rows[y].name)}</b> · tour ${lap}<br>${lapT(t)}<br>${k === 3 ? esc(why) : k === 2 && why ? "Tour perdu" : d <= 0 ? `${gapS(d)} : plus vite que son rythme` : `${gapS(d)} sur son rythme`}`; } },
+      xAxis: { type: "value", min: 0.5, max: LAPS + 0.5, name: "Tour", nameLocation: "end", nameGap: 8, ...axisCommon(T), splitLine: { show: false }, axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => (Number.isInteger(v) && (v === 1 || v % 10 === 0) ? v : "") } },
+      yAxis: [{ type: "category", data: rows.map((d) => d.code), ...axisCommon(T), axisLine: { show: false }, splitLine: { show: false }, axisLabel: { ...axisCommon(T).axisLabel, color: T.ink, fontWeight: 700, fontSize: 12 } },
+        { type: "category", position: "right", data: R.map((r) => `${r.ok} / ${r.n}`), ...axisCommon(T), axisLine: { show: false }, splitLine: { show: false }, axisLabel: { ...axisCommon(T).axisLabel, color: T.ink2 } }],
+      series: [{ type: "custom", data, encode: { x: 0, y: 1 }, renderItem: (params, api) => {
+        const lap = api.value(0), y = api.value(1), k = api.value(2), a = api.coord([lap - 0.5, y]), b = api.coord([lap + 0.5, y]);
+        const h = Math.min(30, api.size([0, 1])[1] * 0.6), w = Math.max(1, b[0] - a[0] - 2);
+        return { type: "rect", shape: { x: a[0] + 1, y: a[1] - h / 2, width: w, height: h, r: Math.min(3, w / 3) }, style: { fill: fill(k), opacity: 0.92 } };
+      } }] };
   }
   if (exMode === "gap") {
     const ref = sel[0];
@@ -797,10 +813,16 @@ function renderExChips() {
   $$("#ex-chips .chip").forEach((b) => b.addEventListener("click", () => {
     const c = b.dataset.code, i = exSel.indexOf(c);
     if (i >= 0) { if (exSel.length > 1) exSel.splice(i, 1); } else { if (exSel.length >= 4) exSel.shift(); exSel.push(c); }
-    renderExChips(); readEx(); update("ch-ex"); exCircuitRefresh();
+    renderExChips(); readEx(); sizeEx(); update("ch-ex"); exCircuitRefresh();
   }));
 }
 function readEx() {
+  if (exMode === "box") {
+    const r = exSel.map((c) => byCode[c]).filter((d) => d && d.clean.length >= 3).map((d) => [d, regOf(d)]).sort((a, b) => b[1].ok / (b[1].n || 1) - a[1].ok / (a[1].n || 1));
+    if (!r.length) { $("#read-ex").textContent = "Pas assez de tours pour juger la régularité."; return; }
+    $("#read-ex").innerHTML = `<b>${r[0][0].last}</b> est le plus régulier de la sélection : ${r[0][1].ok} tours dans son rythme sur ${r[0][1].n}.` + (r.length > 1 ? " " + r.slice(1).map(([d, x]) => `${d.last} : ${x.ok} sur ${x.n}`).join(", ") + "." : "") + ` <span class="reg-key"><span><i style="background:var(--good)"></i>dans son rythme</span><span><i style="background:#e3a008"></i>un peu lent</span><span><i style="background:var(--bad)"></i>tour perdu</span><span><i style="background:var(--track)"></i>départ, stands ou safety car</span></span>`;
+    return;
+  }
   const sel = exSel.map((c) => byCode[c]).filter((d) => d && d.median != null);
   if (sel.length < 2) { $("#read-ex").textContent = "Ajoute un deuxième pilote avec assez de tours représentatifs pour comparer."; return; }
   const s = [...sel].sort((a, b) => a.median - b.median);
@@ -1089,15 +1111,17 @@ function applyLevel(l, was) {
   document.body.dataset.level = l;
   $("#lvl-ess")?.setAttribute("aria-pressed", l === "essentiel"); $("#lvl-exp")?.setAttribute("aria-pressed", l === "expert");
   if (l === "expert" && was !== "expert") toast("Mode expert : <b>5 analyses</b> à déplier, signalées par « Sous le capot »");
-  if (l !== "expert") { if (["box", "tyre"].includes(exMode)) selectEx("laps"); if (courseMode !== "pos") selectCourse("pos"); }
+  if (l !== "expert") { if (courseMode !== "pos") selectCourse("pos"); }
   setTimeout(() => { Object.values(charts).forEach((c) => c.inst && c.inst.resize()); placeIndicators(); placeCursor(); }, 60);
 }
 function selectCourse(m) { courseMode = m; $$("[data-course]").forEach((b) => b.setAttribute("aria-selected", b.dataset.course === m)); update("ch-course", true); }
 $$("[data-course]").forEach((b) => b.addEventListener("click", () => selectCourse(b.dataset.course)));
+// La régularité n'a besoin que d'une bande par pilote : graphique plus bas
+function sizeEx() { const el = $("#ch-ex"), h = exMode === "box" ? `${90 + exSel.length * 56}px` : ""; if (el.style.height !== h) { el.style.height = h; charts["ch-ex"]?.inst?.resize(); } }
 function selectEx(m) {
   $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m));
   if (m === "circuit") { showExCircuit(true); return; }
-  showExCircuit(false); exMode = m; update("ch-ex");
+  showExCircuit(false); exMode = m; readEx(); sizeEx(); update("ch-ex");
 }
 $$("[data-ex]").forEach((b) => b.addEventListener("click", () => selectEx(b.dataset.ex)));
 
@@ -1341,7 +1365,7 @@ function renderAll() {
     if (!$("#ex-circ").hidden && circ.duel) playCircuit();
   }
   placeCursor();
-  mobileRender();
+  mobileRender(); renderChapterCards();
 }
 
 /* ======================= Démarrage ======================= */
@@ -1359,7 +1383,7 @@ $("#dsect-go").addEventListener("click", () => {
   const d = computeDuels().filter((x) => x.valid && bestLapOf(x.fast) && bestLapOf(x.slow))[0];
   if (d) { exSel = [d.fast.code, d.slow.code]; renderExChips(); readEx(); update("ch-ex"); }
   selectEx("circuit");
-  if (MOB() && typeof navGo === "function") { const { g } = parseHash(); navGo(`#${g}/explorer`); } else $("#explorer").scrollIntoView({ behavior: "smooth" });
+  const { g } = parseHash(); navGo(`#${g}/explorer`, !!NAV.chap);
 });
 $("#gp").addEventListener("change", () => navGP($("#gp").value));
 $("#year").addEventListener("change", async () => {

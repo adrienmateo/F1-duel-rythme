@@ -40,35 +40,81 @@ body.at-home { overflow: hidden; }
   .home-list { grid-template-columns: 1fr; max-height: 62vh; overflow: auto; padding-right: 4px; }
 }
 
-/* ---------- Mobile : sommaire en cartes, chapitres plein écran ---------- */
-.mchaps, .mchap { display: none; }
+/* ---------- Chapitres : sommaire en cartes partout, chapitre en plein écran (mobile) ou en grand panneau (ordinateur) ---------- */
+.mchap { display: none; }
+main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
+.mchaps { display: grid; gap: 10px; }
+.mc-title { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 4px 2px 0; }
+.mc { text-align: left; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-md); color: inherit; font: inherit; cursor: pointer; }
+.mc-k { display: flex; align-items: center; gap: 8px; font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.mc-n { font-family: var(--mono); color: var(--muted); letter-spacing: 0; }
+.mc b { display: block; line-height: 1.2; }
+.mc small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--ink-2); }
+.mc-sw { display: flex; flex-direction: column; gap: 4px; }
+.mc-sw i { display: block; width: 26px; height: 6px; border-radius: 3px; }
+.mc-chev { width: 18px; height: 18px; }
+.mc-prev .pv-line { fill: none; stroke-width: 2.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.mc-prev .pv-ghost { fill: none; stroke: var(--grey-line); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.mc-prev text { font: 600 11px var(--mono); fill: var(--ink-2); }
+.mc-prev .pv-code { font-weight: 700; fill: var(--ink); }
+.mchap-panel { min-height: 100%; }
+.mchap-k, .mchap-x { display: none; }
+body.in-chap { overflow: hidden; }
+.mchap-back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--ink-2); font: 600 15px var(--body); padding: 6px 8px 6px 0; cursor: pointer; }
+.mchap-back svg { width: 22px; height: 22px; }
+.mchap-body > section { margin: 0; }
+.mchap-next { display: flex; justify-content: space-between; align-items: center; gap: 18px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 13px 16px; color: inherit; font: inherit; cursor: pointer; }
+.mchap-next small { display: block; color: var(--muted); font-size: 12px; } .mchap-next b { font-size: 15.5px; }
+.mchap-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; background: var(--header); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+
 @media (max-width: 640px) {
   body { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .mbar { display: none !important; }
-  main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
-  .mchaps { display: grid; gap: 10px; }
-  .mc-title { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 4px 2px 0; }
-  .mc { display: grid; grid-template-columns: 1fr auto 18px; gap: 12px; align-items: center; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 13px 14px; box-shadow: var(--sh-md); color: inherit; font: inherit; cursor: pointer; transition: transform .12s; }
+  .mc { display: grid; grid-template-columns: 1fr auto 18px; gap: 12px; align-items: center; border-radius: 18px; padding: 13px 14px; transition: transform .12s; }
   .mc:active { transform: scale(.98); }
-  .mc-k { font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
-  .mc b { display: block; font-size: 15.5px; margin: 1px 0 3px; line-height: 1.25; }
-  .mc small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 13px; color: var(--ink-2); line-height: 1.35; }
-  .mc-sw { display: flex; flex-direction: column; gap: 4px; }
-  .mc-sw i { display: block; width: 26px; height: 6px; border-radius: 3px; }
-  .mc-chev { width: 18px; height: 18px; color: var(--muted); }
+  .mc b { font-size: 15.5px; margin: 1px 0 3px; line-height: 1.25; }
+  .mc small { font-size: 13px; line-height: 1.35; }
+  .mc-n, .mc-prev { display: none; }
+  .mc-go { font-size: 0; color: var(--muted); }
   .mchap { display: block; position: fixed; inset: 0; z-index: 60; overflow-y: auto; overflow-x: hidden; background: var(--page); transform: translateX(100%); transition: transform .36s cubic-bezier(.2,.8,.2,1); box-shadow: -14px 0 32px rgba(0,0,0,.14); padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
   .mchap[hidden] { display: none; }
   .mchap.on { transform: none; }
-  body.in-chap { overflow: hidden; }
-  .mchap-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: var(--header); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
-  .mchap-back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--ink-2); font: 600 15px var(--body); padding: 6px 8px 6px 0; cursor: pointer; }
-  .mchap-back svg { width: 22px; height: 22px; }
+  .mchap-bar { padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; }
   .mchap-body { padding: 14px 12px 4px; }
-  .mchap-body > section { margin: 0; }
-  .mchap-next { display: flex; justify-content: space-between; align-items: center; width: calc(100% - 24px); margin: 10px 12px 0; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 13px 16px; color: inherit; font: inherit; cursor: pointer; }
-  .mchap-next small { display: block; color: var(--muted); font-size: 12px; } .mchap-next b { font-size: 15.5px; }
+  .mchap-next { width: calc(100% - 24px); margin: 10px 12px 0; }
 }
-@media (prefers-reduced-motion: reduce) { .home, .mchap { transition: none; } }
+
+@media (min-width: 641px) {
+  /* Sommaire : de grandes cartes, une phrase et un aperçu, le détail s'ouvre au clic */
+  .mchaps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 26px 0 8px; }
+  .mc-title { grid-column: 1 / -1; font-size: 13px; margin: 0 2px; }
+  .mc { display: grid; grid-template-rows: auto 1fr auto; gap: 16px; border-radius: 24px; padding: 22px 24px 18px; min-height: 250px; transition: transform .18s, box-shadow .2s, border-color .2s; }
+  .mc:hover { transform: translateY(-3px); box-shadow: var(--sh-lg); border-color: var(--grey-line); }
+  .mc:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .mc-txt { display: grid; gap: 6px; }
+  .mc b { font: 800 24px/1.12 var(--display); letter-spacing: -.01em; }
+  .mc small { font-size: 15px; line-height: 1.45; }
+  .mc-sw { display: none; }
+  .mc-prev { width: 100%; height: 92px; align-self: end; }
+  .mc-go { justify-self: end; display: inline-flex; align-items: center; gap: 4px; font: 700 13.5px var(--body); color: var(--ink-2); transition: color .2s, gap .2s; }
+  .mc:hover .mc-go { color: var(--accent); gap: 8px; }
+  .mc-explorer { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-rows: auto auto; min-height: 0; column-gap: 36px; }
+  .mc-explorer .mc-txt { grid-row: 1 / 3; align-self: center; }
+  /* Le chapitre ouvert : un grand panneau au-dessus du site, fermé par la croix, Échap ou un clic à côté */
+  .mchap { display: block; position: fixed; inset: 0; z-index: 60; overflow-y: auto; padding: 28px 24px 40px; background: rgba(12, 14, 18, .42); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); opacity: 0; transition: opacity .25s; }
+  .mchap[hidden] { display: none; }
+  .mchap.on { opacity: 1; }
+  .mchap-panel { min-height: 0; max-width: 1180px; margin: 0 auto; background: var(--page); border: 1px solid var(--line); border-radius: 26px; box-shadow: 0 30px 80px rgba(0, 0, 0, .28); padding-bottom: 22px; transform: translateY(22px) scale(.985); transition: transform .34s cubic-bezier(.2,.8,.2,1); }
+  .mchap.on .mchap-panel { transform: none; }
+  .mchap-bar { top: -28px; padding: 14px 18px 12px 22px; border-radius: 26px 26px 0 0; }
+  .mchap-k { display: block; margin-left: auto; font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+  .mchap-x { display: inline-flex; }
+  .mchap-body { padding: 18px 22px 4px; }
+  .mchap-body > section.card { box-shadow: none; }
+  .mchap-next { margin: 14px 22px 0 auto; min-width: 280px; }
+  .mchap-next:hover { border-color: var(--grey-line); }
+}
+@media (prefers-reduced-motion: reduce) { .home, .mchap, .mchap-panel, .mc { transition: none; } }
 /* Duel libre dans « Où se joue l'écart » */
 .chip-other { border-style: dashed !important; }
 .circ-other { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 2px; animation: coIn .25s ease-out; }
@@ -117,3 +163,8 @@ body.at-home { overflow: hidden; }
 .ex-circ[hidden] { display: none; }
 @media (max-width: 640px) { .ex-circ { gap: 8px; } .ex-circ .circ-top { flex-wrap: wrap; } }
 #wander-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 65; overflow: visible; }
+
+/* Régularité (Explorer) : la légende des cases sous la phrase */
+.reg-key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+.reg-key span { display: inline-flex; align-items: center; gap: 6px; }
+.reg-key i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }

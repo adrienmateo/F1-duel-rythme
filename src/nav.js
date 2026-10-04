@@ -2,7 +2,7 @@
 /* ======================= Parcours : accueil « Choisis ton Grand Prix », adresses, chapitres plein écran sur mobile ======================= */
 // Adresses : #<lieu>-<année> pour un GP, #<lieu>-<année>/<chapitre> pour un chapitre (mobile).
 // Le bouton retour du navigateur ou du téléphone suit toujours le parcours.
-const NAV = { home: false, homeWait: [], chap: null, slot: null };
+const NAV = { home: false, homeWait: [], chap: null, slot: null, pushed: false };
 const CHAPTERS = [
   { id: "course", sec: "course", k: "La course" },
   { id: "rythme", sec: "rythme", k: "Le rythme" },
@@ -13,7 +13,8 @@ const CHAPTERS = [
 const slugify = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const slugOf = (r) => `${slugify(r.location || r.circuit_short_name || r.country_name)}-${r.year}`;
 const parseHash = () => { const [g, c] = decodeURIComponent(location.hash.slice(1)).split("/"); return { g: g || "", c: c || "" }; };
-function navGo(hash, replace) { if (location.hash !== hash) history[replace ? "replaceState" : "pushState"](null, "", hash || location.pathname); navRoute(); }
+function navGo(hash, replace) { if (NAV.chap && hash.includes("/") && location.hash.includes("/")) replace = true; // un seul chapitre dans l'historique
+  if (location.hash !== hash) { history[replace ? "replaceState" : "pushState"](null, "", hash || location.pathname); if (!replace) NAV.pushed = hash.includes("/"); } navRoute(); }
 const navGP = (sk, replace) => { const r = RACES.find((x) => x.session_key === +sk); if (r) navGo("#" + slugOf(r), replace); };
 // La voiture du haut de page attend que l'accueil soit refermé
 const homeClosed = () => (NAV.home ? new Promise((r) => NAV.homeWait.push(r)) : Promise.resolve());
@@ -70,10 +71,47 @@ function showHome(on) {
   else { el.classList.remove("on"); setTimeout(() => { if (!NAV.home) el.hidden = true; }, 320); NAV.homeWait.splice(0).forEach((r) => r()); }
 }
 
-/* --- Chapitres plein écran (mobile) --- */
-function mobileNav() { return MOB(); }
+/* --- Chapitres : sommaire en cartes, chapitre ouvert en plein écran (mobile) ou en grand panneau (ordinateur) --- */
+function mobileNav() { return true; }
+// Petit aperçu dessiné à partir des données de la course, pour la carte du chapitre (ordinateur)
+function chapPreview(id) {
+  const W = id === "course" ? 300 : 520, H = 92, svg = (inner) => `<svg class="mc-prev" viewBox="0 0 ${W} ${H}" preserveAspectRatio="${id === "course" ? "none" : "xMinYMid meet"}" aria-hidden="true">${inner}</svg>`;
+  const t = (x, y, txt, cls = "pv-t", anchor = "start") => `<text x="${x}" y="${y}" class="${cls}" text-anchor="${anchor}" dominant-baseline="middle">${esc(txt)}</text>`;
+  try {
+    if (id === "course") {
+      const N = Math.max(2, drivers.length), X = (lap) => 4 + ((lap - 1) / Math.max(1, LAPS - 1)) * (W - 8), Y = (p) => 6 + ((p - 1) / (N - 1)) * (H - 12);
+      const line = (d, cls, col) => { const pts = d.pos.map((p, k) => (p ? `${X(k + 1).toFixed(1)},${Y(p).toFixed(1)}` : null)).filter(Boolean); return pts.length > 1 ? `<polyline points="${pts.join(" ")}" class="${cls}"${col ? ` stroke="${col}"` : ""}/>` : ""; };
+      return svg(finishers.slice(3, 10).map((d) => line(d, "pv-ghost")).join("") + finishers.slice(0, 3).reverse().map((d) => line(d, "pv-line", d.color)).join(""));
+    }
+    if (id === "rythme") {
+      const top = paced.slice(0, 4); if (!top.length) return "";
+      const span = Math.max(0.3, (top[top.length - 1].median - top[0].median) * 1.4), rh = H / 4;
+      return svg(top.map((d, i) => { const y = i * rh + rh / 2, w = (W - 120) * (1 - (d.median - top[0].median) / span);
+        return t(0, y, d.code, "pv-code") + `<rect x="46" y="${y - 7}" width="${w.toFixed(1)}" height="14" rx="4" fill="${d.color}"/>` + t(W, y, i ? gapS(d.median - top[0].median) : "réf.", "pv-t", "end"); }).join(""));
+    }
+    if (id === "duels") {
+      const ds = computeDuels().filter((d) => d.valid).slice(0, 3); if (!ds.length) return "";
+      const rh = H / 3, max = ds[0].gap || 1;
+      return svg(ds.map((d, i) => { const y = i * rh + rh / 2, w = 30 + (W - 210) * (d.gap / max);
+        return t(0, y, d.fast.code, "pv-code") + `<rect x="46" y="${y - 6}" width="${w.toFixed(1)}" height="12" rx="4" fill="${d.color}"/>` + t(52 + w, y, d.slow.code, "pv-t") + t(W, y, gapS(d.gap), "pv-t", "end"); }).join(""));
+    }
+    if (id === "pneus") {
+      const rows = finishers.slice(0, 5), rh = H / 5, X = (lap) => 46 + ((lap - 1) / Math.max(1, LAPS)) * (W - 46);
+      return svg(rows.map((d, i) => { const y = i * rh + rh / 2;
+        return t(0, y, d.code, "pv-code") + d.stints.map(([c, a, b]) => `<rect x="${(X(a) + 1).toFixed(1)}" y="${y - 6}" width="${Math.max(2, X(Math.min(b, LAPS) + 1) - X(a) - 3).toFixed(1)}" height="12" rx="4" fill="${(COMP[c] || COMP.U || { c: "#999" }).c}"/>`).join(""); }).join(""));
+    }
+    if (id === "explorer") {
+      const two = finishers.slice(0, 2).filter((d) => d.clean.length >= 3); if (!two.length) return "";
+      const rh = H / 2, X = (lap) => 46 + ((lap - 1) / Math.max(1, LAPS)) * (W - 46), cw = Math.max(1.5, (W - 46) / Math.max(1, LAPS) - 1.5);
+      const col = ["var(--good)", "#e3a008", "var(--bad)", "var(--track)"];
+      return svg(two.map((d, i) => { const y = i * rh + rh / 2;
+        return t(0, y, d.code, "pv-code") + regOf(d).cells.map((c) => `<rect x="${X(c.lap).toFixed(1)}" y="${y - 9}" width="${cw.toFixed(1)}" height="18" rx="2" fill="${col[c.k]}"/>`).join(""); }).join(""));
+    }
+  } catch (e) { return ""; }
+  return "";
+}
 function renderChapterCards() {
-  const box = $("#mchaps"); if (!box) return;
+  const box = $("#mchaps"); if (!box || !drivers.length) return;
   const first = (id) => ($("#" + id)?.textContent || "").replace(/\s+/g, " ").trim().split(/(?<=\.)\s/)[0] || "";
   const duels = computeDuels().filter((d) => d.valid);
   const sw = (cols) => `<span class="mc-sw">${cols.slice(0, 4).map((c) => `<i style="background:${c}"></i>`).join("")}</span>`;
@@ -82,14 +120,15 @@ function renderChapterCards() {
     rythme: [first("read-rythme"), sw(paced.slice(0, 3).map((d) => d.color))],
     duels: [first("read-duels"), sw(duels.slice(0, 3).map((d) => d.color))],
     pneus: [first("read-strat"), `<span class="mc-sw">${["S", "M", "H"].map((c) => `<i style="background:${COMP[c].c}"></i>`).join("")}</span>`],
-    explorer: ["Compare jusqu'à 4 pilotes : temps au tour, écart en piste.", sw(finishers.slice(0, 2).map((d) => d.color))],
+    explorer: ["Choisis jusqu'à 4 pilotes : temps au tour, écart en piste, régularité, et leur meilleur tour sur le circuit.", sw(finishers.slice(0, 2).map((d) => d.color))],
   };
-  box.innerHTML = `<div class="mc-title">Comprendre la course</div>` + CHAPTERS.map((c) => {
+  box.innerHTML = `<div class="mc-title">Comprendre la course</div>` + CHAPTERS.map((c, i) => {
     const h2 = $(`#${c.sec} h2`)?.textContent || c.k, [txt, prev] = info[c.id];
-    return `<button class="mc" data-ch="${c.id}"><span class="mc-txt"><span class="mc-k">${c.k}</span><b>${esc(h2)}</b><small>${esc(txt)}</small></span>${prev}<svg class="mc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>`;
+    return `<button class="mc mc-${c.id}" data-ch="${c.id}"><span class="mc-txt"><span class="mc-k"><span class="mc-n">0${i + 1}</span>${c.k}</span><b>${esc(h2)}</b><small>${esc(txt)}</small></span>${prev}${chapPreview(c.id)}<span class="mc-go">Ouvrir<svg class="mc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span></button>`;
   }).join("");
   $$("#mchaps .mc").forEach((b) => b.addEventListener("click", () => { const { g } = parseHash(); navGo(`#${g}/${b.dataset.ch}`); }));
 }
+function markNav(sec) { $$("nav.sections a").forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + sec)); }
 function openChapter(id) {
   const c = CHAPTERS.find((x) => x.id === id); if (!c) return closeChapter();
   const ov = $("#mchap"), body = $("#mchap-body");
@@ -101,10 +140,11 @@ function openChapter(id) {
     const i = CHAPTERS.indexOf(c), nx = CHAPTERS[(i + 1) % CHAPTERS.length];
     $("#mchap-next").innerHTML = `<span><small>Chapitre suivant</small><b>${nx.k}</b></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>`;
     $("#mchap-next").onclick = () => { const { g } = parseHash(); navGo(`#${g}/${nx.id}`, true); };
-    $("#mchap-title").textContent = RACE ? `${RACE.country_name} ${RACE.year}` : "";
+    $("#mchap-title").textContent = RACE ? `${typeof paysFr === "function" ? paysFr(RACE) : RACE.country_name} ${RACE.year}` : "";
+    $("#mchap-k").textContent = `${String(i + 1).padStart(2, "0")} · ${c.k}`;
     ov.scrollTop = 0;
   }
-  ov.hidden = false; document.body.classList.add("in-chap");
+  ov.hidden = false; document.body.classList.add("in-chap"); markNav(c.sec);
   requestAnimationFrame(() => ov.classList.add("on"));
   setTimeout(() => {
     Object.values(charts).forEach((ch) => { if (ch.el && body.contains(ch.el)) { if (ch.inst) ch.inst.resize(); else if (ch.el.offsetParent) draw(ch.el.id); } });
@@ -114,9 +154,11 @@ function openChapter(id) {
 function putBack() { if (NAV.chap && NAV.slot) { const c = CHAPTERS.find((x) => x.id === NAV.chap), sec = $("#" + c.sec); NAV.slot.replaceWith(sec); } NAV.chap = null; NAV.slot = null; }
 function closeChapter() {
   const ov = $("#mchap"); if (!ov || ov.hidden) return;
-  ov.classList.remove("on"); document.body.classList.remove("in-chap");
-  setTimeout(() => { if (!ov.classList.contains("on")) { ov.hidden = true; putBack(); stopReplay(); } }, 360);
+  ov.classList.remove("on"); document.body.classList.remove("in-chap"); markNav("gp-section");
+  setTimeout(() => { if (!ov.classList.contains("on")) { ov.hidden = true; putBack(); stopReplay(); placeIndicators(); } }, 360);
 }
+// Revenir au sommaire : on dépile l'historique si le chapitre a été ouvert depuis le site, sinon on remplace l'adresse
+function chapBack() { const { g } = parseHash(); if (NAV.pushed) { NAV.pushed = false; history.back(); } else navGo("#" + g, true); }
 
 /* --- Routeur --- */
 let navLoading = null;
@@ -134,11 +176,24 @@ async function navRoute() {
     $("#gp").value = r.session_key;
     if (!(navLoading && navLoading.sk === r.session_key)) { navLoading = { sk: r.session_key, p: loadGP(r.session_key) }; navLoading.p.finally(() => { if (navLoading?.sk === r.session_key) navLoading = null; }); }
   }
-  if (c && mobileNav()) openChapter(c);
-  else { closeChapter(); if (c) { const ch = CHAPTERS.find((x) => x.id === c); ch && $("#" + ch.sec)?.scrollIntoView({ behavior: "smooth" }); } }
+  if (c) openChapter(c); else closeChapter();
 }
 addEventListener("popstate", navRoute);
-$("#mchap-back").addEventListener("click", () => { const { g } = parseHash(); if (history.length > 1) history.back(); else navGo("#" + g); });
+$("#mchap-back").addEventListener("click", chapBack);
+$("#mchap-x").addEventListener("click", chapBack);
+$("#mchap").addEventListener("click", (e) => { if (e.target === e.currentTarget) chapBack(); }); // clic à côté du panneau (ordinateur)
+addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.chap && !document.querySelector(".msheet.on, .overlay:not([hidden])")) chapBack(); });
+// Liens internes (menu du haut, raccourcis) : un chapitre s'ouvre, le reste défile jusqu'à la bonne partie
+document.addEventListener("click", (e) => {
+  const a = e.target.closest('a[href^="#"]'); if (!a || a.closest("#home")) return;
+  const id = a.getAttribute("href").slice(1), ch = CHAPTERS.find((x) => x.sec === id), el = document.getElementById(id);
+  if (!ch && !el) return;
+  e.preventDefault(); if (typeof closeSheets === "function") closeSheets();
+  const { g } = parseHash();
+  if (ch) { navGo(`#${g}/${ch.id}`, !!NAV.chap); return; }
+  if (NAV.chap) navGo("#" + g, true);
+  setTimeout(() => (id === "gp-section" ? scrollTo({ top: 0, behavior: "smooth" }) : el.scrollIntoView({ behavior: "smooth" })), NAV.chap ? 380 : 0);
+}, true);
 $$(".brand").forEach((b) => { b.style.cursor = "pointer"; b.addEventListener("click", () => navGo("")); });
 // Glisser depuis le bord gauche pour revenir (comme une app)
 (() => {
