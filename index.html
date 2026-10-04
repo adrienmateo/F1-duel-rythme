@@ -679,6 +679,90 @@ nav.sections a.on { background: transparent; }
 /* Passage Essentiel / Expert */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }
 
+
+/* ---------- Accueil : « Choisis ton Grand Prix » ---------- */
+.home { position: fixed; inset: 0; z-index: 70; overflow-y: auto; background: var(--page); opacity: 0; transform: scale(1.01); transition: opacity .3s, transform .3s; }
+.home.on { opacity: 1; transform: none; }
+body.at-home { overflow: hidden; }
+.home-in { max-width: 980px; margin: 0 auto; padding: 18px 16px 48px; display: grid; gap: 14px; }
+.home-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+.home-years { display: flex; gap: 6px; }
+.home-years button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font: 600 13px var(--body); color: var(--ink-2); cursor: pointer; }
+.home-years button[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
+.home-h { margin: 0 0 6px; }
+.home-side { display: grid; gap: 10px; }
+.home .home-brand { font-size: 15px; gap: 10px; }
+.home-feat .hf { width: 100%; display: grid; gap: 10px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 16px; box-shadow: var(--sh-md); cursor: pointer; color: inherit; font: inherit; transition: transform .15s, box-shadow .2s; }
+.home-feat .hf:hover { transform: translateY(-2px); box-shadow: var(--sh-lg); }
+.hf-top { display: flex; justify-content: space-between; align-items: baseline; }
+.hf-top .mono { font-size: 12px; color: var(--muted); }
+.hf-map { width: 100%; height: 170px; }
+.hf-map path, .hr-map path { fill: none; stroke: var(--ink-2); stroke-linejoin: round; opacity: .75; }
+.hf-map path { stroke-width: 5; }
+.hr-map path { stroke-width: 3.2; }
+.hf-name { font: 800 26px/1 var(--display); font-stretch: 125%; text-transform: uppercase; }
+.hf-win { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-2); }
+.hf-win i { width: 4px; height: 18px; border-radius: 2px; }
+.hf-win b { color: var(--ink); }
+.hf-cta { display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--accent); color: #fff; border-radius: 14px; padding: 13px; font-weight: 700; font-size: 15px; }
+.home-t { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.home-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.hr { display: grid; grid-template-columns: 36px 1fr 64px; gap: 10px; align-items: center; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; cursor: pointer; color: inherit; font: inherit; transition: transform .12s, border-color .2s; }
+.hr:hover { border-color: var(--grey-line); } .hr:active { transform: scale(.98); }
+.hr-r { font: 700 12px var(--mono); color: var(--muted); }
+.hr-t b { display: block; font-size: 15px; } .hr-t small { color: var(--ink-2); font-size: 12.5px; }
+.hr-map { width: 64px; height: 40px; }
+.home-empty { color: var(--muted); padding: 30px 0; text-align: center; }
+@media (min-width: 900px) {
+  .home-in { grid-template-columns: 1.1fr 1fr; column-gap: 28px; align-items: start; padding-top: 28px; }
+  .home-top, .home-in > .eyebrow, .home-h { grid-column: 1 / -1; }
+  .home-side { display: grid; gap: 10px; align-content: start; }
+  .home-t { margin: 0; }
+  .home-list { grid-template-columns: 1fr; max-height: 62vh; overflow: auto; padding-right: 4px; }
+}
+
+/* ---------- Mobile : sommaire en cartes, chapitres plein écran ---------- */
+.mchaps, .mchap { display: none; }
+@media (max-width: 640px) {
+  body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .mbar { display: none !important; }
+  main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
+  .mchaps { display: grid; gap: 10px; }
+  .mc-title { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 4px 2px 0; }
+  .mc { display: grid; grid-template-columns: 1fr auto 18px; gap: 12px; align-items: center; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 13px 14px; box-shadow: var(--sh-md); color: inherit; font: inherit; cursor: pointer; transition: transform .12s; }
+  .mc:active { transform: scale(.98); }
+  .mc-k { font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  .mc b { display: block; font-size: 15.5px; margin: 1px 0 3px; line-height: 1.25; }
+  .mc small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+  .mc-sw { display: flex; flex-direction: column; gap: 4px; }
+  .mc-sw i { display: block; width: 26px; height: 6px; border-radius: 3px; }
+  .mc-chev { width: 18px; height: 18px; color: var(--muted); }
+  .mchap { display: block; position: fixed; inset: 0; z-index: 60; overflow-y: auto; overflow-x: hidden; background: var(--page); transform: translateX(100%); transition: transform .36s cubic-bezier(.2,.8,.2,1); box-shadow: -14px 0 32px rgba(0,0,0,.14); padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .mchap[hidden] { display: none; }
+  .mchap.on { transform: none; }
+  body.in-chap { overflow: hidden; }
+  .mchap-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: var(--header); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .mchap-back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--ink-2); font: 600 15px var(--body); padding: 6px 8px 6px 0; cursor: pointer; }
+  .mchap-back svg { width: 22px; height: 22px; }
+  .mchap-body { padding: 14px 12px 4px; }
+  .mchap-body > section { margin: 0; }
+  .mchap-next { display: flex; justify-content: space-between; align-items: center; width: calc(100% - 24px); margin: 10px 12px 0; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 13px 16px; color: inherit; font: inherit; cursor: pointer; }
+  .mchap-next small { display: block; color: var(--muted); font-size: 12px; } .mchap-next b { font-size: 15.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .home, .mchap { transition: none; } }
+/* Duel libre dans « Où se joue l'écart » */
+.chip-other { border-style: dashed !important; }
+.circ-other { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 2px; animation: coIn .25s ease-out; }
+.circ-other[hidden] { display: none; }
+.circ-other select { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 10px; padding: 8px 10px; font: 700 14px var(--mono); max-width: 46%; }
+@keyframes coIn { from { opacity: 0; transform: translateY(-4px); } }
+.home-h { font-size: clamp(28px, 8.5vw, 50px); overflow-wrap: anywhere; }
+.home-in > * { min-width: 0; }
+.home-top { flex-wrap: wrap; }
+.home-years { overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.home-years::-webkit-scrollbar { display: none; }
+@media (max-width: 640px) { .home-top .home-brand { font-size: 0; gap: 0; } .home-top .home-brand .logo { width: 32px; height: 32px; } }
+
 </style>
 </head>
 <body>
@@ -708,6 +792,16 @@ nav.sections a.on { background: transparent; }
   <div id="progress" aria-hidden="true"></div>
 </header>
 
+<section class="home" id="home" aria-label="Choisir un Grand Prix" hidden>
+  <div class="home-in">
+    <div class="home-top"><div class="brand home-brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M4 17h7M9 12h10M6 7h12"/></svg></span>Duel de rythme</div><div class="home-years" id="home-years" role="group" aria-label="Saison"></div></div>
+    <div class="eyebrow">Saison <span id="home-y"></span></div>
+    <h1 class="home-h">Choisis ton Grand Prix</h1>
+    <div class="home-feat" id="home-feat"><p class="home-empty">Chargement des Grands Prix…</p></div>
+    <div class="home-side"><div class="home-t">Les autres Grands Prix</div>
+    <div class="home-list" id="home-list"></div></div>
+  </div>
+</section>
 <main class="loading">
   <div class="status" id="status" role="status" aria-live="polite" hidden></div>
 
@@ -734,6 +828,8 @@ nav.sections a.on { background: transparent; }
       <div class="pitlist" id="pitlist"></div>
     </div>
   </section>
+
+  <div class="mchaps" id="mchaps"></div>
 
   <!-- 2. La course -->
   <section class="sec card" id="course">
@@ -898,6 +994,11 @@ nav.sections a.on { background: transparent; }
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="overlay" id="overlay" hidden><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title" id="dialog"></div></div>
 <svg id="hc-fx" aria-hidden="true"><g id="hc-marks"></g><g id="hc-puffs"></g><g id="hc-car"></g></svg>
+<div class="mchap" id="mchap" hidden role="dialog" aria-label="Chapitre">
+  <div class="mchap-bar"><button class="mchap-back" id="mchap-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg><span id="mchap-title"></span></button></div>
+  <div class="mchap-body" id="mchap-body"></div>
+  <button class="mchap-next" id="mchap-next"></button>
+</div>
 
 <script>
 /* ======================= Configuration ======================= */
@@ -1436,6 +1537,7 @@ function applyFollow(announce) {
 }
 
 /* --- La course --- */
+const CAR_PATH = "path://M0,1 L5,1 L5,7 L9,7 L9,2 L15,2 L15,7 L22,7.5 L28,8.5 L30,4 L34,4 L34,8.6 L40,10 L34,11.4 L34,16 L30,16 L28,11.5 L22,12.5 L15,13 L15,18 L9,18 L9,13 L5,13 L5,19 L0,19 Z";
 function buildCourse(T) {
   const o = base(T);
   const laps = Array.from({ length: LAPS }, (_, i) => i + 1);
@@ -1449,10 +1551,17 @@ function buildCourse(T) {
       silent: !(showField || !pins.length) && pin < 0,
       lineStyle: { width: pin >= 0 ? (pins.length > 6 ? 2.2 : 3) : 1.2, color: pin >= 0 ? d.color : T.grey, opacity: pin >= 0 ? 1 : showField || !pins.length ? 0.7 : 0, type: pin >= 0 ? dashIf(d, pins) : "solid" },
       emphasis: { focus: "series", lineStyle: { width: 3.5, color: pin >= 0 ? d.color : T.accent } },
-      endLabel: { show: pin >= 0, formatter: "{a}", color: T.ink, fontFamily: "JetBrains Mono, monospace", fontWeight: 700, fontSize: 12 },
+      endLabel: { show: pin >= 0, formatter: "{a}", color: T.ink, fontFamily: "JetBrains Mono, monospace", fontWeight: 700, fontSize: 12, distance: 16 },
+      // Petite F1 aux couleurs de l'écurie en tête de ligne
+
       ...(n === 0 ? { markArea: neutralArea(T, replayLap) } : {}),
     };
   });
+  // Petite F1 aux couleurs de l'écurie en tête de ligne de chaque pilote suivi
+  const head = Math.min(replayLap, LAPS) - 1;
+  series.push({ type: "scatter", silent: true, z: 8, animation: false, tooltip: { show: false },
+    data: pins.map((c) => byCode[c]).filter((d) => d && (courseMode === "pos" ? d.pos : d.gapLead)[head] != null)
+      .map((d) => { const v = (courseMode === "pos" ? d.pos : d.gapLead)[head]; return { value: [head, courseMode === "pos" ? v : +v.toFixed(3)], symbol: CAR_PATH, symbolSize: [32, 15], itemStyle: { color: d.color, opacity: 1, borderColor: T.surface, borderWidth: 1 } }; }) });
   const pd = pins.map((c) => byCode[c]).filter(Boolean);
   const maxPos = showField || !pd.length ? drivers.length : Math.min(drivers.length, Math.max(1, ...pd.flatMap((d) => d.pos.filter((v) => v != null))) + 1);
   const gaps = pd.flatMap((d) => d.gapLead.filter((v) => v != null));
@@ -1783,8 +1892,28 @@ function setupCircuit() {
   if (!circ.duels.length) { pick.innerHTML = ""; $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = ""; msgCircuit("Pas de temps de secteur disponibles pour cette course."); return; }
   const mixed = (x) => { const a = bestLapOf(x.fast).s, b = bestLapOf(x.slow).s; const w = [0, 1, 2].map((i) => a[i] <= b[i]); return w.some(Boolean) && w.some((v) => !v); };
   const first = Math.max(0, circ.duels.findIndex(mixed));
-  pick.innerHTML = circ.duels.map((x, i) => `<button class="chip" data-i="${i}" aria-pressed="${i === first}"><span class="sw" style="background:${x.color};border-color:${x.color}"></span>${esc(x.team)}</button>`).join("");
-  $$("#circ-pick .chip").forEach((b) => b.addEventListener("click", () => { $$("#circ-pick .chip").forEach((x) => x.setAttribute("aria-pressed", x === b)); circ.duel = circ.duels[+b.dataset.i]; playCircuit(); }));
+  pick.innerHTML = circ.duels.map((x, i) => `<button class="chip" data-i="${i}" aria-pressed="${i === first}"><span class="sw" style="background:${x.color};border-color:${x.color}"></span>${esc(x.team)}</button>`).join("") +
+    `<button class="chip chip-other" data-i="other" aria-pressed="false">＋ Autre duel</button>`;
+  // Duel libre : deux pilotes quelconques, choisis sur une seule ligne
+  let row = $("#circ-other");
+  if (!row) { row = document.createElement("div"); row.className = "circ-other"; row.id = "circ-other"; row.innerHTML = `<label class="visually-hidden" for="co-a">Pilote A</label><select id="co-a"></select><span class="fine">contre</span><label class="visually-hidden" for="co-b">Pilote B</label><select id="co-b"></select>`; $(".circ-top").after(row); }
+  row.hidden = true;
+  const pool = finishers.concat(dnfs).filter((d) => bestLapOf(d));
+  const opts = pool.map((d) => `<option value="${d.code}">${d.code} · ${esc(d.last)}</option>`).join("");
+  $("#co-a").innerHTML = opts; $("#co-b").innerHTML = opts;
+  if (pool[1]) { $("#co-a").value = pool[0].code; $("#co-b").value = pool[1].code; }
+  circ.custom = {};
+  const customDuel = () => {
+    const a = byCode[$("#co-a").value], b = byCode[$("#co-b").value]; if (!a || !b || a === b) return null;
+    const key = a.code + "-" + b.code;
+    return (circ.custom[key] ||= { team: a.team === b.team ? a.team : `${a.team} / ${b.team}`, color: a.color, valid: true, fast: a, slow: b });
+  };
+  ["co-a", "co-b"].forEach((id) => ($("#" + id).onchange = () => { const d = customDuel(); if (d) { circ.duel = d; playCircuit(); } }));
+  $$("#circ-pick .chip").forEach((b) => b.addEventListener("click", () => {
+    $$("#circ-pick .chip").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    const other = b.dataset.i === "other"; row.hidden = !other;
+    const d = other ? customDuel() : circ.duels[+b.dataset.i]; if (d) { circ.duel = d; playCircuit(); }
+  }));
   circ.duel = circ.duels[first];
   $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = "";
 }
@@ -2121,6 +2250,8 @@ async function loadRaces(year) {
   }
   const now = new Date();
   RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  const am = new Map(arch.map((x) => [x.session_key, x]));
+  RACES.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
   if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
   $("#gp").innerHTML = RACES.map((r) => `<option value="${r.session_key}">${esc(r.country_name)} ${r.year}</option>`).join("");
   $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
@@ -2159,25 +2290,28 @@ async function fetchRace(sk) {
   return pack;
 }
 
-let first = true;
+let first = true, loadSeq = 0;
 async function loadGP(sk) {
   const session = RACES.find((r) => r.session_key === +sk);
   if (!session) return;
+  const myLoad = ++loadSeq;
   $("main").classList.add("loading"); stopReplay();
   const hTok = hcBegin();
   $("#round").textContent = "R" + String(RACES.indexOf(session) + 1).padStart(2, "0");
   try {
     const pack = await fetchRace(sk);
+    if (myLoad !== loadSeq) return; // un autre GP a été demandé entre-temps
     if (!pack.data.laps.length) throw new Error("OpenF1 n'a pas encore les temps au tour de cette course. Réessaie un peu plus tard.");
     buildModel(session, pack);
     setStatus(offline ? "OpenF1 est momentanément réservé aux abonnés (séance de F1 en direct) : seuls les GP déjà consultés sur cet appareil sont disponibles." : "");
     renderAll();
+    if (NAV.home) renderHome(); // l'accueil affiche le vainqueur dès que la course est chargée
     hcRun(hTok);
-    if (!first) toast(`${esc(session.country_name)} ${session.year} chargé`);
+    if (!first && !NAV.home) toast(`${esc(session.country_name)} ${session.year} chargé`);
     first = false;
   } catch (e) {
     setStatus(e.message, "error"); hcFail();
-  } finally { $("main").classList.remove("loading"); fitTower(); }
+  } finally { if (myLoad === loadSeq) { $("main").classList.remove("loading"); fitTower(); } }
 }
 function renderAll() {
   follow = []; $("#follow").classList.remove("on"); $("#follow").hidden = true; showField = false;
@@ -2227,9 +2361,9 @@ $("#follow-x").innerHTML = IC.x;
 $("#follow-x").addEventListener("click", () => { follow = []; applyFollow(); });
 $("#cplay").innerHTML = IC.play + "Rejouer le tour";
 $("#cplay").addEventListener("click", playCircuit);
-$("#gp").addEventListener("change", () => loadGP($("#gp").value));
+$("#gp").addEventListener("change", () => navGP($("#gp").value));
 $("#year").addEventListener("change", async () => {
-  try { $("main").classList.add("loading"); if (await loadRaces(+$("#year").value)) await loadGP($("#gp").value); else setStatus(`Aucune course terminée pour ${$("#year").value}.`, "error"); }
+  try { $("main").classList.add("loading"); if (await loadRaces(+$("#year").value)) navGP(RACES.at(-1).session_key); else setStatus(`Aucune course terminée pour ${$("#year").value}.`, "error"); }
   catch (e) { setStatus(e.message, "error"); } finally { $("main").classList.remove("loading"); }
 });
 if (!reduce && "IntersectionObserver" in window) {
@@ -2245,7 +2379,10 @@ if (!reduce && "IntersectionObserver" in window) {
     let ok = await loadRaces(now);
     if (!ok && now > 2023) { $("#year").value = now - 1; ok = await loadRaces(now - 1); }
     if (!ok) { setStatus("Aucune course terminée trouvée.", "error"); return; }
-    await loadGP($("#gp").value);
+    setStatus("");
+    // Lien direct vers un GP : on y va. Sinon l'accueil, et le dernier GP se charge déjà en coulisse.
+    if (parseHash().g) await navRoute();
+    else { showHome(true); $("#gp").value = RACES.at(-1).session_key; await loadGP(RACES.at(-1).session_key); }
   } catch (e) { setStatus(e.message, "error"); $("main").classList.remove("loading"); }
 })();
 
@@ -2437,7 +2574,7 @@ function mobileRender() {
   if (!MOB()) return;
   if (!mobileReady) setupMobileOnce();
   buildDuelSwipe();
-  renderGaps(); renderKeep(); renderExQuick(); syncExPick(); syncPickBtn();
+  renderGaps(); renderKeep(); renderExQuick(); syncExPick(); syncPickBtn(); renderChapterCards();
   EXM.forEach(([m]) => { if (charts["ch-ex-" + m]?.inst) draw("ch-ex-" + m); });
   swipes.concat(duelSwipe ? [duelSwipe] : []).forEach((w) => w._reset());
   setTimeout(() => $$(".mswipe").forEach((w) => w._refit()), 300);
@@ -2616,10 +2753,161 @@ async function hcRun(tok) {
   try { raw = await hcTrace(w); } catch { raw = null; }
   if (tok !== HC.tok) return;
   if (!raw) return hcFail();
+  if (NAV.home) renderHome(); // le tracé apparaît aussi sur l'accueil
+  await homeClosed(); if (tok !== HC.tok) return;
   await hcFinish(tok); if (tok !== HC.tok) return;
   hcBuild(raw);
   setTimeout(() => { if (tok === HC.tok) hcArrive(); }, reduce ? 0 : 650);
 }
+
+/* ======================= Parcours : accueil « Choisis ton Grand Prix », adresses, chapitres plein écran sur mobile ======================= */
+// Adresses : #<lieu>-<année> pour un GP, #<lieu>-<année>/<chapitre> pour un chapitre (mobile).
+// Le bouton retour du navigateur ou du téléphone suit toujours le parcours.
+const NAV = { home: false, homeWait: [], chap: null, slot: null };
+const CHAPTERS = [
+  { id: "course", sec: "course", k: "La course" },
+  { id: "rythme", sec: "rythme", k: "Le rythme" },
+  { id: "duels", sec: "duels", k: "Les duels" },
+  { id: "pneus", sec: "strategies", k: "Les pneus" },
+  { id: "explorer", sec: "explorer", k: "Explorer" },
+];
+const slugify = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const slugOf = (r) => `${slugify(r.location || r.circuit_short_name || r.country_name)}-${r.year}`;
+const parseHash = () => { const [g, c] = decodeURIComponent(location.hash.slice(1)).split("/"); return { g: g || "", c: c || "" }; };
+function navGo(hash, replace) { if (location.hash !== hash) history[replace ? "replaceState" : "pushState"](null, "", hash || location.pathname); navRoute(); }
+const navGP = (sk, replace) => { const r = RACES.find((x) => x.session_key === +sk); if (r) navGo("#" + slugOf(r), replace); };
+// La voiture du haut de page attend que l'accueil soit refermé
+const homeClosed = () => (NAV.home ? new Promise((r) => NAV.homeWait.push(r)) : Promise.resolve());
+
+/* --- Accueil --- */
+const PAYS = { Australia: "Australie", China: "Chine", Japan: "Japon", Bahrain: "Bahreïn", "Saudi Arabia": "Arabie saoudite", "United States": "États-Unis", Italy: "Italie", Monaco: "Monaco", Spain: "Espagne", Canada: "Canada", Austria: "Autriche", "United Kingdom": "Grande-Bretagne", Hungary: "Hongrie", Belgium: "Belgique", Netherlands: "Pays-Bas", Azerbaijan: "Azerbaïdjan", Singapore: "Singapour", Mexico: "Mexique", Brazil: "Brésil", "United Arab Emirates": "Abu Dhabi", Qatar: "Qatar" };
+const paysFr = (r) => (r.country_name === "United States" && r.location && !/austin/i.test(r.location) ? r.location : PAYS[r.country_name] || r.country_name);
+const dateFr = (iso) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+function winnerOf(r) {
+  if (r.winner) return r.winner;
+  const p = store.get(r.session_key); if (!p) return null;
+  const w = p.results.find((x) => x.position === 1 && !x.dnf && !x.dns && !x.dsq), d = w && p.drivers.find((x) => x.driver_number === w.driver_number);
+  return d ? { code: d.name_acronym, name: d.last_name || d.name_acronym, color: "#" + (d.team_colour || "898781") } : null;
+}
+function outlineOf(r) {
+  if (r.outline) return r.outline;
+  try { return JSON.parse(localStorage.getItem(`f1duel:v4:trace:${r.session_key}`)); } catch { return null; }
+}
+function outlineSvg(pts, w, h, pad, cls) {
+  if (!pts || pts.length < 10) return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" aria-hidden="true"></svg>`;
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const sc = Math.min((w - 2 * pad) / (x1 - x0 || 1), (h - 2 * pad) / (y1 - y0 || 1)), ox = (w - (x1 - x0) * sc) / 2, oy = (h - (y1 - y0) * sc) / 2;
+  const d = "M" + pts.map(([x, y]) => `${(ox + (x - x0) * sc).toFixed(1)},${(h - (oy + (y - y0) * sc)).toFixed(1)}`).join("L") + "Z";
+  return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}"/></svg>`;
+}
+function renderHome() {
+  const el = $("#home"); if (!el) return;
+  $("#home-years").innerHTML = [...$("#year").options].map((o) => `<button data-y="${o.value}" aria-pressed="${o.value === $("#year").value}">${o.value}</button>`).join("");
+  $$("#home-years button").forEach((b) => b.addEventListener("click", async () => {
+    if (b.dataset.y === $("#year").value) return;
+    $("#year").value = b.dataset.y; $("#home-feat").innerHTML = `<p class="home-empty">Chargement des Grands Prix…</p>`; $("#home-list").innerHTML = "";
+    try { await loadRaces(+b.dataset.y); } catch (e) { $("#home-feat").innerHTML = `<p class="home-empty">${esc(e.message)}</p>`; return; }
+    renderHome();
+  }));
+  $("#home-y").textContent = $("#year").value;
+  if (!RACES.length) { $("#home-feat").innerHTML = `<p class="home-empty">Aucun Grand Prix disponible pour le moment.</p>`; $("#home-list").innerHTML = ""; return; }
+  const list = [...RACES].reverse(), f = list[0], fw = winnerOf(f);
+  const round = (r) => "R" + String(RACES.indexOf(r) + 1).padStart(2, "0");
+  $("#home-feat").innerHTML = `<button class="hf" data-sk="${f.session_key}">
+      <span class="hf-top"><span class="eyebrow">Dernier GP · ${round(f)}</span><span class="mono">${dateFr(f.date_start)}</span></span>
+      ${outlineSvg(outlineOf(f), 320, 150, 14, "hf-map")}
+      <span class="hf-name">${esc(paysFr(f))}</span>
+      ${fw ? `<span class="hf-win"><i style="background:${fw.color}"></i>Vainqueur : <b>${esc(fw.name)}</b></span>` : ""}
+      <span class="hf-cta">Voir le GP <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span>
+    </button>`;
+  $("#home-list").innerHTML = list.slice(1).map((r) => { const w = winnerOf(r); return `<button class="hr" data-sk="${r.session_key}">
+      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(paysFr(r))}</b><small>${dateFr(r.date_start)}${w ? " · " + esc(w.name) : ""}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`; }).join("");
+  $$("#home [data-sk]").forEach((b) => b.addEventListener("click", () => navGP(b.dataset.sk)));
+}
+function showHome(on) {
+  NAV.home = on; const el = $("#home");
+  document.body.classList.toggle("at-home", on);
+  if (on) { renderHome(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; }
+  else { el.classList.remove("on"); setTimeout(() => { if (!NAV.home) el.hidden = true; }, 320); NAV.homeWait.splice(0).forEach((r) => r()); }
+}
+
+/* --- Chapitres plein écran (mobile) --- */
+function mobileNav() { return MOB(); }
+function renderChapterCards() {
+  const box = $("#mchaps"); if (!box) return;
+  const first = (id) => ($("#" + id)?.textContent || "").replace(/\s+/g, " ").trim().split(/(?<=\.)\s/)[0] || "";
+  const duels = computeDuels().filter((d) => d.valid);
+  const sw = (cols) => `<span class="mc-sw">${cols.slice(0, 4).map((c) => `<i style="background:${c}"></i>`).join("")}</span>`;
+  const info = {
+    course: [first("read-course"), sw(finishers.slice(0, 3).map((d) => d.color))],
+    rythme: [first("read-rythme"), sw(paced.slice(0, 3).map((d) => d.color))],
+    duels: [first("read-duels"), sw(duels.slice(0, 3).map((d) => d.color))],
+    pneus: [first("read-strat"), `<span class="mc-sw">${["S", "M", "H"].map((c) => `<i style="background:${COMP[c].c}"></i>`).join("")}</span>`],
+    explorer: ["Compare jusqu'à 4 pilotes : temps au tour, écart en piste.", sw(finishers.slice(0, 2).map((d) => d.color))],
+  };
+  box.innerHTML = `<div class="mc-title">Comprendre la course</div>` + CHAPTERS.map((c) => {
+    const h2 = $(`#${c.sec} h2`)?.textContent || c.k, [txt, prev] = info[c.id];
+    return `<button class="mc" data-ch="${c.id}"><span class="mc-txt"><span class="mc-k">${c.k}</span><b>${esc(h2)}</b><small>${esc(txt)}</small></span>${prev}<svg class="mc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>`;
+  }).join("");
+  $$("#mchaps .mc").forEach((b) => b.addEventListener("click", () => { const { g } = parseHash(); navGo(`#${g}/${b.dataset.ch}`); }));
+}
+function openChapter(id) {
+  const c = CHAPTERS.find((x) => x.id === id); if (!c) return closeChapter();
+  const ov = $("#mchap"), body = $("#mchap-body");
+  if (NAV.chap !== id) {
+    putBack();
+    const sec = $("#" + c.sec); if (!sec) return;
+    NAV.slot = document.createComment("chapitre"); sec.before(NAV.slot); body.appendChild(sec); NAV.chap = id;
+    sec.classList.add("in");
+    const i = CHAPTERS.indexOf(c), nx = CHAPTERS[(i + 1) % CHAPTERS.length];
+    $("#mchap-next").innerHTML = `<span><small>Chapitre suivant</small><b>${nx.k}</b></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>`;
+    $("#mchap-next").onclick = () => { const { g } = parseHash(); navGo(`#${g}/${nx.id}`, true); };
+    $("#mchap-title").textContent = RACE ? `${RACE.country_name} ${RACE.year}` : "";
+    ov.scrollTop = 0;
+  }
+  ov.hidden = false; document.body.classList.add("in-chap");
+  requestAnimationFrame(() => ov.classList.add("on"));
+  setTimeout(() => {
+    Object.values(charts).forEach((ch) => { if (ch.el && body.contains(ch.el)) { if (ch.inst) ch.inst.resize(); else if (ch.el.offsetParent) draw(ch.el.id); } });
+    $$(".mswipe", body).forEach((w) => w._refit && w._refit()); placeIndicators(); placeCursor();
+  }, 380);
+}
+function putBack() { if (NAV.chap && NAV.slot) { const c = CHAPTERS.find((x) => x.id === NAV.chap), sec = $("#" + c.sec); NAV.slot.replaceWith(sec); } NAV.chap = null; NAV.slot = null; }
+function closeChapter() {
+  const ov = $("#mchap"); if (!ov || ov.hidden) return;
+  ov.classList.remove("on"); document.body.classList.remove("in-chap");
+  setTimeout(() => { if (!ov.classList.contains("on")) { ov.hidden = true; putBack(); stopReplay(); } }, 360);
+}
+
+/* --- Routeur --- */
+let navLoading = null;
+async function navRoute() {
+  const { g, c } = parseHash();
+  if (!g) { closeChapter(); showHome(true); return; }
+  let r = RACES.find((x) => slugOf(x) === g);
+  if (!r) { // GP d'une autre saison : on charge sa liste
+    const y = +(g.match(/-(\d{4})$/) || [])[1];
+    if (y && y !== +$("#year").value && [...$("#year").options].some((o) => +o.value === y)) { $("#year").value = y; try { await loadRaces(y); } catch {} r = RACES.find((x) => slugOf(x) === g); }
+  }
+  if (!r) { navGo("", true); return; }
+  showHome(false);
+  if ($("#gp").value !== String(r.session_key) || !RACE || RACE.session_key !== r.session_key) {
+    $("#gp").value = r.session_key;
+    if (!(navLoading && navLoading.sk === r.session_key)) { navLoading = { sk: r.session_key, p: loadGP(r.session_key) }; navLoading.p.finally(() => { if (navLoading?.sk === r.session_key) navLoading = null; }); }
+  }
+  if (c && mobileNav()) openChapter(c);
+  else { closeChapter(); if (c) { const ch = CHAPTERS.find((x) => x.id === c); ch && $("#" + ch.sec)?.scrollIntoView({ behavior: "smooth" }); } }
+}
+addEventListener("popstate", navRoute);
+$("#mchap-back").addEventListener("click", () => { const { g } = parseHash(); if (history.length > 1) history.back(); else navGo("#" + g); });
+$$(".brand").forEach((b) => { b.style.cursor = "pointer"; b.addEventListener("click", () => navGo("")); });
+// Glisser depuis le bord gauche pour revenir (comme une app)
+(() => {
+  const ov = $("#mchap"); let sx = null, sy = 0;
+  ov.addEventListener("touchstart", (e) => { const t = e.touches[0]; if (t.clientX < 30) { sx = t.clientX; sy = t.clientY; } }, { passive: true });
+  ov.addEventListener("touchmove", (e) => { if (sx == null) return; const t = e.touches[0], dx = t.clientX - sx; if (dx > 0 && Math.abs(t.clientY - sy) < 70) ov.style.transform = `translateX(${dx}px)`; }, { passive: true });
+  ov.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; ov.style.transform = ""; sx = null; if (dx > 90) $("#mchap-back").click(); });
+})();
 </script>
 </body>
 </html>

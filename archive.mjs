@@ -68,6 +68,19 @@ async function archiveRace(s) {
   return true;
 }
 
+// Résumé pour l'écran d'accueil du site : vainqueur et petit tracé (environ 90 points)
+function summary(sk) {
+  try {
+    const { pack, trace } = JSON.parse(fs.readFileSync(path.join(DATA, `${sk}.json`), "utf8"));
+    const w = pack.results.find((r) => r.position === 1 && !r.dnf && !r.dns && !r.dsq);
+    const d = w && pack.drivers.find((x) => x.driver_number === w.driver_number);
+    const out = {};
+    if (d) out.winner = { code: d.name_acronym, name: String(d.last_name || d.full_name || d.name_acronym).toLowerCase().replace(/(^|[\s-])\p{L}/gu, (m) => m.toUpperCase()), color: "#" + (d.team_colour || "898781") };
+    if (trace && trace.length > 20) { const step = Math.max(1, Math.floor(trace.length / 90)); out.outline = trace.filter((_, i) => i % step === 0); }
+    return out;
+  } catch { return {}; }
+}
+
 /* ---------- Toutes les courses terminées de l'année ---------- */
 fs.mkdirSync(DATA, { recursive: true });
 let added = 0;
@@ -87,7 +100,7 @@ try {
     }
     // Liste des courses lue par le site (seulement celles qui sont archivées)
     const keep = ["session_key", "meeting_key", "session_name", "session_type", "date_start", "date_end", "country_name", "location", "circuit_short_name", "year", "is_cancelled"];
-    fs.writeFileSync(path.join(DATA, `races-${year}.json`), JSON.stringify(archived.map((s) => Object.fromEntries(keep.map((k) => [k, s[k]])))));
+    fs.writeFileSync(path.join(DATA, `races-${year}.json`), JSON.stringify(archived.map((s) => ({ ...Object.fromEntries(keep.map((k) => [k, s[k]])), ...summary(s.session_key) }))));
   }
 } catch (e) {
   if (e instanceof Closed) { console.log(e.message); process.exit(0); }
