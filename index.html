@@ -919,7 +919,7 @@ async function api(endpoint, params) {
     lastCall = Date.now();
     let res;
     try { res = await fetch(url); }
-    catch { throw new Error("Impossible de joindre OpenF1. Vérifie ta connexion internet."); }
+    catch { throw new Error(navigator.onLine === false ? "Pas de connexion internet : impossible de joindre OpenF1." : "OpenF1 ne répond pas. Pendant une séance de F1 en direct (essais, qualifs ou course), OpenF1 réserve son accès aux abonnés : les GP s'afficheront de nouveau à la fin de la séance."); }
     if (res.ok) { const data = await res.json(); memo.set(url, data); return data; }
     if (res.status === 429) { setStatus(`Limite d'appels OpenF1 atteinte, nouvelle tentative dans ${5 * attempt} s…`, "load"); await sleep(5000 * attempt); continue; }
     if (res.status === 404) return [];
@@ -2093,13 +2093,18 @@ function setStatus(msg, kind) {
   el.hidden = false; el.classList.toggle("error", kind === "error");
   el.innerHTML = (kind === "load" ? '<span class="spin" aria-hidden="true"></span>' : "") + `<span>${esc(msg)}</span>`;
 }
-let RACES = [];
+let RACES = [], offline = null;
 async function loadRaces(year) {
   $("#gp").disabled = true; $("#gp").innerHTML = "<option>Chargement…</option>";
-  const sessions = await api("sessions", { year, session_type: "Race" });
+  // La liste des courses est gardée dans le navigateur : pendant une séance en direct, OpenF1 coupe l'accès gratuit,
+  // et les GP déjà consultés restent ainsi disponibles
+  const listKey = `f1duel:v4:races:${year}`;
+  let sessions;
+  try { sessions = await api("sessions", { year, session_type: "Race" }); try { localStorage.setItem(listKey, JSON.stringify(sessions)); } catch {} }
+  catch (e) { const saved = (() => { try { return JSON.parse(localStorage.getItem(listKey)); } catch { return null; } })(); if (!saved) throw e; sessions = saved; offline = e.message; }
   const now = new Date();
-  RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
-  if (!RACES.length) { $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
+  RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
   $("#gp").innerHTML = RACES.map((r) => `<option value="${r.session_key}">${esc(r.country_name)} ${r.year}</option>`).join("");
   $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
   return true;
@@ -2139,7 +2144,7 @@ async function loadGP(sk) {
     const pack = await fetchRace(sk);
     if (!pack.data.laps.length) throw new Error("OpenF1 n'a pas encore les temps au tour de cette course. Réessaie un peu plus tard.");
     buildModel(session, pack);
-    setStatus("");
+    setStatus(offline ? "OpenF1 est momentanément réservé aux abonnés (séance de F1 en direct) : seuls les GP déjà consultés sur cet appareil sont disponibles." : "");
     renderAll();
     hcRun(hTok);
     if (!first) toast(`${esc(session.country_name)} ${session.year} chargé`);
