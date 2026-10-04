@@ -187,7 +187,7 @@ function mobileRender() {
   if (!MOB()) return;
   if (!mobileReady) setupMobileOnce();
   buildDuelSwipe();
-  renderGaps(); renderKeep(); renderExQuick(); syncExPick(); syncPickBtn();
+  renderGaps(); renderKeep(); renderExQuick(); syncExPick(); syncPickBtn(); renderChapterCards();
   EXM.forEach(([m]) => { if (charts["ch-ex-" + m]?.inst) draw("ch-ex-" + m); });
   swipes.concat(duelSwipe ? [duelSwipe] : []).forEach((w) => w._reset());
   setTimeout(() => $$(".mswipe").forEach((w) => w._refit()), 300);

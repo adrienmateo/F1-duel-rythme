@@ -172,6 +172,8 @@ async function hcRun(tok) {
   try { raw = await hcTrace(w); } catch { raw = null; }
   if (tok !== HC.tok) return;
   if (!raw) return hcFail();
+  if (NAV.home) renderHome(); // le tracé apparaît aussi sur l'accueil
+  await homeClosed(); if (tok !== HC.tok) return;
   await hcFinish(tok); if (tok !== HC.tok) return;
   hcBuild(raw);
   setTimeout(() => { if (tok === HC.tok) hcArrive(); }, reduce ? 0 : 650);

@@ -534,6 +534,7 @@ function applyFollow(announce) {
 }
 
 /* --- La course --- */
+const CAR_PATH = "path://M0,1 L5,1 L5,7 L9,7 L9,2 L15,2 L15,7 L22,7.5 L28,8.5 L30,4 L34,4 L34,8.6 L40,10 L34,11.4 L34,16 L30,16 L28,11.5 L22,12.5 L15,13 L15,18 L9,18 L9,13 L5,13 L5,19 L0,19 Z";
 function buildCourse(T) {
   const o = base(T);
   const laps = Array.from({ length: LAPS }, (_, i) => i + 1);
@@ -547,10 +548,17 @@ function buildCourse(T) {
       silent: !(showField || !pins.length) && pin < 0,
       lineStyle: { width: pin >= 0 ? (pins.length > 6 ? 2.2 : 3) : 1.2, color: pin >= 0 ? d.color : T.grey, opacity: pin >= 0 ? 1 : showField || !pins.length ? 0.7 : 0, type: pin >= 0 ? dashIf(d, pins) : "solid" },
       emphasis: { focus: "series", lineStyle: { width: 3.5, color: pin >= 0 ? d.color : T.accent } },
-      endLabel: { show: pin >= 0, formatter: "{a}", color: T.ink, fontFamily: "JetBrains Mono, monospace", fontWeight: 700, fontSize: 12 },
+      endLabel: { show: pin >= 0, formatter: "{a}", color: T.ink, fontFamily: "JetBrains Mono, monospace", fontWeight: 700, fontSize: 12, distance: 16 },
+      // Petite F1 aux couleurs de l'écurie en tête de ligne
+
       ...(n === 0 ? { markArea: neutralArea(T, replayLap) } : {}),
     };
   });
+  // Petite F1 aux couleurs de l'écurie en tête de ligne de chaque pilote suivi
+  const head = Math.min(replayLap, LAPS) - 1;
+  series.push({ type: "scatter", silent: true, z: 8, animation: false, tooltip: { show: false },
+    data: pins.map((c) => byCode[c]).filter((d) => d && (courseMode === "pos" ? d.pos : d.gapLead)[head] != null)
+      .map((d) => { const v = (courseMode === "pos" ? d.pos : d.gapLead)[head]; return { value: [head, courseMode === "pos" ? v : +v.toFixed(3)], symbol: CAR_PATH, symbolSize: [32, 15], itemStyle: { color: d.color, opacity: 1, borderColor: T.surface, borderWidth: 1 } }; }) });
   const pd = pins.map((c) => byCode[c]).filter(Boolean);
   const maxPos = showField || !pd.length ? drivers.length : Math.min(drivers.length, Math.max(1, ...pd.flatMap((d) => d.pos.filter((v) => v != null))) + 1);
   const gaps = pd.flatMap((d) => d.gapLead.filter((v) => v != null));
@@ -881,8 +889,28 @@ function setupCircuit() {
   if (!circ.duels.length) { pick.innerHTML = ""; $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = ""; msgCircuit("Pas de temps de secteur disponibles pour cette course."); return; }
   const mixed = (x) => { const a = bestLapOf(x.fast).s, b = bestLapOf(x.slow).s; const w = [0, 1, 2].map((i) => a[i] <= b[i]); return w.some(Boolean) && w.some((v) => !v); };
   const first = Math.max(0, circ.duels.findIndex(mixed));
-  pick.innerHTML = circ.duels.map((x, i) => `<button class="chip" data-i="${i}" aria-pressed="${i === first}"><span class="sw" style="background:${x.color};border-color:${x.color}"></span>${esc(x.team)}</button>`).join("");
-  $$("#circ-pick .chip").forEach((b) => b.addEventListener("click", () => { $$("#circ-pick .chip").forEach((x) => x.setAttribute("aria-pressed", x === b)); circ.duel = circ.duels[+b.dataset.i]; playCircuit(); }));
+  pick.innerHTML = circ.duels.map((x, i) => `<button class="chip" data-i="${i}" aria-pressed="${i === first}"><span class="sw" style="background:${x.color};border-color:${x.color}"></span>${esc(x.team)}</button>`).join("") +
+    `<button class="chip chip-other" data-i="other" aria-pressed="false">＋ Autre duel</button>`;
+  // Duel libre : deux pilotes quelconques, choisis sur une seule ligne
+  let row = $("#circ-other");
+  if (!row) { row = document.createElement("div"); row.className = "circ-other"; row.id = "circ-other"; row.innerHTML = `<label class="visually-hidden" for="co-a">Pilote A</label><select id="co-a"></select><span class="fine">contre</span><label class="visually-hidden" for="co-b">Pilote B</label><select id="co-b"></select>`; $(".circ-top").after(row); }
+  row.hidden = true;
+  const pool = finishers.concat(dnfs).filter((d) => bestLapOf(d));
+  const opts = pool.map((d) => `<option value="${d.code}">${d.code} · ${esc(d.last)}</option>`).join("");
+  $("#co-a").innerHTML = opts; $("#co-b").innerHTML = opts;
+  if (pool[1]) { $("#co-a").value = pool[0].code; $("#co-b").value = pool[1].code; }
+  circ.custom = {};
+  const customDuel = () => {
+    const a = byCode[$("#co-a").value], b = byCode[$("#co-b").value]; if (!a || !b || a === b) return null;
+    const key = a.code + "-" + b.code;
+    return (circ.custom[key] ||= { team: a.team === b.team ? a.team : `${a.team} / ${b.team}`, color: a.color, valid: true, fast: a, slow: b });
+  };
+  ["co-a", "co-b"].forEach((id) => ($("#" + id).onchange = () => { const d = customDuel(); if (d) { circ.duel = d; playCircuit(); } }));
+  $$("#circ-pick .chip").forEach((b) => b.addEventListener("click", () => {
+    $$("#circ-pick .chip").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    const other = b.dataset.i === "other"; row.hidden = !other;
+    const d = other ? customDuel() : circ.duels[+b.dataset.i]; if (d) { circ.duel = d; playCircuit(); }
+  }));
   circ.duel = circ.duels[first];
   $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = "";
 }
@@ -1219,6 +1247,8 @@ async function loadRaces(year) {
   }
   const now = new Date();
   RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  const am = new Map(arch.map((x) => [x.session_key, x]));
+  RACES.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
   if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
   $("#gp").innerHTML = RACES.map((r) => `<option value="${r.session_key}">${esc(r.country_name)} ${r.year}</option>`).join("");
   $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
@@ -1257,25 +1287,28 @@ async function fetchRace(sk) {
   return pack;
 }
 
-let first = true;
+let first = true, loadSeq = 0;
 async function loadGP(sk) {
   const session = RACES.find((r) => r.session_key === +sk);
   if (!session) return;
+  const myLoad = ++loadSeq;
   $("main").classList.add("loading"); stopReplay();
   const hTok = hcBegin();
   $("#round").textContent = "R" + String(RACES.indexOf(session) + 1).padStart(2, "0");
   try {
     const pack = await fetchRace(sk);
+    if (myLoad !== loadSeq) return; // un autre GP a été demandé entre-temps
     if (!pack.data.laps.length) throw new Error("OpenF1 n'a pas encore les temps au tour de cette course. Réessaie un peu plus tard.");
     buildModel(session, pack);
     setStatus(offline ? "OpenF1 est momentanément réservé aux abonnés (séance de F1 en direct) : seuls les GP déjà consultés sur cet appareil sont disponibles." : "");
     renderAll();
+    if (NAV.home) renderHome(); // l'accueil affiche le vainqueur dès que la course est chargée
     hcRun(hTok);
-    if (!first) toast(`${esc(session.country_name)} ${session.year} chargé`);
+    if (!first && !NAV.home) toast(`${esc(session.country_name)} ${session.year} chargé`);
     first = false;
   } catch (e) {
     setStatus(e.message, "error"); hcFail();
-  } finally { $("main").classList.remove("loading"); fitTower(); }
+  } finally { if (myLoad === loadSeq) { $("main").classList.remove("loading"); fitTower(); } }
 }
 function renderAll() {
   follow = []; $("#follow").classList.remove("on"); $("#follow").hidden = true; showField = false;
@@ -1325,9 +1358,9 @@ $("#follow-x").innerHTML = IC.x;
 $("#follow-x").addEventListener("click", () => { follow = []; applyFollow(); });
 $("#cplay").innerHTML = IC.play + "Rejouer le tour";
 $("#cplay").addEventListener("click", playCircuit);
-$("#gp").addEventListener("change", () => loadGP($("#gp").value));
+$("#gp").addEventListener("change", () => navGP($("#gp").value));
 $("#year").addEventListener("change", async () => {
-  try { $("main").classList.add("loading"); if (await loadRaces(+$("#year").value)) await loadGP($("#gp").value); else setStatus(`Aucune course terminée pour ${$("#year").value}.`, "error"); }
+  try { $("main").classList.add("loading"); if (await loadRaces(+$("#year").value)) navGP(RACES.at(-1).session_key); else setStatus(`Aucune course terminée pour ${$("#year").value}.`, "error"); }
   catch (e) { setStatus(e.message, "error"); } finally { $("main").classList.remove("loading"); }
 });
 if (!reduce && "IntersectionObserver" in window) {
@@ -1343,6 +1376,9 @@ if (!reduce && "IntersectionObserver" in window) {
     let ok = await loadRaces(now);
     if (!ok && now > 2023) { $("#year").value = now - 1; ok = await loadRaces(now - 1); }
     if (!ok) { setStatus("Aucune course terminée trouvée.", "error"); return; }
-    await loadGP($("#gp").value);
+    setStatus("");
+    // Lien direct vers un GP : on y va. Sinon l'accueil, et le dernier GP se charge déjà en coulisse.
+    if (parseHash().g) await navRoute();
+    else { showHome(true); $("#gp").value = RACES.at(-1).session_key; await loadGP(RACES.at(-1).session_key); }
   } catch (e) { setStatus(e.message, "error"); $("main").classList.remove("loading"); }
 })();
