@@ -168,3 +168,17 @@ body.in-chap { overflow: hidden; }
 .reg-key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 13px; color: var(--ink-2); }
 .reg-key span { display: inline-flex; align-items: center; gap: 6px; }
 .reg-key i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* « Comment lire » : une ligne toujours visible au-dessus du graphique */
+.howread { display: flex; gap: 10px; align-items: baseline; margin: 2px 0 10px; padding: 9px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.howread b { color: var(--ink); font-weight: 600; }
+.hw-k { flex: none; font: 700 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.hw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin: 0 4px 0 6px; vertical-align: -1px; }
+@media (max-width: 640px) { .howread { flex-direction: column; gap: 2px; font-size: 13px; } #how-ex { display: none; } }
+/* Explorer : pilote de référence */
+.ex-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 2px 0 6px; }
+.ex-ref[hidden] { display: none; }
+.ex-ref-k { font: 700 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.ex-ref button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 4px 11px; font: 600 13px var(--body); cursor: pointer; }
+.ex-ref button i { width: 8px; height: 8px; border-radius: 50%; }
+.ex-ref button[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }

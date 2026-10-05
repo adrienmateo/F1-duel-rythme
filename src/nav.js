@@ -5,7 +5,6 @@
 const NAV = { home: false, homeWait: [], chap: null, slot: null, pushed: false };
 const CHAPTERS = [
   { id: "course", sec: "course", k: "La course" },
-  { id: "rythme", sec: "rythme", k: "Le rythme" },
   { id: "duels", sec: "duels", k: "Les duels" },
   { id: "pneus", sec: "strategies", k: "Les pneus" },
   { id: "explorer", sec: "explorer", k: "Explorer" },

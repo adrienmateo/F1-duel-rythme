@@ -83,7 +83,7 @@ function exRefresh() { EXM.forEach(([m]) => updateBase("ch-ex-" + m)); syncExPic
 function syncExPick() {
   const el = $("#expick"); if (!el) return;
   el.innerHTML = `<span class="lbl">Pilotes</span>` + exSel.filter((c) => byCode[c]).map((c) => `<button class="pp" data-c="${c}" title="Retirer"><i style="background:${byCode[c].color}"></i>${c}${exSel.length > 1 ? '<span class="x">×</span>' : ""}</button>`).join("") + (exSel.length < 4 ? `<button class="add" id="ex-add">+ Ajouter</button>` : "");
-  $$("#expick .pp").forEach((b) => b.addEventListener("click", () => { if (exSel.length > 1) { exSel = exSel.filter((x) => x !== b.dataset.c); renderExChips(); readEx(); exRefresh(); } }));
+  $$("#expick .pp").forEach((b) => b.addEventListener("click", () => { if (exSel.length > 1) { exSel = exSel.filter((x) => x !== b.dataset.c); exChanged(); } }));
   $("#ex-add")?.addEventListener("click", () => { $("#ex-chips-slot").appendChild($("#ex-chips")); openSheet("msheet-ex"); });
   $$("#exquick button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.sel === exSel.join(",")));
 }
@@ -94,7 +94,7 @@ function renderExQuick() {
     ...(duels[0] ? [["Duel du jour", [duels[0].fast.code, duels[0].slow.code], null, true]] : []),
     ...TEAMS.map((t) => [t.team, t.ds.map((d) => d.code), t.color, false])];
   qr.innerHTML = quick.map(([l, sel, col, hot]) => `<button class="${hot ? "hot" : ""}" data-sel="${sel.join(",")}">${col ? `<i style="background:${col}"></i>` : ""}${esc(l)}</button>`).join("");
-  $$("button", qr).forEach((b) => b.addEventListener("click", () => { exSel = b.dataset.sel.split(","); renderExChips(); readEx(); exRefresh(); }));
+  $$("button", qr).forEach((b) => b.addEventListener("click", () => { exSel = b.dataset.sel.split(",").slice(0, 4); exChanged(); }));
 }
 
 /* --- Les duels : groupes de 4 écuries, puis la carte Circuit --- */

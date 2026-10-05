@@ -263,8 +263,20 @@ function buildModel(session, raw) {
   drivers.forEach((d) => { d.ideal = d.bestS ? d.bestS.reduce((a, b) => a + b, 0) : null; });
   byCode = Object.fromEntries(drivers.map((d) => [d.code, d]));
 
+  // Recalage sur le résultat officiel : les heures de passage s'obtiennent en additionnant les temps au tour,
+  // ce qui accumule de petites erreurs. Pour chaque pilote arrivé dans le même tour que le vainqueur, on répartit
+  // l'écart entre l'écart calculé et l'écart officiel à l'arrivée sur tous ses tours.
+  const win = drivers.find((d) => d.result?.position === 1 && !isOut(d.result));
+  const wEnd = win && win.s.lineAt.get(win.result.number_of_laps ?? LAPS);
+  if (wEnd != null) drivers.forEach((d) => {
+    const r = d.result, n = r?.number_of_laps, g = d === win ? 0 : r?.gap_to_leader;
+    if (!r || isOut(r) || typeof g !== "number" || n !== win.result.number_of_laps) return;
+    const end = d.s.lineAt.get(n); if (end == null) return;
+    const delta = wEnd + g * 1000 - end; if (!delta || Math.abs(delta) > 30000) return;
+    const adj = new Map(); d.s.lineAt.forEach((t, lap) => adj.set(lap, t + delta * Math.min(1, lap / n))); d.s.lineAt = adj;
+  });
   // Positions et écarts : heure de passage sur la ligne de chaque pilote, tour par tour
-  const t0 = Math.min(...drivers.map((d) => d.s.lineAt.get(1)).filter((v) => v != null));
+  const t0 =Math.min(...drivers.map((d) => d.s.lineAt.get(1)).filter((v) => v != null));
   for (let lap = 1; lap <= LAPS; lap++) {
     const at = drivers.map((d) => [d, d.s.lineAt.get(lap)]).filter(([, t]) => t != null).sort((a, b) => a[1] - b[1]);
     if (!at.length) continue;
@@ -754,6 +766,42 @@ function readStrat() {
   $("#tyre-legend").innerHTML = Object.entries(COMP).filter(([k]) => used.includes(k)).map(([, c]) => `<span><i class="dot" style="background:${c.c}"></i>${c.name}</span>`).join("");
 }
 
+/* --- Lignes « Comment lire » : ce que montre le graphique, en une phrase, juste au-dessus --- */
+const sw = (c, round) => `<i class="hw" style="background:${c}${round ? ";border-radius:50%" : ""}"></i>`;
+function setHow(id, html) { const el = $("#" + id); if (el) el.innerHTML = `<span class="hw-k">Comment lire</span><span>${html}</span>`; }
+function renderHow() {
+  setHow("how-course", courseMode === "pos"
+    ? `Chaque ligne est un pilote, à la couleur de son écurie. <b>En haut = en tête</b>. La petite F1 montre où il est au tour affiché. ${sw("var(--sc)")} bande jaune = safety car ou VSC.`
+    : `Chaque ligne est un pilote. <b>Tout en haut = le leader</b> ; plus une ligne descend, plus le pilote est loin derrière lui (en secondes). ${sw("var(--sc)")} bande jaune = safety car ou VSC.`);
+  setHow("how-duels", `Une ligne par écurie : le pilote de gauche était le plus rapide des deux. <b>Plus la barre est longue, plus l'écart était grand</b> (en secondes par tour, sur un tour typique). Clique sur une écurie pour revoir le duel.`);
+  setHow("how-strat", `Une ligne par pilote, du départ (à gauche) à l'arrivée (à droite). La couleur indique le pneu : ${sw(COMP.S.c)}tendre ${sw(COMP.M.c)}médium ${sw(COMP.H.c)}dur. <b>Chaque changement de couleur = un arrêt aux stands.</b>`);
+  const ref = byCode[exSel[0]], rn = ref ? `<b>${esc(ref.last)}</b>` : "le pilote de référence";
+  setHow("how-ex", {
+    laps: `Une ligne par pilote, un point par tour : <b>plus c'est bas, plus le tour est rapide</b>. Les trous sont les tours aux stands ou sous neutralisation.`,
+    gap: `Distance en piste entre chaque pilote et ${rn}, tour par tour. <b>Au-dessus de zéro = derrière ${rn}</b>, en dessous = devant lui.`,
+    box: `Une case par tour, comparée au rythme habituel du pilote sur le même train de pneus : ${sw("var(--good)")}dans son rythme ${sw("#e3a008")}un peu lent ${sw("var(--bad)")}tour perdu ${sw("var(--track)")}départ, stands ou safety car.`,
+    circuit: `Les deux pilotes refont leur meilleur tour sur le vrai tracé : ${rn} contre le deuxième pilote choisi. Chaque secteur prend la couleur du plus rapide.`,
+  }[$("[data-ex][aria-selected=true]")?.dataset.ex || exMode] || "");
+}
+// « Comparé à » : le premier pilote de la sélection sert de référence ; un clic en choisit un autre
+function renderExRef() {
+  const el = $("#ex-ref"); if (!el) return;
+  const mode = $("[data-ex][aria-selected=true]")?.dataset.ex || exMode, sel = exSel.filter((c) => byCode[c]);
+  el.hidden = sel.length < 2 || mode === "box";
+  el.innerHTML = `<span class="ex-ref-k">Comparé à</span>` + sel.map((c, i) => `<button aria-pressed="${!i}" data-ref="${c}"><i style="background:${byCode[c].color}"></i>${byCode[c].last}</button>`).join("");
+  $$("#ex-ref [data-ref]").forEach((b) => b.addEventListener("click", () => setExRef(b.dataset.ref)));
+}
+function setExRef(c) {
+  if (exSel[0] === c || !exSel.includes(c)) return;
+  exSel = [c, ...exSel.filter((x) => x !== c)];
+  exChanged();
+}
+// Après tout changement de sélection : chips, phrase, graphiques, circuit
+function exChanged() {
+  renderExChips(); readEx(); sizeEx(); update("ch-ex");
+  if (typeof exRefresh === "function" && MOB()) exRefresh(); else exCircuitRefresh();
+}
+
 /* --- Explorer --- */
 // Régularité d'un pilote : chaque tour comparé à son temps médian sur le même relais, carburant retiré.
 // 0 = dans son rythme (moins de 0,4 s au-dessus), 1 = un peu lent (jusqu'à 1 s), 2 = tour perdu, 3 = hors course (départ, stands, neutralisation)
@@ -795,7 +843,7 @@ function buildEx(T) {
     const ref = sel[0];
     return { ...o, legend: { top: 0, textStyle: { color: T.ink2 } }, tooltip: { ...o.tooltip, trigger: "axis", valueFormatter: (v) => (v == null ? "—" : gapS(v)) },
       xAxis: { type: "category", data: Array.from({ length: LAPS }, (_, i) => i + 1), boundaryGap: false, name: "Tour", ...axisCommon(T), splitLine: { show: false } },
-      yAxis: { type: "value", ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => (v > 0 ? "+" : "") + v + " s" } },
+      yAxis: { type: "value", name: `Écart à ${ref.code}`, nameTextStyle: { color: T.muted, align: "left" }, ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => (v > 0 ? "+" : "") + v + " s" } },
       series: sel.map((d, i) => ({ name: d.code, type: "line", symbol: "none", smooth: 0.2, lineStyle: { width: 2.5, color: col(i), type: dashIf(d, exSel) }, itemStyle: { color: col(i) },
         areaStyle: i ? { color: col(i), opacity: 0.06 } : undefined,
         data: Array.from({ length: LAPS }, (_, k) => (d.cum[k] == null || ref.cum[k] == null ? null : +(d.cum[k] - ref.cum[k]).toFixed(3))),
@@ -809,24 +857,36 @@ function buildEx(T) {
       ...(i === 0 ? { markArea: neutralArea(T) } : {}) })) };
 }
 function renderExChips() {
+  renderExRef(); renderHow();
   $("#ex-chips").innerHTML = finishers.concat(dnfs).map((d) => { const on = exSel.includes(d.code); return `<button class="chip" aria-pressed="${on}" data-code="${d.code}"><span class="sw" style="background:${d.color};border-color:${on ? "transparent" : d.color}"></span>${d.code}</button>`; }).join("");
   $$("#ex-chips .chip").forEach((b) => b.addEventListener("click", () => {
     const c = b.dataset.code, i = exSel.indexOf(c);
-    if (i >= 0) { if (exSel.length > 1) exSel.splice(i, 1); } else { if (exSel.length >= 4) exSel.shift(); exSel.push(c); }
-    renderExChips(); readEx(); sizeEx(); update("ch-ex"); exCircuitRefresh();
+    if (i >= 0) { if (exSel.length > 1) exSel.splice(i, 1); else return; }
+    else { if (exSel.length >= 4) { toast("4 pilotes au maximum : retire d'abord un pilote."); return; } exSel.push(c); }
+    exChanged();
   }));
 }
 function readEx() {
   if (exMode === "box") {
     const r = exSel.map((c) => byCode[c]).filter((d) => d && d.clean.length >= 3).map((d) => [d, regOf(d)]).sort((a, b) => b[1].ok / (b[1].n || 1) - a[1].ok / (a[1].n || 1));
     if (!r.length) { $("#read-ex").textContent = "Pas assez de tours pour juger la régularité."; return; }
-    $("#read-ex").innerHTML = `<b>${r[0][0].last}</b> est le plus régulier de la sélection : ${r[0][1].ok} tours dans son rythme sur ${r[0][1].n}.` + (r.length > 1 ? " " + r.slice(1).map(([d, x]) => `${d.last} : ${x.ok} sur ${x.n}`).join(", ") + "." : "") + ` <span class="reg-key"><span><i style="background:var(--good)"></i>dans son rythme</span><span><i style="background:#e3a008"></i>un peu lent</span><span><i style="background:var(--bad)"></i>tour perdu</span><span><i style="background:var(--track)"></i>départ, stands ou safety car</span></span>`;
+    $("#read-ex").innerHTML = `<b>${r[0][0].last}</b> est le plus régulier de la sélection : ${r[0][1].ok} tours dans son rythme sur ${r[0][1].n}.` + (r.length > 1 ? " " + r.slice(1).map(([d, x]) => `${d.last} : ${x.ok} sur ${x.n}`).join(", ") + "." : "");
     return;
   }
-  const sel = exSel.map((c) => byCode[c]).filter((d) => d && d.median != null);
-  if (sel.length < 2) { $("#read-ex").textContent = "Ajoute un deuxième pilote avec assez de tours représentatifs pour comparer."; return; }
-  const s = [...sel].sort((a, b) => a.median - b.median);
-  $("#read-ex").innerHTML = `<b>${s[0].last}</b> a le meilleur rythme de la sélection : ${s.slice(1).map((d) => `${gapS(d.median - s[0].median)} sur ${d.last}`).join(", ")} par tour.`;
+  renderExRef(); renderHow();
+  const all = exSel.map((c) => byCode[c]).filter(Boolean), ref = all[0];
+  if (all.length < 2) { $("#read-ex").textContent = "Ajoute un deuxième pilote pour comparer."; return; }
+  if (exMode === "gap") {
+    // Écart en piste à l'arrivée (ou au dernier tour commun), par rapport à la référence
+    const parts = all.slice(1).map((d) => { let k = Math.min(d.cum.length, ref.cum.length) - 1; while (k >= 0 && (d.cum[k] == null || ref.cum[k] == null)) k--; if (k < 0) return null; const g = d.cum[k] - ref.cum[k];
+      return `${esc(d.last)} <b>${fr(Math.abs(g), 1)} s ${g > 0 ? "derrière" : "devant"}</b>${k + 1 < LAPS ? ` (au tour ${k + 1})` : ""}`; }).filter(Boolean);
+    $("#read-ex").innerHTML = `Comparé à <b>${esc(ref.last)}</b>, à l'arrivée : ${parts.join(", ")}.`;
+    return;
+  }
+  if (ref.median == null) { $("#read-ex").innerHTML = `${esc(ref.last)} n'a pas assez de tours représentatifs : choisis un autre pilote de référence.`; return; }
+  const others = all.slice(1).filter((d) => d.median != null);
+  $("#read-ex").innerHTML = `Comparé à <b>${esc(ref.last)}</b>, sur un tour typique (temps médian, hors stands et neutralisations) : ` +
+    others.map((d) => { const g = d.median - ref.median; return `${esc(d.last)} <b>${fr(Math.abs(g))} s ${g > 0 ? "plus lent" : "plus rapide"}</b>`; }).join(", ") + " par tour.";
 }
 
 /* ======================= Mode expert : analyses « Sous le capot » ======================= */
@@ -921,7 +981,7 @@ function syncCircuitDuel() {
   if (pair.length < 2) { circ.duel = null; if (note) note.textContent = "Choisis au moins deux pilotes ci-dessus pour les voir sur le circuit."; return false; }
   const [a, b] = pair, key = a.code + "-" + b.code;
   circ.duel = (circ.custom[key] ||= { team: a.team === b.team ? a.team : `${a.team} / ${b.team}`, color: a.color, valid: true, fast: a, slow: b });
-  if (note) note.textContent = exSel.length > 2 ? `Les deux premiers pilotes choisis : ${a.code} et ${b.code}.` : "";
+  if (note) note.textContent = exSel.length > 2 ? `${a.last} (référence) contre ${b.last}. Change la référence avec « Comparé à ».` : "";
   return true;
 }
 // L'onglet « Sur le circuit » de l'Explorer
@@ -1034,7 +1094,7 @@ function showDriver(code) {
       series: [{ type: "line", data: Array.from({ length: LAPS }, (_, k) => d.pos[k] ?? null), symbol: "none", smooth: 0.2, lineStyle: { width: 3, color: d.color }, areaStyle: { color: d.color, opacity: 0.08 }, markArea: neutralArea(T, LAPS, false) }] }) };
     draw("ch-dlg");
     $("#dlg-follow").addEventListener("click", () => { toggleFollow(code); closeDialog(); });
-    $("#dlg-go")?.addEventListener("click", () => { const mate = drivers.find((x) => x.team === d.team && x !== d); exSel = [d.code, mate.code]; renderExChips(); readEx(); closeDialog(); location.hash = "explorer"; setTimeout(() => update("ch-ex"), 300); });
+    $("#dlg-go")?.addEventListener("click", () => { const mate = drivers.find((x) => x.team === d.team && x !== d); exSel = [d.code, mate.code]; renderExChips(); readEx(); closeDialog(); navGo(`#${parseHash().g}/explorer`, !!NAV.chap); setTimeout(() => update("ch-ex"), 300); });
   }, { drawer: true });
 }
 function showDuel(du) {
@@ -1079,7 +1139,7 @@ function showDuel(du) {
       timer = setInterval(() => { if (!$("#ch-dlg") || k >= end - 1) return clearInterval(timer); k++; paint(); }, Math.max(40, 3500 / end)); };
     run();
     $("#dl-replay").addEventListener("click", run);
-    $("#dlg-go").addEventListener("click", () => { clearInterval(timer); exSel = [A.code, B.code]; renderExChips(); readEx(); closeDialog(); location.hash = "explorer"; setTimeout(() => update("ch-ex"), 300); });
+    $("#dlg-go").addEventListener("click", () => { clearInterval(timer); exSel = [A.code, B.code]; renderExChips(); readEx(); closeDialog(); navGo(`#${parseHash().g}/explorer`, !!NAV.chap); setTimeout(() => update("ch-ex"), 300); });
   });
 }
 
@@ -1114,13 +1174,13 @@ function applyLevel(l, was) {
   if (l !== "expert") { if (courseMode !== "pos") selectCourse("pos"); }
   setTimeout(() => { Object.values(charts).forEach((c) => c.inst && c.inst.resize()); placeIndicators(); placeCursor(); }, 60);
 }
-function selectCourse(m) { courseMode = m; $$("[data-course]").forEach((b) => b.setAttribute("aria-selected", b.dataset.course === m)); update("ch-course", true); }
+function selectCourse(m) { courseMode = m; renderHow(); $$("[data-course]").forEach((b) => b.setAttribute("aria-selected", b.dataset.course === m)); update("ch-course", true); }
 $$("[data-course]").forEach((b) => b.addEventListener("click", () => selectCourse(b.dataset.course)));
 // La régularité n'a besoin que d'une bande par pilote : graphique plus bas
 function sizeEx() { const el = $("#ch-ex"), h = exMode === "box" ? `${90 + exSel.length * 56}px` : ""; if (el.style.height !== h) { el.style.height = h; charts["ch-ex"]?.inst?.resize(); } }
 function selectEx(m) {
   $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m));
-  if (m === "circuit") { showExCircuit(true); return; }
+  if (m === "circuit") { showExCircuit(true); renderExRef(); renderHow(); return; }
   showExCircuit(false); exMode = m; readEx(); sizeEx(); update("ch-ex");
 }
 $$("[data-ex]").forEach((b) => b.addEventListener("click", () => selectEx(b.dataset.ex)));
