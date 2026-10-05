@@ -20,7 +20,7 @@
 .hc-lights i { width: 16px; height: 16px; border-radius: 50%; background: #2a1414; transition: background .08s, box-shadow .08s; }
 .hc-lights i.lit { background: #ff2a1f; box-shadow: 0 0 12px 2px rgba(255,42,31,.7); }
 .hc:not(.ready) svg { min-height: 120px; }
-#hc-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; overflow: visible; }
+#hc-fx { position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; z-index: 40; overflow: visible; }
 .hc-smoke { fill: var(--smoke); }
 .hc-skid { stroke: var(--skid); stroke-linecap: round; }
 @media (max-width: 720px) {

@@ -95,7 +95,8 @@ function drawTopCar(g, color, num) {
 
 /* --- Mise en scène --- */
 const hcCtm = () => hcSvg().getScreenCTM();
-const hcScr = (x, y) => { const m = hcCtm(); return [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]; };
+// Coordonnées dans la page (et non dans l'écran) : la voiture défile avec le haut de page au lieu de rester collée à l'écran
+const hcScr = (x, y) => { const m = hcCtm(); return [m.a * x + m.c * y + m.e + scrollX, m.b * x + m.d * y + m.f + scrollY]; };
 function hcAt(dist) {
   const T = HC.T; let dd = ((dist % T.L) + T.L) % T.L, i = 0;
   while (dd > T.seg[i]) { dd -= T.seg[i]; i = (i + 1) % HC_NP; }
@@ -117,7 +118,7 @@ function hcArrive() {
   hcDrawCar(HC.color, HC.num); HC.mark = null; HC.yaw = 0;
   if (reduce) { const p = hcAt(0), [x, y] = hcScr(p.x, p.y); hcPlace(x, y, p.ang, HC_CAR * hcCtm().a); hcPark(); return; }
   const vw = innerWidth, vh = innerHeight, m = vw < 720;
-  HC.entry = { p0: [-70, Math.min(vh * 0.8, vh - 80)], c1: [vw * (m ? 0.5 : 0.45), vh * (m ? 1.05 : 1.1)], dur: m ? 2.0 : 2.4 };
+  HC.entry = { p0: [-70 + scrollX, scrollY + Math.min(vh * 0.8, vh - 80)], c1: [scrollX + vw * (m ? 0.5 : 0.45), scrollY + vh * (m ? 1.05 : 1.1)], dur: m ? 2.0 : 2.4 };
   HC.phase = "in"; HC.t = 0; HC.last = performance.now(); cancelAnimationFrame(HC.raf); HC.raf = requestAnimationFrame(hcLoop);
 }
 function hcPark() { HC.phase = "parked"; HC.raf = 0; $("#hc").classList.add("parked"); }
@@ -160,7 +161,9 @@ function hcLoop(now) {
   HC.raf = requestAnimationFrame(hcLoop);
 }
 function hcFollow() { if (HC.phase !== "parked" || !HC.car || !HC.T) return; const q = hcAt(0), [x, y] = hcScr(q.x, q.y); hcPlace(x, y, q.ang, HC_CAR * hcCtm().a); }
-addEventListener("scroll", hcFollow, { passive: true }); addEventListener("resize", hcFollow);
+addEventListener("resize", hcFollow);
+// Si le contenu au-dessus change de hauteur (cartes, polices), la voiture garée se recale sur la grille
+if ("ResizeObserver" in window) new ResizeObserver(hcFollow).observe(document.body);
 hcSvg().addEventListener("click", hcLap);
 hcSvg().addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); hcLap(); } });
 
