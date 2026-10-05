@@ -145,7 +145,7 @@ function setupMobileOnce() {
   });
   // Les sections en cartes
   const grid = $("#gp-section .hero-grid");
-  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Direction de course", [$("#log")]], ["Chiffres clés", [$("#kpis")]]]));
+  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Les faits", [$("#log")]], ["Chiffres clés", [$("#kpis")]]]));
   grid.remove();
   const cw = $("#course .course-wrap");
   swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Les batailles", [expertCard("#course .under")], true]]));

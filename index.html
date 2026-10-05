@@ -907,6 +907,47 @@ body.in-chap { overflow: hidden; }
 .mc-prev .pv-n { font: 800 12px var(--body); fill: #fff; }
 @media (max-width: 640px) { .mom { padding: 13px 12px; } .mom-t { font-size: 17px; } .mom-who { margin-left: 0; } }
 
+/* Explorer : afficher aussi les tours lents (comme le « Show outliers » de GP Tempo) */
+.ex-all { display: inline-flex; align-items: center; gap: 8px; justify-self: start; width: fit-content; margin: 0 0 6px; border: 0; background: none; padding: 2px 0; font: 600 13px var(--body); color: var(--ink-2); cursor: pointer; }
+.ex-all[hidden] { display: none; }
+.ex-all .box { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--grey-line); display: grid; place-items: center; transition: background .15s, border-color .15s; }
+.ex-all[aria-pressed="true"] .box { background: var(--ink); border-color: var(--ink); }
+.ex-all[aria-pressed="true"] .box::after { content: ""; width: 7px; height: 4px; border: 2px solid var(--page); border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+
+/* « La course en un coup d'œil » : frise (ordinateur), liste verticale (mobile) */
+.frise { position: relative; margin: 34px 10px 0; }
+.fr-track { position: relative; height: 10px; border-radius: 5px; background: var(--track); }
+.fr-band { position: absolute; top: -3px; height: 16px; border-radius: 4px; background: var(--sc); opacity: .85; }
+.fr-band b { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); font: 700 10px var(--mono); color: var(--sc-ink); white-space: nowrap; }
+.fr-flag { position: absolute; right: -6px; top: -7px; width: 18px; height: 24px; border-radius: 3px; background: repeating-conic-gradient(var(--ink) 0 25%, var(--surface) 0 50%) 0 0 / 8px 8px; border: 1px solid var(--ink); }
+.fr-ticks { position: relative; height: 18px; margin-top: 4px; }
+.fr-tick { position: absolute; transform: translateX(-50%); font: 600 10.5px var(--mono); color: var(--muted); }
+.fr-tick:first-child { transform: none; } .fr-tick:last-child { transform: translateX(-100%); }
+.fr-evs { position: relative; height: 170px; }
+.fr-ev { position: absolute; top: -40px; transform: translateX(-50%); display: grid; justify-items: center; gap: 0; border: 0; background: none; padding: 0; cursor: pointer; color: inherit; font: inherit; }
+.fr-ev::before { content: ""; width: 1.5px; height: 40px; background: var(--c); opacity: .5; }
+.fr-ev.r1::before { height: 86px; } .fr-ev.r2::before { height: 132px; }
+.fr-ev .fr-lbl { background: var(--surface); border-radius: 6px; }
+.fr-ev .fr-dot { position: absolute; top: -7px; width: 14px; height: 14px; border-radius: 50%; background: var(--c); border: 2.5px solid var(--surface); box-shadow: 0 0 0 1px var(--c); transition: transform .15s; }
+.fr-ev:hover .fr-dot { transform: scale(1.25); }
+.fr-lbl { display: grid; gap: 1px; text-align: center; font-size: 13px; line-height: 1.3; color: var(--ink); width: max-content; max-width: 150px; padding-top: 4px; }
+.fr-k { font: 700 11px var(--mono); color: var(--c); white-space: nowrap; }
+.fr-ev.l { transform: translateX(-7px); justify-items: start; } .fr-ev.l .fr-lbl { text-align: left; } .fr-ev.l::before { margin-left: 6px; } .fr-ev.l .fr-dot { left: 0; }
+.fr-ev.r { transform: translateX(calc(-100% + 7px)); justify-items: end; } .fr-ev.r .fr-lbl { text-align: right; } .fr-ev.r::before { margin-right: 6px; } .fr-ev.r .fr-dot { right: 0; }
+.fr-ev:hover .fr-lbl { color: var(--accent); }
+@media (max-width: 640px) { .frise { display: none; } .fr-list { display: grid !important; } }
+#log.fr-fallback .frise { display: none; }
+#log.fr-fallback .fr-list { display: grid !important; }
+  .fr-list { display: none; gap: 0; position: relative; margin-top: 4px; }
+  .fr-list::before { content: ""; position: absolute; left: 49px; top: 10px; bottom: 10px; width: 2px; background: var(--track); }
+  .fr-li { display: grid; grid-template-columns: 38px 14px 1fr; gap: 10px; align-items: center; text-align: left; border: 0; background: none; padding: 9px 0; font: inherit; color: var(--ink-2); font-size: 14px; position: relative; }
+  .fr-li .fr-lap { font: 700 12px var(--mono); color: var(--muted); }
+  .fr-li .fr-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c, var(--grey-line)); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--c, var(--grey-line)); position: relative; z-index: 1; }
+  .fr-li b { color: var(--ink); }
+  .fr-li.sc .fr-dot { background: var(--sc); box-shadow: 0 0 0 1px var(--sc); border-radius: 3px; }
+  .fr-li.end .fr-dot { background: repeating-conic-gradient(var(--ink) 0 25%, var(--surface) 0 50%) 0 0 / 6px 6px; box-shadow: 0 0 0 1px var(--ink); border-radius: 2px; }
+@media (max-width: 640px) { #log:has(.frise) { display: grid; } }
+
 </style>
 </head>
 <body>
@@ -1075,6 +1116,7 @@ body.in-chap { overflow: hidden; }
     </div>
     <div class="chips" id="ex-chips"></div>
     <div class="ex-ref" id="ex-ref" role="group" aria-label="Pilote de référence"></div>
+    <button class="ex-all" id="ex-all" aria-pressed="false"><span class="box" aria-hidden="true"></span>Afficher tous les tours</button>
     <p class="read" id="read-ex"></p>
     <p class="howread" id="how-ex"></p>
     <div class="chart mid" id="ch-ex" role="img" aria-label="Comparaison des pilotes sélectionnés"></div>
@@ -1541,19 +1583,17 @@ function renderHero() {
   const segs = []; let prev = 1;
   NEUTRAL.forEach((r) => { if (r.start > prev) segs.push(`<span style="flex:${r.start - prev}"></span>`); segs.push(`<span class="sc" style="flex:${r.end - r.start + 1}" title="${NKlong[r.kind]} T${r.start}–${r.end}"></span>`); prev = r.end + 1; });
   if (prev <= LAPS) segs.push(`<span style="flex:${LAPS - prev + 1}"></span>`);
-  $("#log").innerHTML = `<div class="log-title">LES FAITS DE COURSE</div>` + (EVENTS.length ? EVENTS.map((e, i) => `<button class="log-row ${e.cls}" data-event="${i}"><span class="lap">${e.lap && e.label !== "Remontée" ? "T" + e.lap : "★"}</span><span>${e.txt}</span></button>`).join("") : `<p class="empty-note">Course sans incident marquant.</p>`) +
-    `<div class="timeline" aria-label="Neutralisations pendant la course">${segs.join("")}</div>`;
-  $$("#log .log-row").forEach((b) => b.addEventListener("click", () => { const e = EVENTS[+b.dataset.event]; openDialog(e.label === "Remontée" ? "Toute la course" : `Tour ${e.lap} · ${e.label || ""}`, `<p class="read">${e.txt.replace(/<[^>]+>/g, "")}. ${e.detail}</p>`); }));
+  renderFrise();
 
   const movers = finishers.filter((d) => d.grid).sort((a, b) => (b.grid - b.finish) - (a.grid - a.finish));
   const duels = computeDuels().filter((x) => x.valid);
   const nLaps = NEUTRAL.filter((r) => r.kind !== "Ralenti").reduce((s, r) => s + r.end - r.start + 1, 0);
   const kpis = [];
   if (g != null) kpis.push({ v: gapS(g), l: "entre le vainqueur et le 2e", more: "Voir le 2e", go: () => showDriver(p2.code) });
-  kpis.push(nLaps ? { v: plural(nLaps, "tour"), l: `sous neutralisation (${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `${NK[r.kind]} T${r.start}${r.end > r.start ? "–" + r.end : ""}`).join(", ")})`, more: "Voir la course", go: () => (location.hash = "course") }
+  if (false) kpis.push(nLaps ? { v: plural(nLaps, "tour"), l: `sous neutralisation (${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `${NK[r.kind]} T${r.start}${r.end > r.start ? "–" + r.end : ""}`).join(", ")})`, more: "Voir la course", go: () => (location.hash = "course") }
     : { v: "0 tour", l: "sous safety car : course jamais neutralisée", more: "Voir la course", go: () => (location.hash = "course") });
   if (movers[0] && movers[0].grid - movers[0].finish > 0) kpis.push({ v: `+${movers[0].grid - movers[0].finish} places`, l: `plus belle remontée : ${movers[0].last} (P${movers[0].grid} → P${movers[0].finish})`, more: "Voir son GP", go: () => showDriver(movers[0].code) });
-  if (duels[0]) kpis.push({ v: gapS(duels[0].gap), l: `plus grand écart entre coéquipiers (${duels[0].team})`, more: "Voir le duel", go: () => showDuel(duels[0]) });
+  if (false && duels[0]) kpis.push({ v: gapS(duels[0].gap), l: `plus grand écart entre coéquipiers (${duels[0].team})`, more: "Voir le duel", go: () => showDuel(duels[0]) });
   $("#kpis").innerHTML = kpis.map((k, i) => `<button class="kpi lift" data-k="${i}"><span class="v mono">${k.v}</span><span class="l">${esc(k.l)}</span><span class="more">${k.more} →</span></button>`).join("");
   $$("#kpis .kpi").forEach((b) => b.addEventListener("click", () => kpis[+b.dataset.k].go()));
   $$("#tower .tower-row").forEach((b) => b.addEventListener("click", () => showDriver(b.dataset.driver)));
@@ -1673,7 +1713,9 @@ new ResizeObserver(() => { Object.values(charts).forEach((c) => c.inst && c.inst
 /* ======================= Pilote suivi, replay ======================= */
 let follow = [], showField = false, holdTicks = 0, coursePinned = [], courseMode = "pos";
 let replayLap = 1, playing = false, playT = null, rythmeReveal = false;
-let exSel = [], exMode = "laps";
+let exSel = [], exMode = "laps", exAll = false;
+// Raison d'un tour lent, en mots simples (sans pourcentage)
+const slowWhy = (r) => (/lent/i.test(r) ? "tour lent (trafic, erreur…)" : r === "SC" || r === "VSC" || r === "Rouge" ? NKlong[r] : r);
 const isMate2 = (d) => drivers.filter((x) => x.team === d.team)[1] === d;
 const dashIf = (d, set) => (isMate2(d) && set.some((c) => c !== d.code && byCode[c]?.team === d.team) ? [6, 4] : "solid");
 const F = (code) => !follow.length || follow.includes(code);
@@ -1940,7 +1982,7 @@ function renderHow() {
   setHow("how-strat", `Une ligne par pilote, du départ (à gauche) à l'arrivée (à droite). La couleur indique le pneu : ${sw(COMP.S.c)}tendre ${sw(COMP.M.c)}médium ${sw(COMP.H.c)}dur. <b>Chaque changement de couleur = un arrêt aux stands.</b>`);
   const ref = byCode[exSel[0]], rn = ref ? `<b>${esc(ref.last)}</b>` : "le pilote de référence";
   setHow("how-ex", {
-    laps: `Une ligne par pilote, un point par tour : <b>plus c'est bas, plus le tour est rapide</b>. Les trous sont les tours aux stands ou sous neutralisation.`,
+    laps: `Une ligne par pilote, un point par tour : <b>plus c'est bas, plus le tour est rapide</b>. ${exAll ? "Les points creux sont les tours lents (stands, safety car, trafic) : survole-les pour la raison." : "Les trous sont les tours aux stands ou sous neutralisation : « Afficher tous les tours » les fait apparaître."}`,
     gap: `Distance en piste entre chaque pilote et ${rn}, tour par tour. <b>Au-dessus de zéro = derrière ${rn}</b>, en dessous = devant lui.`,
     box: `Une case par tour, comparée au rythme habituel du pilote sur le même train de pneus : ${sw("var(--good)")}dans son rythme ${sw("#e3a008")}un peu lent ${sw("var(--bad)")}tour perdu ${sw("var(--track)")}départ, stands ou safety car.`,
     circuit: `Les deux pilotes refont leur meilleur tour sur le vrai tracé : ${rn} contre le deuxième pilote choisi. Chaque secteur prend la couleur du plus rapide.`,
@@ -1951,6 +1993,7 @@ function renderExRef() {
   const el = $("#ex-ref"); if (!el) return;
   const mode = $("[data-ex][aria-selected=true]")?.dataset.ex || exMode, sel = exSel.filter((c) => byCode[c]);
   el.hidden = sel.length < 2 || mode === "box";
+  const all = $("#ex-all"); if (all) { all.hidden = mode !== "laps"; all.setAttribute("aria-pressed", exAll); }
   el.innerHTML = `<span class="ex-ref-k">Comparé à</span>` + sel.map((c, i) => `<button aria-pressed="${!i}" data-ref="${c}"><i style="background:${byCode[c].color}"></i>${byCode[c].last}</button>`).join("");
   $$("#ex-ref [data-ref]").forEach((b) => b.addEventListener("click", () => setExRef(b.dataset.ref)));
 }
@@ -1959,6 +2002,7 @@ function setExRef(c) {
   exSel = [c, ...exSel.filter((x) => x !== c)];
   exChanged();
 }
+$("#ex-all")?.addEventListener("click", () => { exAll = !exAll; exChanged(); });
 // Après tout changement de sélection : chips, phrase, graphiques, circuit
 function exChanged() {
   renderExChips(); readEx(); sizeEx(); update("ch-ex");
@@ -2012,12 +2056,18 @@ function buildEx(T) {
         data: Array.from({ length: LAPS }, (_, k) => (d.cum[k] == null || ref.cum[k] == null ? null : +(d.cum[k] - ref.cum[k]).toFixed(3))),
         ...(i === 0 ? { markArea: neutralArea(T, LAPS, false) } : {}) })) };
   }
-  return { ...o, legend: { top: 0, textStyle: { color: T.ink2 } }, tooltip: { ...o.tooltip, trigger: "axis", valueFormatter: (v) => (v == null ? "—" : lapT(v)) },
+  // Tours lents (stands, neutralisation, trafic) : cachés par défaut, en points creux avec le bouton « Afficher tous les tours »
+  const slow = exAll ? sel.map((d, i) => ({ name: d.code + " · tour lent", type: "scatter", symbol: "emptyCircle", symbolSize: 8, z: 3,
+    itemStyle: { color: col(i), borderWidth: 2 }, data: Array.from({ length: LAPS }, (_, k) => { const l = d.laps[k]; return l && l.reason && l.t ? [k, +l.t.toFixed(3)] : null; }).filter(Boolean) })) : [];
+  return { ...o, legend: { top: 0, textStyle: { color: T.ink2 }, data: sel.map((d) => d.code) },
+    tooltip: { ...o.tooltip, trigger: "axis", formatter: (ps) => { const k = ps[0]?.dataIndex ?? 0, lap = (ps[0]?.axisValue ?? k + 1);
+      return `<b>Tour ${lap}</b><br>` + sel.map((d, i) => { const l = d.laps[+lap - 1]; if (!l || !l.t) return ""; if (l.reason && !exAll) return "";
+        return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col(i)};margin-right:6px"></span>${d.code} <b>${lapT(l.t)}</b>${l.reason ? ` <span style="color:${T.muted}">· ${esc(slowWhy(l.reason))}</span>` : ""}`; }).filter(Boolean).join("<br>"); } },
     xAxis: { type: "category", data: Array.from({ length: LAPS }, (_, i) => i + 1), boundaryGap: false, name: "Tour", ...axisCommon(T), splitLine: { show: false } },
     yAxis: { type: "value", scale: true, ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => lapT(v).slice(0, -2) } },
     series: sel.map((d, i) => ({ name: d.code, type: "line", symbol: "circle", symbolSize: 5, showSymbol: false, smooth: 0.2, connectNulls: false, lineStyle: { width: 2.5, color: col(i), type: dashIf(d, exSel) }, itemStyle: { color: col(i) },
       data: Array.from({ length: LAPS }, (_, k) => { const l = d.laps[k]; return l && !l.reason ? +l.t.toFixed(3) : null; }),
-      ...(i === 0 ? { markArea: neutralArea(T) } : {}) })) };
+      ...(i === 0 ? { markArea: neutralArea(T) } : {}) })).concat(slow) };
 }
 function renderExChips() {
   renderExRef(); renderHow();
@@ -2645,6 +2695,9 @@ const posAt = (d, lap) => { for (let l = Math.min(lap, LAPS); l >= 1; l--) if (d
 const leaderAt = (lap) => drivers.find((d) => d.pos[lap - 1] === 1) || null;
 const deName = (n) => (/^[aeiouyhàâéèêîôû]/i.test(n) ? "d'" : "de ") + n;
 let FACTS = [], MOMENTS = [];
+// Un fait compte plus s'il touche la tête de course : podium ×1,3, top 6 ×1,1, top 10 ×1, au-delà ×0,55
+const wPos = (p) => (!p ? 0.55 : p <= 3 ? 1.3 : p <= 6 ? 1.1 : p <= 10 ? 1 : 0.55);
+const FACT_MIN = 55, FACT_MAX = 5, FRISE_MAX = 4;
 const pAt = (d, l) => (l === 0 ? d.grid : d.pos[l - 1]) || null; // tour 0 = la grille de départ
 
 function buildFacts() {
@@ -2653,8 +2706,8 @@ function buildFacts() {
   const start = drivers.filter((d) => d.grid && d.pos[0]).map((d) => [d, d.grid - d.pos[0]]).sort((a, b) => b[1] - a[1])[0];
   if (start && start[1] >= 3) {
     const [d, g] = start, passed = drivers.filter((x) => x !== d && x.grid && x.pos[0] && x.grid < d.grid && x.pos[0] > d.pos[0]);
-    out.push({ lap: 1, cls: "up", label: "Départ", score: 40 + g * 4, txt: `<b>${esc(d.last)}</b> gagne ${g} places au départ`,
-      detail: `Parti P${d.grid}, il boucle le premier tour P${d.pos[0]}.`, ds: [d, ...passed.slice(0, 3)], win: [0, 3], main: d, from: 0, to: 1 });
+    out.push({ lap: 1, cls: "up", label: "Départ", score: (40 + g * 4) * wPos(d.pos[0]), txt: `<b>${esc(d.last)}</b> gagne ${g} places au départ`,
+      detail: `Parti P${d.grid}, il boucle le premier tour P${d.pos[0]}.`, ds: [d, ...passed.slice(0, 3)], win: [0, 3], main: d, from: 0, to: 1, who: d, short: `+${g} places au départ` });
   }
   // Changements de leader (on ignore les échanges de quelques tours dus aux arrêts aux stands)
   let cur = drivers.find((d) => d.grid === 1) || leaderAt(1);
@@ -2669,7 +2722,7 @@ function buildFacts() {
     out.push({ lap, cls: "lead", label: lap === 1 ? "Départ" : "Prise de tête", score: 70 + (L === win && toEnd ? 25 : 0) + Math.min(10, held / 3),
       txt: lap === 1 ? `<b>${esc(L.last)}</b> prend la tête au départ` : `<b>${esc(L.last)}</b> prend la tête`,
       detail: `${prev ? (inPit ? `Pendant l'arrêt aux stands ${deName(esc(prev.last))}. ` : `Devant ${esc(prev.last)}. `) : ""}${toEnd ? "Il ne la lâchera plus." : `Il la garde ${plural(held, "tour")}.`}`,
-      ds: [L, prev].filter(Boolean), win: [Math.max(1, lap - 3), Math.min(LAPS, lap + 4)], main: L, from: Math.max(1, lap - 1), to: lap });
+      ds: [L, prev].filter(Boolean), win: [Math.max(1, lap - 3), Math.min(LAPS, lap + 4)], main: L, from: Math.max(1, lap - 1), to: lap, who: L, short: "prend la tête" });
     cur = L;
   }
   // Safety car, VSC, drapeau rouge : qui en profite
@@ -2680,10 +2733,10 @@ function buildFacts() {
     const best = gains[0];
     if (best && best[1] >= 2) {
       const [d, g] = best, passed = drivers.filter((x) => x !== d && posAt(x, b) < posAt(d, b) && posAt(x, a) > posAt(d, a));
-      out.push({ lap: r.start, cls: "sc", label: name, score: 50 + Math.min(40, g * 7) + (r.kind === "Rouge" ? 15 : 0),
+      out.push({ lap: r.start, cls: "sc", label: name, score: (50 + Math.min(40, g * 7)) * wPos(posAt(d, a)) + (r.kind === "Rouge" ? 15 : 0),
         txt: `<b>${name}</b> : ${esc(d.last)} s'arrête et gagne ${g} places`,
         detail: `Tours ${r.start} à ${r.end}. Un arrêt sous ${r.kind === "VSC" ? "VSC" : r.kind === "Rouge" ? "drapeau rouge" : "safety car"} coûte moins de temps : P${posAt(d, b)} avant, P${posAt(d, a)} à la relance.${pitters.length > 1 ? ` ${pitters.length} pilotes en ont profité pour s'arrêter.` : ""}`,
-        ds: [d, ...passed.slice(0, 3)], win: [Math.max(1, r.start - 2), Math.min(LAPS, r.end + 4)], main: d, from: b, to: a });
+        ds: [d, ...passed.slice(0, 3)], win: [Math.max(1, r.start - 2), Math.min(LAPS, r.end + 4)], main: d, from: b, to: a, who: d, short: `s'arrête sous ${r.kind === "VSC" ? "VSC" : r.kind === "Rouge" ? "drapeau rouge" : "SC"} : +${g}` });
     } else {
       out.push({ lap: r.start, cls: "sc", label: name, score: r.kind === "Rouge" ? 75 : 25 + (r.end - r.start),
         txt: `<b>${name}</b>${r.end > r.start ? ` jusqu'au tour ${r.end}` : ""}`,
@@ -2697,20 +2750,27 @@ function buildFacts() {
     out.push({ lap, cls: "out", label: d.result.dsq ? "Disqualification" : "Abandon", score: 40 + (11 - p) * 5,
       txt: `${d.result.dsq ? "Disqualification" : "Abandon"} ${deName(`<b>${esc(d.last)}</b>`)}, alors ${p === 1 ? "en tête" : "P" + p}`,
       detail: `${esc(d.team)}, après ${plural(d.outLap, "tour")}.${behind[0] ? ` ${esc(behind[0].last)} récupère la place.` : ""}`,
-      ds: [d, ...behind.slice(0, 2)], win: [Math.max(1, d.outLap - 3), Math.min(LAPS, d.outLap + 3)], main: behind[0] || d, from: d.outLap - 1, to: Math.min(LAPS, d.outLap + 2) });
+      ds: [d, ...behind.slice(0, 2)], win: [Math.max(1, d.outLap - 3), Math.min(LAPS, d.outLap + 3)], main: behind[0] || d, from: d.outLap - 1, to: Math.min(LAPS, d.outLap + 2), who: d, short: `${d.result.dsq ? "disqualifié" : "abandon"} (P${p})` });
   });
   // Plus belle remontée de la course
   const up = finishers.filter((d) => d.grid).map((d) => [d, d.grid - d.finish]).sort((a, b) => b[1] - a[1])[0];
   if (up && up[1] >= 5) {
     const [d, g] = up;
-    out.push({ lap: null, cls: "up", label: "Remontée", score: 45 + g * 2, txt: `<b>${esc(d.last)}</b> remonte de P${d.grid} à P${d.finish}`,
-      detail: `${plural(g, "place")} gagnée${g > 1 ? "s" : ""} entre la grille et l'arrivée.`, ds: [d], win: [1, LAPS], main: d, from: 0, to: LAPS });
+    out.push({ lap: null, cls: "up", label: "Remontée", score: (45 + g * 2) * wPos(d.finish), txt: `<b>${esc(d.last)}</b> remonte de P${d.grid} à P${d.finish}`,
+      detail: `${plural(g, "place")} gagnée${g > 1 ? "s" : ""} entre la grille et l'arrivée.`, ds: [d], win: [1, LAPS], main: d, from: 0, to: LAPS, who: d, short: `remonte de P${d.grid} à P${d.finish}` });
   }
   return out;
 }
-// Les 6 faits les plus importants, dans l'ordre de la course, puis l'arrivée
+// Les faits retenus : au-dessus d'un seuil (une course calme en aura peu), 5 au plus, un même pilote une seule fois
+// (sauf prise de tête). Les neutralisations sans gain restent pour les notes du replay (elles sont les bandes jaunes de la frise).
 function selectFacts(all) {
-  const top = [...all].sort((a, b) => b.score - a.score).slice(0, 6).sort((a, b) => (a.lap ?? LAPS - 0.5) - (b.lap ?? LAPS - 0.5));
+  const seen = new Set(), top = [];
+  [...all].filter((f) => f.who && f.score >= FACT_MIN).sort((a, b) => b.score - a.score).forEach((f) => {
+    if (top.length >= FACT_MAX || (f.cls !== "lead" && seen.has(f.who))) return;
+    if (f.cls !== "lead") seen.add(f.who); top.push(f);
+  });
+  top.push(...all.filter((f) => !f.who && f.lap && f.cls === "sc"));
+  top.sort((a, b) => (a.lap ?? LAPS - 0.5) - (b.lap ?? LAPS - 0.5));
   const [w, p2] = finishers;
   if (w) { const g = winnerGap(); top.push({ lap: LAPS, cls: "", label: "Arrivée", score: 0, txt: `Drapeau à damier : <b>${esc(w.last)}</b> gagne`, detail: `${esc(w.name)} gagne${p2 && g != null ? ` avec ${gapS(g)} d'avance sur ${esc(p2.last)}` : ""}.` }); }
   return top;
@@ -2768,6 +2828,43 @@ function momPlay(el, m) {
   const [l0, l1] = m.win, dur = reduce ? 0 : Math.min(5200, 900 + (l1 - l0) * 380), t0 = performance.now();
   const tick = (now) => { const u = dur ? Math.min(1, (now - t0) / dur) : 1; momDraw(el, m, l0 + (l1 - l0) * u); if (u < 1) el._raf = requestAnimationFrame(tick); else el._raf = 0; };
   el._raf = requestAnimationFrame(tick);
+}
+
+/* --- « La course en un coup d'œil » : une frise du départ à l'arrivée, avec les neutralisations et les faits --- */
+function renderFrise() {
+  const X = (lap) => ((Math.max(1, lap) - 1) / Math.max(1, LAPS - 1)) * 100;
+  const evs = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX).sort((a, b) => a.lap - b.lap), w = finishers[0];
+  // Étiquettes sur deux étages quand deux faits sont trop proches
+  let lastX = [-99, -99, -99];
+  const items = evs.map((e) => { const x = X(e.lap); let row = lastX.findIndex((lx) => x - lx >= 24); if (row < 0) row = lastX.indexOf(Math.min(...lastX)); lastX[row] = x; return { e, x, row }; });
+  const bands = NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `<span class="fr-band" style="left:${X(r.start)}%;width:${Math.max(0.8, X(r.end) - X(r.start))}%" title="${NKlong[r.kind]} T${r.start}–${r.end}"><b>${NK[r.kind]}</b></span>`).join("");
+  const ticks = [1, Math.round(LAPS / 4), Math.round(LAPS / 2), Math.round((3 * LAPS) / 4), LAPS].map((l) => `<span class="fr-tick" style="left:${X(l)}%">T${l}</span>`).join("");
+  const edge = (x) => (x < 12 ? "l" : x > 85 ? "r" : "");
+  const flat = `<div class="frise">
+      <div class="fr-track">${bands}<span class="fr-flag" title="Arrivée"></span></div>
+      <div class="fr-ticks">${ticks}</div>
+      <div class="fr-evs">${items.map(({ e, x, row }, i) => `<button class="fr-ev r${row} ${edge(x)}" style="left:${x}%;--c:${e.who.color}" data-f="${i}"><i class="fr-dot"></i><span class="fr-lbl"><span class="fr-k">T${e.lap} · ${e.who.code}</span>${esc(e.short)}</span></button>`).join("")}</div>
+    </div>`;
+  const list = `<div class="fr-list">${items.map(({ e }, i) => `<button class="fr-li" style="--c:${e.who.color}" data-f="${i}"><span class="fr-lap">T${e.lap}</span><i class="fr-dot"></i><span><b>${e.who.last}</b> ${esc(e.short)}</span></button>`).join("")}
+      ${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `<div class="fr-li sc"><span class="fr-lap">T${r.start}</span><i class="fr-dot"></i><span>${NKlong[r.kind]} jusqu'au tour ${r.end}</span></div>`).join("")}
+      ${w ? `<div class="fr-li end"><span class="fr-lap">T${LAPS}</span><i class="fr-dot"></i><span>Drapeau à damier : <b>${esc(w.last)}</b> gagne</span></div>` : ""}</div>`;
+  $("#log").innerHTML = `<div class="log-title">LA COURSE EN UN COUP D'ŒIL</div>${flat}${list}`;
+  // Étages des étiquettes : on mesure, puis chaque étiquette prend le premier étage où elle ne chevauche pas sa voisine
+  const evEls = $$("#log .fr-ev"); if (evEls.length && $("#log .frise").offsetParent) {
+    // Deux étages au plus : si ça ne tient pas, on bascule sur la liste (jamais d'étiquettes qui se chevauchent)
+    const rowsEnd = [-1e9, -1e9]; let fits = true;
+    evEls.forEach((el) => { el.classList.remove("r0", "r1", "r2"); const r = el.querySelector(".fr-lbl").getBoundingClientRect();
+      // Étage où l'étiquette demande le moins de décalage ; jusqu'à 70 px on la pousse à droite, au-delà on bascule sur la liste
+      const shifts = rowsEnd.map((end) => Math.max(0, end + 10 - r.left)), row = shifts.indexOf(Math.min(...shifts)), dx = shifts[row];
+      const lbl = el.querySelector(".fr-lbl"); lbl.style.transform = dx ? `translateX(${dx}px)` : "";
+      if (dx > 70 || r.right + dx > $("#log .frise").getBoundingClientRect().right + 12) { fits = false; return; }
+      rowsEnd[row] = r.right + dx; el.classList.add("r" + row); });
+    $("#log").classList.toggle("fr-fallback", !fits);
+    $("#log .fr-evs").style.height = (rowsEnd.filter((v) => v > -1e9).length * 46 + 34) + "px";
+  }
+  // La liste mobile se trie par tour
+  const L = $("#log .fr-list"); [...L.children].sort((a, b) => +a.querySelector(".fr-lap").textContent.slice(1) - +b.querySelector(".fr-lap").textContent.slice(1)).forEach((n) => L.appendChild(n));
+  $$("#log [data-f]").forEach((b) => b.addEventListener("click", () => { const e = items[+b.dataset.f].e; openDialog(`Tour ${e.lap} · ${e.label}`, `<p class="read">${e.txt}. ${e.detail}</p>`); }));
 }
 
 /* ======================= Mobile : vertical pour changer de section, horizontal pour changer de vue ======================= */
@@ -2916,7 +3013,7 @@ function setupMobileOnce() {
   });
   // Les sections en cartes
   const grid = $("#gp-section .hero-grid");
-  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Direction de course", [$("#log")]], ["Chiffres clés", [$("#kpis")]]]));
+  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Les faits", [$("#log")]], ["Chiffres clés", [$("#kpis")]]]));
   grid.remove();
   const cw = $("#course .course-wrap");
   swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Les batailles", [expertCard("#course .under")], true]]));

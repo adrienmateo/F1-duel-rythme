@@ -379,19 +379,17 @@ function renderHero() {
   const segs = []; let prev = 1;
   NEUTRAL.forEach((r) => { if (r.start > prev) segs.push(`<span style="flex:${r.start - prev}"></span>`); segs.push(`<span class="sc" style="flex:${r.end - r.start + 1}" title="${NKlong[r.kind]} T${r.start}–${r.end}"></span>`); prev = r.end + 1; });
   if (prev <= LAPS) segs.push(`<span style="flex:${LAPS - prev + 1}"></span>`);
-  $("#log").innerHTML = `<div class="log-title">LES FAITS DE COURSE</div>` + (EVENTS.length ? EVENTS.map((e, i) => `<button class="log-row ${e.cls}" data-event="${i}"><span class="lap">${e.lap && e.label !== "Remontée" ? "T" + e.lap : "★"}</span><span>${e.txt}</span></button>`).join("") : `<p class="empty-note">Course sans incident marquant.</p>`) +
-    `<div class="timeline" aria-label="Neutralisations pendant la course">${segs.join("")}</div>`;
-  $$("#log .log-row").forEach((b) => b.addEventListener("click", () => { const e = EVENTS[+b.dataset.event]; openDialog(e.label === "Remontée" ? "Toute la course" : `Tour ${e.lap} · ${e.label || ""}`, `<p class="read">${e.txt.replace(/<[^>]+>/g, "")}. ${e.detail}</p>`); }));
+  renderFrise();
 
   const movers = finishers.filter((d) => d.grid).sort((a, b) => (b.grid - b.finish) - (a.grid - a.finish));
   const duels = computeDuels().filter((x) => x.valid);
   const nLaps = NEUTRAL.filter((r) => r.kind !== "Ralenti").reduce((s, r) => s + r.end - r.start + 1, 0);
   const kpis = [];
   if (g != null) kpis.push({ v: gapS(g), l: "entre le vainqueur et le 2e", more: "Voir le 2e", go: () => showDriver(p2.code) });
-  kpis.push(nLaps ? { v: plural(nLaps, "tour"), l: `sous neutralisation (${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `${NK[r.kind]} T${r.start}${r.end > r.start ? "–" + r.end : ""}`).join(", ")})`, more: "Voir la course", go: () => (location.hash = "course") }
+  if (false) kpis.push(nLaps ? { v: plural(nLaps, "tour"), l: `sous neutralisation (${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `${NK[r.kind]} T${r.start}${r.end > r.start ? "–" + r.end : ""}`).join(", ")})`, more: "Voir la course", go: () => (location.hash = "course") }
     : { v: "0 tour", l: "sous safety car : course jamais neutralisée", more: "Voir la course", go: () => (location.hash = "course") });
   if (movers[0] && movers[0].grid - movers[0].finish > 0) kpis.push({ v: `+${movers[0].grid - movers[0].finish} places`, l: `plus belle remontée : ${movers[0].last} (P${movers[0].grid} → P${movers[0].finish})`, more: "Voir son GP", go: () => showDriver(movers[0].code) });
-  if (duels[0]) kpis.push({ v: gapS(duels[0].gap), l: `plus grand écart entre coéquipiers (${duels[0].team})`, more: "Voir le duel", go: () => showDuel(duels[0]) });
+  if (false && duels[0]) kpis.push({ v: gapS(duels[0].gap), l: `plus grand écart entre coéquipiers (${duels[0].team})`, more: "Voir le duel", go: () => showDuel(duels[0]) });
   $("#kpis").innerHTML = kpis.map((k, i) => `<button class="kpi lift" data-k="${i}"><span class="v mono">${k.v}</span><span class="l">${esc(k.l)}</span><span class="more">${k.more} →</span></button>`).join("");
   $$("#kpis .kpi").forEach((b) => b.addEventListener("click", () => kpis[+b.dataset.k].go()));
   $$("#tower .tower-row").forEach((b) => b.addEventListener("click", () => showDriver(b.dataset.driver)));
@@ -511,7 +509,9 @@ new ResizeObserver(() => { Object.values(charts).forEach((c) => c.inst && c.inst
 /* ======================= Pilote suivi, replay ======================= */
 let follow = [], showField = false, holdTicks = 0, coursePinned = [], courseMode = "pos";
 let replayLap = 1, playing = false, playT = null, rythmeReveal = false;
-let exSel = [], exMode = "laps";
+let exSel = [], exMode = "laps", exAll = false;
+// Raison d'un tour lent, en mots simples (sans pourcentage)
+const slowWhy = (r) => (/lent/i.test(r) ? "tour lent (trafic, erreur…)" : r === "SC" || r === "VSC" || r === "Rouge" ? NKlong[r] : r);
 const isMate2 = (d) => drivers.filter((x) => x.team === d.team)[1] === d;
 const dashIf = (d, set) => (isMate2(d) && set.some((c) => c !== d.code && byCode[c]?.team === d.team) ? [6, 4] : "solid");
 const F = (code) => !follow.length || follow.includes(code);
@@ -778,7 +778,7 @@ function renderHow() {
   setHow("how-strat", `Une ligne par pilote, du départ (à gauche) à l'arrivée (à droite). La couleur indique le pneu : ${sw(COMP.S.c)}tendre ${sw(COMP.M.c)}médium ${sw(COMP.H.c)}dur. <b>Chaque changement de couleur = un arrêt aux stands.</b>`);
   const ref = byCode[exSel[0]], rn = ref ? `<b>${esc(ref.last)}</b>` : "le pilote de référence";
   setHow("how-ex", {
-    laps: `Une ligne par pilote, un point par tour : <b>plus c'est bas, plus le tour est rapide</b>. Les trous sont les tours aux stands ou sous neutralisation.`,
+    laps: `Une ligne par pilote, un point par tour : <b>plus c'est bas, plus le tour est rapide</b>. ${exAll ? "Les points creux sont les tours lents (stands, safety car, trafic) : survole-les pour la raison." : "Les trous sont les tours aux stands ou sous neutralisation : « Afficher tous les tours » les fait apparaître."}`,
     gap: `Distance en piste entre chaque pilote et ${rn}, tour par tour. <b>Au-dessus de zéro = derrière ${rn}</b>, en dessous = devant lui.`,
     box: `Une case par tour, comparée au rythme habituel du pilote sur le même train de pneus : ${sw("var(--good)")}dans son rythme ${sw("#e3a008")}un peu lent ${sw("var(--bad)")}tour perdu ${sw("var(--track)")}départ, stands ou safety car.`,
     circuit: `Les deux pilotes refont leur meilleur tour sur le vrai tracé : ${rn} contre le deuxième pilote choisi. Chaque secteur prend la couleur du plus rapide.`,
@@ -789,6 +789,7 @@ function renderExRef() {
   const el = $("#ex-ref"); if (!el) return;
   const mode = $("[data-ex][aria-selected=true]")?.dataset.ex || exMode, sel = exSel.filter((c) => byCode[c]);
   el.hidden = sel.length < 2 || mode === "box";
+  const all = $("#ex-all"); if (all) { all.hidden = mode !== "laps"; all.setAttribute("aria-pressed", exAll); }
   el.innerHTML = `<span class="ex-ref-k">Comparé à</span>` + sel.map((c, i) => `<button aria-pressed="${!i}" data-ref="${c}"><i style="background:${byCode[c].color}"></i>${byCode[c].last}</button>`).join("");
   $$("#ex-ref [data-ref]").forEach((b) => b.addEventListener("click", () => setExRef(b.dataset.ref)));
 }
@@ -797,6 +798,7 @@ function setExRef(c) {
   exSel = [c, ...exSel.filter((x) => x !== c)];
   exChanged();
 }
+$("#ex-all")?.addEventListener("click", () => { exAll = !exAll; exChanged(); });
 // Après tout changement de sélection : chips, phrase, graphiques, circuit
 function exChanged() {
   renderExChips(); readEx(); sizeEx(); update("ch-ex");
@@ -850,12 +852,18 @@ function buildEx(T) {
         data: Array.from({ length: LAPS }, (_, k) => (d.cum[k] == null || ref.cum[k] == null ? null : +(d.cum[k] - ref.cum[k]).toFixed(3))),
         ...(i === 0 ? { markArea: neutralArea(T, LAPS, false) } : {}) })) };
   }
-  return { ...o, legend: { top: 0, textStyle: { color: T.ink2 } }, tooltip: { ...o.tooltip, trigger: "axis", valueFormatter: (v) => (v == null ? "—" : lapT(v)) },
+  // Tours lents (stands, neutralisation, trafic) : cachés par défaut, en points creux avec le bouton « Afficher tous les tours »
+  const slow = exAll ? sel.map((d, i) => ({ name: d.code + " · tour lent", type: "scatter", symbol: "emptyCircle", symbolSize: 8, z: 3,
+    itemStyle: { color: col(i), borderWidth: 2 }, data: Array.from({ length: LAPS }, (_, k) => { const l = d.laps[k]; return l && l.reason && l.t ? [k, +l.t.toFixed(3)] : null; }).filter(Boolean) })) : [];
+  return { ...o, legend: { top: 0, textStyle: { color: T.ink2 }, data: sel.map((d) => d.code) },
+    tooltip: { ...o.tooltip, trigger: "axis", formatter: (ps) => { const k = ps[0]?.dataIndex ?? 0, lap = (ps[0]?.axisValue ?? k + 1);
+      return `<b>Tour ${lap}</b><br>` + sel.map((d, i) => { const l = d.laps[+lap - 1]; if (!l || !l.t) return ""; if (l.reason && !exAll) return "";
+        return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col(i)};margin-right:6px"></span>${d.code} <b>${lapT(l.t)}</b>${l.reason ? ` <span style="color:${T.muted}">· ${esc(slowWhy(l.reason))}</span>` : ""}`; }).filter(Boolean).join("<br>"); } },
     xAxis: { type: "category", data: Array.from({ length: LAPS }, (_, i) => i + 1), boundaryGap: false, name: "Tour", ...axisCommon(T), splitLine: { show: false } },
     yAxis: { type: "value", scale: true, ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => lapT(v).slice(0, -2) } },
     series: sel.map((d, i) => ({ name: d.code, type: "line", symbol: "circle", symbolSize: 5, showSymbol: false, smooth: 0.2, connectNulls: false, lineStyle: { width: 2.5, color: col(i), type: dashIf(d, exSel) }, itemStyle: { color: col(i) },
       data: Array.from({ length: LAPS }, (_, k) => { const l = d.laps[k]; return l && !l.reason ? +l.t.toFixed(3) : null; }),
-      ...(i === 0 ? { markArea: neutralArea(T) } : {}) })) };
+      ...(i === 0 ? { markArea: neutralArea(T) } : {}) })).concat(slow) };
 }
 function renderExChips() {
   renderExRef(); renderHow();
