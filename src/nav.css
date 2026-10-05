@@ -42,7 +42,7 @@ body.at-home { overflow: hidden; }
 
 /* ---------- Chapitres : sommaire en cartes partout, chapitre en plein écran (mobile) ou en grand panneau (ordinateur) ---------- */
 .mchap { display: none; }
-main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
+main > #moments, main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
 .mchaps { display: grid; gap: 10px; }
 .mc-title { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 4px 2px 0; }
 .mc { text-align: left; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-md); color: inherit; font: inherit; cursor: pointer; }
@@ -182,3 +182,46 @@ body.in-chap { overflow: hidden; }
 .ex-ref button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 4px 11px; font: 600 13px var(--body); cursor: pointer; }
 .ex-ref button i { width: 8px; height: 8px; border-radius: 50%; }
 .ex-ref button[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
+#u-pits[hidden] { display: none !important; }
+
+/* Les duels : une ligne par écurie, barre à la couleur de l'écurie, duel et écart alignés à droite */
+.duel .fill { opacity: .85; }
+.duel .who { white-space: nowrap; }
+.duel .who .gap { font-weight: 600; color: var(--ink); }
+@media (min-width: 641px) {
+  .duel .team { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .duel .team .dot { flex: none; margin: 0; }
+  .duel { grid-template-columns: 150px minmax(0, 1fr) 236px; }
+  .duel .who { display: grid; grid-template-columns: 58px 96px 1fr; align-items: center; gap: 8px; }
+  .duel .who .strat { order: -1; justify-self: start; }
+  .duel .who > span:empty { order: -1; }
+  .duel .who .gap { text-align: right; }
+  .duel-head .who-h { padding-left: 66px; }
+}
+
+/* Les faits de course (haut de page) */
+.log-row.lead .lap, .log-row.lead b { color: var(--purple); }
+.log-row.up .lap { color: var(--good); }
+/* Les 3 moments */
+.moments { display: grid; gap: 14px; }
+.mom { display: grid; gap: 8px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.mom-k { display: flex; gap: 10px; align-items: baseline; font: 600 12px var(--mono); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.mom-n { color: var(--accent); font-weight: 700; }
+.mom-t { margin: 0; font: 700 20px/1.25 var(--body); }
+.mom-d { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.5; }
+.mom-ba { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 2px; color: var(--muted); }
+.mom-ba > span:not(.mv):not(.mom-who) { display: grid; line-height: 1.1; }
+.mom-ba small { font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+.mom-ba b { font: 800 20px var(--display); color: var(--ink); }
+.mom-who { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-weight: 600; color: var(--ink-2); }
+.mom-who i { width: 10px; height: 10px; border-radius: 50%; }
+.mom-stage { position: relative; }
+.mom-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.mom-play { margin-left: auto; padding: 6px 12px; font-size: 13px; }
+.mom-grid { stroke: var(--track); stroke-width: 1; }
+.mom-lbl { font: 600 10.5px var(--mono); fill: var(--muted); }
+.mom-sc { fill: var(--sc); opacity: .16; }
+.mom-code { font: 700 16px var(--mono); fill: var(--ink); }
+.mc-prev .pv-axis { stroke: var(--track); stroke-width: 4; stroke-linecap: round; }
+.mc-prev .pv-n { font: 800 12px var(--body); fill: #fff; }
+@media (max-width: 640px) { .mom { padding: 13px 12px; } .mom-t { font-size: 17px; } .mom-who { margin-left: 0; } }

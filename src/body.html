@@ -10,7 +10,7 @@
       <select id="gp" aria-label="Grand Prix" disabled><option>Chargement…</option></select>
     </div>
     <nav class="sections" aria-label="Sections">
-      <a href="#gp-section">Le GP<i class="xdot" aria-hidden="true"></i></a><a href="#course">La course<i class="xdot" aria-hidden="true"></i></a><a href="#duels">Les duels<i class="xdot" aria-hidden="true"></i></a><a href="#strategies">Stratégies<i class="xdot" aria-hidden="true"></i></a><a href="#explorer">Explorer</a>
+      <a href="#gp-section">Le GP<i class="xdot" aria-hidden="true"></i></a><a href="#moments">Les moments</a><a href="#course">La course<i class="xdot" aria-hidden="true"></i></a><a href="#duels">Les duels<i class="xdot" aria-hidden="true"></i></a><a href="#strategies">Stratégies<i class="xdot" aria-hidden="true"></i></a><a href="#explorer">Explorer</a>
     </nav>
     <button class="mburger" id="mburger" aria-label="Menu" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <button class="icon-btn" id="theme" aria-label="Passer en mode sombre">
@@ -55,7 +55,15 @@
 
   <div class="mchaps" id="mchaps"></div>
 
-  <!-- 2. La course -->
+  <!-- 2. Les 3 moments -->
+  <section class="sec card" id="moments">
+    <div class="sec-head"><div><div class="eyebrow">Les 3 moments</div><h2>Les moments qui ont fait la course</h2></div></div>
+    <p class="read" id="read-moments"></p>
+    <p class="howread"><span class="hw-k">Comment lire</span><span>Chaque moment montre les pilotes concernés sur les tours qui l'entourent : <b>en haut = devant</b>. Les voitures avancent tour par tour ; la bande jaune signale un safety car ou un VSC.</span></p>
+    <div class="moments" id="moments-list"></div>
+  </section>
+
+  <!-- 3. La course -->
   <section class="sec card" id="course">
     <div class="sec-head">
       <div><div class="eyebrow">La course</div><h2>Comment la course s'est jouée</h2></div>
@@ -134,7 +142,7 @@
     <div class="under x-grid x-only" id="u-pits">
       <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Les arrêts aux stands chronométrés</h3></div>
       <p class="read" id="read-pits" style="font-size:15px"></p>
-      <p class="howto"><span><b>Ce que ça montre :</b> le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands.</span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> <span id="how-pits">le temps de chaque arrêt.</span></span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
       <div class="pitlist" id="pitlist"></div>
     </div>
   </section>
@@ -165,7 +173,7 @@
         <div><div class="circ-who" id="circ-who"></div><div class="circ-stage"><svg id="circ" viewBox="0 0 680 400" role="img" aria-label="Tracé du circuit découpé en trois secteurs : meilleur tour de chaque pilote"></svg><p class="fine circ-msg" id="circ-msg" hidden></p></div></div>
         <div class="circ-side" id="cside"></div>
       </div>
-      <p class="fine">Meilleur tour de chaque pilote, joué en accéléré, sur le tracé réel (positions OpenF1).</p>
+      <p class="fine">Meilleur tour de chaque pilote, joué en accéléré, sur le tracé réel.</p>
     </div>
   </section>
 

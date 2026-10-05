@@ -20,14 +20,14 @@ async function api(endpoint, params) {
     lastCall = Date.now(); calls.push(lastCall);
     let res;
     try { res = await fetch(url); }
-    catch { throw new Error(navigator.onLine === false ? "Pas de connexion internet : impossible de joindre OpenF1." : "OpenF1 ne répond pas. Pendant une séance de F1 en direct (essais, qualifs ou course), OpenF1 réserve son accès aux abonnés : les GP s'afficheront de nouveau à la fin de la séance."); }
+    catch { throw new Error(navigator.onLine === false ? "Pas de connexion internet : impossible de charger les données." : "Les données ne sont pas disponibles en ce moment (une séance de F1 est peut-être en cours). Les GP s'afficheront de nouveau à la fin de la séance."); }
     if (res.ok) { const data = await res.json(); memo.set(url, data); return data; }
     if (res.status === 429) { await sleep(5000 * attempt); continue; } // trop d'appels : on attend sans rien afficher de plus
     if (res.status === 404) return [];
     if (res.status >= 500) { await sleep(2000 * attempt); continue; }
-    throw new Error(`OpenF1 a répondu une erreur (HTTP ${res.status}) sur « ${endpoint} ».`);
+    throw new Error("Les données de ce Grand Prix n'ont pas pu être chargées. Réessaie dans un moment.");
   }
-  throw new Error("OpenF1 ne répond pas pour le moment. Réessaie dans une minute.");
+  throw new Error("Les données ne répondent pas pour le moment. Réessaie dans une minute.");
 }
 const store = {
   key: (sk) => `f1duel:v4:${sk}`,
@@ -332,6 +332,8 @@ function buildModel(session, raw) {
   const [w, p2] = finishers;
   if (w) ev.push({ lap: LAPS, cls: "", txt: "Drapeau à damier", detail: `${w.name} gagne${p2 ? ` avec ${gapS(winnerGap())} d'avance` : ""}.` });
   EVENTS = ev.sort((a, b) => a.lap - b.lap);
+  // Haut de page et replay : les faits marquants repérés dans les données (voir moments.js)
+  FACTS = buildFacts(); EVENTS = selectFacts(FACTS);
 }
 function winnerGap() {
   const [w, p2] = finishers; if (!w || !p2) return null;
@@ -377,9 +379,9 @@ function renderHero() {
   const segs = []; let prev = 1;
   NEUTRAL.forEach((r) => { if (r.start > prev) segs.push(`<span style="flex:${r.start - prev}"></span>`); segs.push(`<span class="sc" style="flex:${r.end - r.start + 1}" title="${NKlong[r.kind]} T${r.start}–${r.end}"></span>`); prev = r.end + 1; });
   if (prev <= LAPS) segs.push(`<span style="flex:${LAPS - prev + 1}"></span>`);
-  $("#log").innerHTML = `<div class="log-title">DIRECTION DE COURSE</div>` + (EVENTS.length ? EVENTS.map((e, i) => `<button class="log-row ${e.cls}" data-event="${i}"><span class="lap">T${e.lap}</span><span>${e.txt}</span></button>`).join("") : `<p class="empty-note">Course sans incident marquant.</p>`) +
+  $("#log").innerHTML = `<div class="log-title">LES FAITS DE COURSE</div>` + (EVENTS.length ? EVENTS.map((e, i) => `<button class="log-row ${e.cls}" data-event="${i}"><span class="lap">${e.lap && e.label !== "Remontée" ? "T" + e.lap : "★"}</span><span>${e.txt}</span></button>`).join("") : `<p class="empty-note">Course sans incident marquant.</p>`) +
     `<div class="timeline" aria-label="Neutralisations pendant la course">${segs.join("")}</div>`;
-  $$("#log .log-row").forEach((b) => b.addEventListener("click", () => { const e = EVENTS[+b.dataset.event]; openDialog(`Tour ${e.lap}`, `<p class="read">${e.txt.replace(/<[^>]+>/g, "")}. ${e.detail}</p>`); }));
+  $$("#log .log-row").forEach((b) => b.addEventListener("click", () => { const e = EVENTS[+b.dataset.event]; openDialog(e.label === "Remontée" ? "Toute la course" : `Tour ${e.lap} · ${e.label || ""}`, `<p class="read">${e.txt.replace(/<[^>]+>/g, "")}. ${e.detail}</p>`); }));
 
   const movers = finishers.filter((d) => d.grid).sort((a, b) => (b.grid - b.finish) - (a.grid - a.finish));
   const duels = computeDuels().filter((x) => x.valid);
@@ -451,15 +453,14 @@ function renderDuels() {
   const tight = valid[valid.length - 1];
   $("#read-duels").innerHTML = `<b>${valid[0].fast.last}</b> a dominé ${valid[0].slow.last} de <b>${gapS(valid[0].gap)}</b> au tour.` + (tight !== valid[0] ? ` Le duel le plus serré est chez ${tight.team} (${gapS(tight.gap)}).` : "") +
     (strat.length ? ` Chez ${strat[0].team}, l'écart venait de la stratégie : à pneus égaux, ${strat[0].slow.last} était plus rapide.` : "");
-  $("#duel-list").innerHTML = `<div class="duel x-grid x-only" style="cursor:default;padding-block:4px"><span class="fine">Écurie</span><span class="fine">Écart de rythme</span><span class="fine" style="display:flex;justify-content:space-between"><span>Duel</span><span class="x-col">à pneus égaux</span></span></div>` +
+  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme médian</span><span class="fine who-h">Duel</span></div>` +
     duels.map((d, i) => d.valid ? `<button class="duel lift" data-d="${i}" data-codes="${d.fast.code} ${d.slow.code}">
-      <span class="team"><i class="dot" style="background:${d.color};margin-right:6px"></i>${esc(d.team)}</span>
-      <span class="track"><span class="fill" style="display:block" data-w="${Math.max(0.6, (d.gap / max) * 100)}"></span></span>
-      <span class="who"><span><b>${d.fast.code}</b> <span class="slow">› ${d.slow.code}</span></span>
-        <span style="display:flex;gap:8px;align-items:center">${d.same != null && d.same < 0 ? '<span class="strat">STRAT</span>' : ""}<span>${gapS(d.gap)}</span><span class="x-col x-only">${d.same == null ? "—" : gapS(d.same)}</span></span></span>
+      <span class="team"><i class="dot" style="background:${d.color}"></i>${esc(d.team)}</span>
+      <span class="track"><span class="fill" style="display:block;background:${d.color}" data-w="${Math.max(0.6, (d.gap / max) * 100)}"></span></span>
+      <span class="who"><span class="pair"><b>${d.fast.code}</b> <span class="slow">› ${d.slow.code}</span></span>${d.same != null && d.same < 0 ? `<span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide">STRAT</span>` : "<span></span>"}<span class="gap">${gapS(d.gap)}</span></span>
     </button>` : `<div class="na">${esc(d.team)} non comparable : ${esc(d.out.join(", "))} sans assez de tours représentatifs.</div>`).join("");
   $$("#duel-list .duel[data-d]").forEach((b) => b.addEventListener("click", () => showDuel(duels[+b.dataset.d])));
-  const grow = () => $$("#duel-list .fill").forEach((f, k) => setTimeout(() => (f.style.width = f.dataset.w + "%"), reduce ? 0 : k * 60));
+  const grow = () => $$("#duels .duel .fill").forEach((f, k) => setTimeout(() => (f.style.width = f.dataset.w + "%"), reduce ? 0 : k * 60));
   if (renderDuels.seen) setTimeout(grow, 50); else whenVisible($("#duels"), () => { renderDuels.seen = true; grow(); });
 }
 
@@ -892,7 +893,9 @@ function readEx() {
 /* ======================= Mode expert : analyses « Sous le capot » ======================= */
 function renderPits() {
   const stops = drivers.flatMap((d) => d.stops.map((s) => ({ ...s, d }))).filter((s) => s.stop != null || s.lane != null);
-  if (!stops.length) { $("#read-pits").textContent = "OpenF1 ne donne pas encore les durées d'arrêt pour cette course."; $("#pitlist").innerHTML = ""; return; }
+  // Pas de durée d'arrêt connue : on n'affiche pas le bloc plutôt que d'expliquer ce qui manque
+  $("#u-pits").hidden = !stops.length;
+  if (!stops.length) { $("#read-pits").textContent = ""; $("#pitlist").innerHTML = ""; return; }
   const hasStop = stops.some((s) => s.stop != null);
   const key = (s) => (hasStop ? s.stop ?? Infinity : s.lane ?? Infinity);
   const sorted = stops.filter((s) => isFinite(key(s))).sort((a, b) => key(a) - key(b));
@@ -901,7 +904,8 @@ function renderPits() {
   const f = sorted[0], sl = sorted[sorted.length - 1];
   $("#read-pits").innerHTML = hasStop
     ? `Arrêt le plus rapide : <b>${esc(f.d.team)}</b> pour ${esc(f.d.last)}, <b>${fr(f.stop, 2)} s</b> à l'arrêt. Le plus lent : ${fr(sl.stop, 2)} s pour ${esc(sl.d.last)}.${laneMed ? ` Le temps total passé dans la voie des stands tourne autour de ${fr(laneMed, 1)} s.` : ""}`
-    : `Temps passé dans la voie des stands (entrée à sortie) : le plus court pour <b>${esc(f.d.last)}</b> (${esc(f.d.team)}), <b>${fr(f.lane, 1)} s</b>. OpenF1 ne donne pas le temps d'immobilisation seul pour cette course.`;
+    : `Temps passé dans la voie des stands (entrée à sortie) : le plus court pour <b>${esc(f.d.last)}</b> (${esc(f.d.team)}), <b>${fr(f.lane, 1)} s</b>.`;
+  $("#how-pits").innerHTML = hasStop ? "le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands." : "le temps de chaque passage aux stands, de l'entrée à la sortie de la voie.";
   $("#pitlist").innerHTML = sorted.slice(0, 10).map((s, i) => `<div class="pit"><span class="rk">${i + 1}</span><span><b class="mono">${s.d.code}</b> <span class="fine">${esc(s.d.team)} · T${s.lap}</span></span><span class="bar"><i style="width:${(key(s) / max) * 100}%"></i></span><span class="v">${hasStop ? `${fr(s.stop, 2)} s${s.lane != null ? ` <small>· voie ${fr(s.lane, 1)} s</small>` : ""}` : `${fr(s.lane, 1)} s <small>· voie</small>`}</span></div>`).join("");
 }
 function buildDrs(T) {
@@ -920,7 +924,7 @@ function readDrs() {
 }
 function renderSectors() {
   const rows = paced.filter((d) => d.bestS).slice(0, 14);
-  if (!rows.length) { $("#read-sect").textContent = "OpenF1 ne donne pas les temps de secteur pour cette course."; $("#tbl-sect").innerHTML = ""; return; }
+  if (!rows.length) { $("#read-sect").textContent = ""; $("#tbl-sect").innerHTML = ""; return; }
   const best = [0, 1, 2].map((k) => Math.min(...rows.map((d) => d.bestS[k])));
   const bestIdeal = Math.min(...rows.map((d) => d.ideal));
   $("#tbl-sect").innerHTML = `<thead><tr><th>Pilote</th><th>Secteur 1</th><th>Secteur 2</th><th>Secteur 3</th><th>Tour idéal</th><th>Meilleur tour</th><th>Marge</th></tr></thead><tbody>` +
@@ -1378,9 +1382,9 @@ async function loadGP(sk) {
   try {
     const pack = await fetchRace(sk);
     if (myLoad !== loadSeq) return; // un autre GP a été demandé entre-temps
-    if (!pack.data.laps.length) throw new Error("OpenF1 n'a pas encore les temps au tour de cette course. Réessaie un peu plus tard.");
+    if (!pack.data.laps.length) throw new Error("Les temps au tour de cette course ne sont pas encore disponibles. Réessaie un peu plus tard.");
     buildModel(session, pack);
-    setStatus(offline ? "OpenF1 est momentanément réservé aux abonnés (séance de F1 en direct) : seuls les GP déjà consultés sur cet appareil sont disponibles." : "");
+    setStatus(offline ? "Une séance de F1 est en cours : seuls les GP déjà disponibles sont affichés pour le moment." : "");
     renderAll();
     if (NAV.home) renderHome(); // l'accueil affiche le vainqueur dès que la course est chargée
     hcRun(hTok);
@@ -1397,7 +1401,7 @@ function renderAll() {
   replayLap = LAPS; $("#lapr").max = LAPS; $("#lapr").value = LAPS; $("#lapn").textContent = `Tour ${LAPS}/${LAPS}`;
   $("#play").innerHTML = IC.play + "Rejouer la course";
   $(".brows").innerHTML = "";
-  renderHero(); renderDuels();
+  renderHero(); renderMoments(); renderDuels();
   readCourse(); renderCourseChips(); renderBoard();
   readRythme(); readStrat(); renderExChips(); readEx();
   renderPits(); readDrs(); renderSectors(); readDsect(); readDeg();

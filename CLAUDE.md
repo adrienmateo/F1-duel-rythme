@@ -12,6 +12,7 @@ Dépôt : https://github.com/adrienmateo/F1-duel-rythme. L'ancienne adresse Netl
 - Effets visuels sobres et modernes : « la donnée fait foi ».
 - Mobile : vertical = changer de sujet, horizontal = changer de vue.
 - Ne jamais montrer à l'utilisateur le message de limite d'appels OpenF1.
+- Si une donnée manque, on ne l'affiche pas (bloc masqué) : jamais de phrase « OpenF1 ne donne pas… ». OpenF1 n'est cité qu'en source (pied de page, méthode).
 - Aucun secret dans le dépôt. La clé Anthropic vit uniquement dans Make. Le mot de passe d'application Gmail est un secret GitHub (adresse Gmail dédiée conseillée).
 
 ## Public et direction
@@ -20,24 +21,26 @@ Dépôt : https://github.com/adrienmateo/F1-duel-rythme. L'ancienne adresse Netl
 - Info générale dans les chapitres ; le choix des pilotes se fait dans « Compare les pilotes de ton choix » (Explorer).
 
 ## Construction
-- `python3 build.py` assemble `index.html` : `src/head.html` + styles (`extra.css`, `mobile.css`, `pace.css`, `nav.css`) + `src/body.html` + UN seul `<script>` (`app.js`, `mobile.js`, `pace.js`, `nav.js`, `wander.js`).
+- `python3 build.py` assemble `index.html` : `src/head.html` + styles (`extra.css`, `mobile.css`, `pace.css`, `nav.css`) + `src/body.html` + UN seul `<script>` (`app.js`, `moments.js`, `mobile.js`, `pace.js`, `nav.js`, `wander.js`).
   Même portée pour tout le script : les fonctions sont hissées, les `const` ne le sont pas. Toujours éditer `src/`, puis relancer `build.py`.
 - Le bloc « Calcul » de `index.html` (entre `/* ======================= Calcul` et `/* ======================= Rendu`) est relu par `report.mjs` et `archive.mjs` via `new Function` (`analyse`, `compactRace`, `gridFromPositions`) : ne pas casser ces repères.
 
 ## Fichiers clés
 - `src/app.js` : données OpenF1 (`api()` limité à 28 appels/min, nouvel essai silencieux sur 429, message clair si OpenF1 est fermé), cache navigateur, rendu des chapitres et graphiques ECharts, Explorer.
 - `src/nav.js` : accueil « Choisis ton Grand Prix » (à chaque ouverture), adresses `#<lieu>-<année>[/<chapitre>]`, sommaire en cartes « Comprendre la course » avec aperçus, chapitre ouvert en plein écran (mobile) ou en grand panneau (ordinateur : croix, Échap, clic à côté, bouton retour). Un seul chapitre à la fois dans l'historique.
-  Chapitres : course, duels, pneus (section `#strategies`), explorer. Le chapitre « Le rythme » est retiré pour l'instant (section `#rythme` gardée cachée dans le HTML, son code tourne encore).
+  Chapitres : moments, course, duels, pneus (section `#strategies`), explorer. Le chapitre « Le rythme » est retiré pour l'instant (section `#rythme` gardée cachée dans le HTML, son code tourne encore).
 - `src/pace.js` : haut de page. Feux de départ qui suivent le chargement, puis une F1 vue de dessus fait un tour sur le vrai tracé (meilleur tour du vainqueur) et se gare ; clic = un autre tour.
-- `src/wander.js` : F1 qui se balade de temps en temps dans la marge (ordinateur) ou traverse « Chapitre suivant » (mobile). Jamais pendant l'accueil ni un chapitre ouvert sur ordinateur.
+- `src/moments.js` : faits de course repérés par règles fixes (`buildFacts`, avec score : prise de tête durable — on ignore les échanges pendant les arrêts —, safety car / VSC / drapeau rouge et le pilote qui gagne le plus de places en s'arrêtant, gain au départ ≥ 3, abandon d'un pilote du top 10, plus belle remontée ≥ 5). Le haut de page « Les faits de course » montre les 6 meilleurs + l'arrivée (alimente aussi les notes du replay via `EVENTS`). Le chapitre « Les 3 moments » rejoue les 3 meilleurs (mini graphique des positions avec voitures, tour 0 = grille).
+- `src/wander.js` : F1 qui se balade de temps en temps dans la marge (ordinateur) ou traverse « Chapitre suivant » (mobile). Jamais pendant l'accueil ni un chapitre ouvert sur ordinateur. Easter egg ordinateur : on peut l'attraper (elle grossit et vibre sous la souris), au lâcher elle repart en dérapant et rapetisse.
 - `src/mobile.js` : cartes à glisser par chapitre, Explorer mobile (raccourcis, pilotes, une carte par vue + « Sur le circuit »).
 - `archive.mjs` + `.github/workflows/archiver-courses.yml` : chaque lundi (et à la main), archive les courses terminées depuis plus de 12 h dans `data/<session_key>.json` et `data/races-<année>.json` (vainqueur + petit tracé), commit par « archive-bot », relance Pages. Permet de voir les GP passés quand OpenF1 est fermé pendant les séances en direct. Le site lit `data/` en premier.
 - `report.mjs` + `.github/workflows/compte-rendu-gp.yml` : compte rendu à la demande uniquement (pas de planification, pour maîtriser les crédits Claude). Avec Make (Claude rédige, Google Sheet d'historique) ou envoi direct par Gmail. Guide : `make/GUIDE-MAKE.md`.
 
 ## Contenu du site (état au 5 oct. 2026)
-- Le GP en 30 s : titre, tracé + voiture, podium, direction de course, chiffres clés (comptage animé).
+- Le GP en 30 s : titre, tracé + voiture, podium, « Les faits de course », chiffres clés (comptage animé).
+- Les 3 moments : les tournants rejoués (voir `moments.js`).
 - La course : graphique positions / écart au leader avec une petite F1 en tête de chaque ligne, replay, classement au tour ; « Pour aller plus loin » : les batailles à moins d'1 s.
-- Les duels : écart médian entre coéquipiers ; lien « Voir deux pilotes sur le circuit » vers l'Explorer.
+- Les duels : une ligne par écurie (barre à la couleur de l'écurie, « VER › HAD +0,901 s », pastille STRAT si à pneus égaux le verdict s'inverse) ; lien « Voir deux pilotes sur le circuit » vers l'Explorer.
 - Stratégies : relais de pneus ; plus loin : usure des pneus, arrêts aux stands chronométrés.
 - Chaque chapitre a une ligne « Comment lire » toujours visible au-dessus du graphique (`renderHow()` dans `app.js`).
 - Explorer (4 pilotes au maximum, un 5e est refusé avec un message ; « Comparé à » choisit le pilote de référence = `exSel[0]`, utilisé par Temps au tour, Écart en piste et Sur le circuit) : Temps au tour, Écart en piste, Régularité (une case par tour : vert dans son rythme ≤ 0,4 s au-dessus de sa médiane du relais carburant retiré, orange ≤ 1 s, rouge tour perdu, gris départ/stands/neutralisation), Sur le circuit (deux pilotes rejoués sur leur meilleur tour, secteur par secteur). L'onglet Pneus a été supprimé.

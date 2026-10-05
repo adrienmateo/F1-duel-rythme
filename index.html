@@ -723,7 +723,7 @@ body.at-home { overflow: hidden; }
 
 /* ---------- Chapitres : sommaire en cartes partout, chapitre en plein écran (mobile) ou en grand panneau (ordinateur) ---------- */
 .mchap { display: none; }
-main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
+main > #moments, main > #course, main > #rythme, main > #duels, main > #strategies, main > #explorer { display: none !important; }
 .mchaps { display: grid; gap: 10px; }
 .mc-title { font: 700 12px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 4px 2px 0; }
 .mc { text-align: left; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-md); color: inherit; font: inherit; cursor: pointer; }
@@ -863,6 +863,49 @@ body.in-chap { overflow: hidden; }
 .ex-ref button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 4px 11px; font: 600 13px var(--body); cursor: pointer; }
 .ex-ref button i { width: 8px; height: 8px; border-radius: 50%; }
 .ex-ref button[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
+#u-pits[hidden] { display: none !important; }
+
+/* Les duels : une ligne par écurie, barre à la couleur de l'écurie, duel et écart alignés à droite */
+.duel .fill { opacity: .85; }
+.duel .who { white-space: nowrap; }
+.duel .who .gap { font-weight: 600; color: var(--ink); }
+@media (min-width: 641px) {
+  .duel .team { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .duel .team .dot { flex: none; margin: 0; }
+  .duel { grid-template-columns: 150px minmax(0, 1fr) 236px; }
+  .duel .who { display: grid; grid-template-columns: 58px 96px 1fr; align-items: center; gap: 8px; }
+  .duel .who .strat { order: -1; justify-self: start; }
+  .duel .who > span:empty { order: -1; }
+  .duel .who .gap { text-align: right; }
+  .duel-head .who-h { padding-left: 66px; }
+}
+
+/* Les faits de course (haut de page) */
+.log-row.lead .lap, .log-row.lead b { color: var(--purple); }
+.log-row.up .lap { color: var(--good); }
+/* Les 3 moments */
+.moments { display: grid; gap: 14px; }
+.mom { display: grid; gap: 8px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.mom-k { display: flex; gap: 10px; align-items: baseline; font: 600 12px var(--mono); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.mom-n { color: var(--accent); font-weight: 700; }
+.mom-t { margin: 0; font: 700 20px/1.25 var(--body); }
+.mom-d { margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.5; }
+.mom-ba { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 2px; color: var(--muted); }
+.mom-ba > span:not(.mv):not(.mom-who) { display: grid; line-height: 1.1; }
+.mom-ba small { font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+.mom-ba b { font: 800 20px var(--display); color: var(--ink); }
+.mom-who { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-weight: 600; color: var(--ink-2); }
+.mom-who i { width: 10px; height: 10px; border-radius: 50%; }
+.mom-stage { position: relative; }
+.mom-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.mom-play { margin-left: auto; padding: 6px 12px; font-size: 13px; }
+.mom-grid { stroke: var(--track); stroke-width: 1; }
+.mom-lbl { font: 600 10.5px var(--mono); fill: var(--muted); }
+.mom-sc { fill: var(--sc); opacity: .16; }
+.mom-code { font: 700 16px var(--mono); fill: var(--ink); }
+.mc-prev .pv-axis { stroke: var(--track); stroke-width: 4; stroke-linecap: round; }
+.mc-prev .pv-n { font: 800 12px var(--body); fill: #fff; }
+@media (max-width: 640px) { .mom { padding: 13px 12px; } .mom-t { font-size: 17px; } .mom-who { margin-left: 0; } }
 
 </style>
 </head>
@@ -879,7 +922,7 @@ body.in-chap { overflow: hidden; }
       <select id="gp" aria-label="Grand Prix" disabled><option>Chargement…</option></select>
     </div>
     <nav class="sections" aria-label="Sections">
-      <a href="#gp-section">Le GP<i class="xdot" aria-hidden="true"></i></a><a href="#course">La course<i class="xdot" aria-hidden="true"></i></a><a href="#duels">Les duels<i class="xdot" aria-hidden="true"></i></a><a href="#strategies">Stratégies<i class="xdot" aria-hidden="true"></i></a><a href="#explorer">Explorer</a>
+      <a href="#gp-section">Le GP<i class="xdot" aria-hidden="true"></i></a><a href="#moments">Les moments</a><a href="#course">La course<i class="xdot" aria-hidden="true"></i></a><a href="#duels">Les duels<i class="xdot" aria-hidden="true"></i></a><a href="#strategies">Stratégies<i class="xdot" aria-hidden="true"></i></a><a href="#explorer">Explorer</a>
     </nav>
     <button class="mburger" id="mburger" aria-label="Menu" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <button class="icon-btn" id="theme" aria-label="Passer en mode sombre">
@@ -924,7 +967,15 @@ body.in-chap { overflow: hidden; }
 
   <div class="mchaps" id="mchaps"></div>
 
-  <!-- 2. La course -->
+  <!-- 2. Les 3 moments -->
+  <section class="sec card" id="moments">
+    <div class="sec-head"><div><div class="eyebrow">Les 3 moments</div><h2>Les moments qui ont fait la course</h2></div></div>
+    <p class="read" id="read-moments"></p>
+    <p class="howread"><span class="hw-k">Comment lire</span><span>Chaque moment montre les pilotes concernés sur les tours qui l'entourent : <b>en haut = devant</b>. Les voitures avancent tour par tour ; la bande jaune signale un safety car ou un VSC.</span></p>
+    <div class="moments" id="moments-list"></div>
+  </section>
+
+  <!-- 3. La course -->
   <section class="sec card" id="course">
     <div class="sec-head">
       <div><div class="eyebrow">La course</div><h2>Comment la course s'est jouée</h2></div>
@@ -1003,7 +1054,7 @@ body.in-chap { overflow: hidden; }
     <div class="under x-grid x-only" id="u-pits">
       <div class="under-head"><span class="lbl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Pour aller plus loin</span><h3>Les arrêts aux stands chronométrés</h3></div>
       <p class="read" id="read-pits" style="font-size:15px"></p>
-      <p class="howto"><span><b>Ce que ça montre :</b> le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands.</span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> <span id="how-pits">le temps de chaque arrêt.</span></span><span><b>Comment le lire :</b> plus le temps est court, plus l'équipe a été efficace. Un arrêt sous safety car coûte moins de places.</span></p>
       <div class="pitlist" id="pitlist"></div>
     </div>
   </section>
@@ -1034,7 +1085,7 @@ body.in-chap { overflow: hidden; }
         <div><div class="circ-who" id="circ-who"></div><div class="circ-stage"><svg id="circ" viewBox="0 0 680 400" role="img" aria-label="Tracé du circuit découpé en trois secteurs : meilleur tour de chaque pilote"></svg><p class="fine circ-msg" id="circ-msg" hidden></p></div></div>
         <div class="circ-side" id="cside"></div>
       </div>
-      <p class="fine">Meilleur tour de chaque pilote, joué en accéléré, sur le tracé réel (positions OpenF1).</p>
+      <p class="fine">Meilleur tour de chaque pilote, joué en accéléré, sur le tracé réel.</p>
     </div>
   </section>
 
@@ -1131,14 +1182,14 @@ async function api(endpoint, params) {
     lastCall = Date.now(); calls.push(lastCall);
     let res;
     try { res = await fetch(url); }
-    catch { throw new Error(navigator.onLine === false ? "Pas de connexion internet : impossible de joindre OpenF1." : "OpenF1 ne répond pas. Pendant une séance de F1 en direct (essais, qualifs ou course), OpenF1 réserve son accès aux abonnés : les GP s'afficheront de nouveau à la fin de la séance."); }
+    catch { throw new Error(navigator.onLine === false ? "Pas de connexion internet : impossible de charger les données." : "Les données ne sont pas disponibles en ce moment (une séance de F1 est peut-être en cours). Les GP s'afficheront de nouveau à la fin de la séance."); }
     if (res.ok) { const data = await res.json(); memo.set(url, data); return data; }
     if (res.status === 429) { await sleep(5000 * attempt); continue; } // trop d'appels : on attend sans rien afficher de plus
     if (res.status === 404) return [];
     if (res.status >= 500) { await sleep(2000 * attempt); continue; }
-    throw new Error(`OpenF1 a répondu une erreur (HTTP ${res.status}) sur « ${endpoint} ».`);
+    throw new Error("Les données de ce Grand Prix n'ont pas pu être chargées. Réessaie dans un moment.");
   }
-  throw new Error("OpenF1 ne répond pas pour le moment. Réessaie dans une minute.");
+  throw new Error("Les données ne répondent pas pour le moment. Réessaie dans une minute.");
 }
 const store = {
   key: (sk) => `f1duel:v4:${sk}`,
@@ -1443,6 +1494,8 @@ function buildModel(session, raw) {
   const [w, p2] = finishers;
   if (w) ev.push({ lap: LAPS, cls: "", txt: "Drapeau à damier", detail: `${w.name} gagne${p2 ? ` avec ${gapS(winnerGap())} d'avance` : ""}.` });
   EVENTS = ev.sort((a, b) => a.lap - b.lap);
+  // Haut de page et replay : les faits marquants repérés dans les données (voir moments.js)
+  FACTS = buildFacts(); EVENTS = selectFacts(FACTS);
 }
 function winnerGap() {
   const [w, p2] = finishers; if (!w || !p2) return null;
@@ -1488,9 +1541,9 @@ function renderHero() {
   const segs = []; let prev = 1;
   NEUTRAL.forEach((r) => { if (r.start > prev) segs.push(`<span style="flex:${r.start - prev}"></span>`); segs.push(`<span class="sc" style="flex:${r.end - r.start + 1}" title="${NKlong[r.kind]} T${r.start}–${r.end}"></span>`); prev = r.end + 1; });
   if (prev <= LAPS) segs.push(`<span style="flex:${LAPS - prev + 1}"></span>`);
-  $("#log").innerHTML = `<div class="log-title">DIRECTION DE COURSE</div>` + (EVENTS.length ? EVENTS.map((e, i) => `<button class="log-row ${e.cls}" data-event="${i}"><span class="lap">T${e.lap}</span><span>${e.txt}</span></button>`).join("") : `<p class="empty-note">Course sans incident marquant.</p>`) +
+  $("#log").innerHTML = `<div class="log-title">LES FAITS DE COURSE</div>` + (EVENTS.length ? EVENTS.map((e, i) => `<button class="log-row ${e.cls}" data-event="${i}"><span class="lap">${e.lap && e.label !== "Remontée" ? "T" + e.lap : "★"}</span><span>${e.txt}</span></button>`).join("") : `<p class="empty-note">Course sans incident marquant.</p>`) +
     `<div class="timeline" aria-label="Neutralisations pendant la course">${segs.join("")}</div>`;
-  $$("#log .log-row").forEach((b) => b.addEventListener("click", () => { const e = EVENTS[+b.dataset.event]; openDialog(`Tour ${e.lap}`, `<p class="read">${e.txt.replace(/<[^>]+>/g, "")}. ${e.detail}</p>`); }));
+  $$("#log .log-row").forEach((b) => b.addEventListener("click", () => { const e = EVENTS[+b.dataset.event]; openDialog(e.label === "Remontée" ? "Toute la course" : `Tour ${e.lap} · ${e.label || ""}`, `<p class="read">${e.txt.replace(/<[^>]+>/g, "")}. ${e.detail}</p>`); }));
 
   const movers = finishers.filter((d) => d.grid).sort((a, b) => (b.grid - b.finish) - (a.grid - a.finish));
   const duels = computeDuels().filter((x) => x.valid);
@@ -1562,15 +1615,14 @@ function renderDuels() {
   const tight = valid[valid.length - 1];
   $("#read-duels").innerHTML = `<b>${valid[0].fast.last}</b> a dominé ${valid[0].slow.last} de <b>${gapS(valid[0].gap)}</b> au tour.` + (tight !== valid[0] ? ` Le duel le plus serré est chez ${tight.team} (${gapS(tight.gap)}).` : "") +
     (strat.length ? ` Chez ${strat[0].team}, l'écart venait de la stratégie : à pneus égaux, ${strat[0].slow.last} était plus rapide.` : "");
-  $("#duel-list").innerHTML = `<div class="duel x-grid x-only" style="cursor:default;padding-block:4px"><span class="fine">Écurie</span><span class="fine">Écart de rythme</span><span class="fine" style="display:flex;justify-content:space-between"><span>Duel</span><span class="x-col">à pneus égaux</span></span></div>` +
+  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme médian</span><span class="fine who-h">Duel</span></div>` +
     duels.map((d, i) => d.valid ? `<button class="duel lift" data-d="${i}" data-codes="${d.fast.code} ${d.slow.code}">
-      <span class="team"><i class="dot" style="background:${d.color};margin-right:6px"></i>${esc(d.team)}</span>
-      <span class="track"><span class="fill" style="display:block" data-w="${Math.max(0.6, (d.gap / max) * 100)}"></span></span>
-      <span class="who"><span><b>${d.fast.code}</b> <span class="slow">› ${d.slow.code}</span></span>
-        <span style="display:flex;gap:8px;align-items:center">${d.same != null && d.same < 0 ? '<span class="strat">STRAT</span>' : ""}<span>${gapS(d.gap)}</span><span class="x-col x-only">${d.same == null ? "—" : gapS(d.same)}</span></span></span>
+      <span class="team"><i class="dot" style="background:${d.color}"></i>${esc(d.team)}</span>
+      <span class="track"><span class="fill" style="display:block;background:${d.color}" data-w="${Math.max(0.6, (d.gap / max) * 100)}"></span></span>
+      <span class="who"><span class="pair"><b>${d.fast.code}</b> <span class="slow">› ${d.slow.code}</span></span>${d.same != null && d.same < 0 ? `<span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide">STRAT</span>` : "<span></span>"}<span class="gap">${gapS(d.gap)}</span></span>
     </button>` : `<div class="na">${esc(d.team)} non comparable : ${esc(d.out.join(", "))} sans assez de tours représentatifs.</div>`).join("");
   $$("#duel-list .duel[data-d]").forEach((b) => b.addEventListener("click", () => showDuel(duels[+b.dataset.d])));
-  const grow = () => $$("#duel-list .fill").forEach((f, k) => setTimeout(() => (f.style.width = f.dataset.w + "%"), reduce ? 0 : k * 60));
+  const grow = () => $$("#duels .duel .fill").forEach((f, k) => setTimeout(() => (f.style.width = f.dataset.w + "%"), reduce ? 0 : k * 60));
   if (renderDuels.seen) setTimeout(grow, 50); else whenVisible($("#duels"), () => { renderDuels.seen = true; grow(); });
 }
 
@@ -2003,7 +2055,9 @@ function readEx() {
 /* ======================= Mode expert : analyses « Sous le capot » ======================= */
 function renderPits() {
   const stops = drivers.flatMap((d) => d.stops.map((s) => ({ ...s, d }))).filter((s) => s.stop != null || s.lane != null);
-  if (!stops.length) { $("#read-pits").textContent = "OpenF1 ne donne pas encore les durées d'arrêt pour cette course."; $("#pitlist").innerHTML = ""; return; }
+  // Pas de durée d'arrêt connue : on n'affiche pas le bloc plutôt que d'expliquer ce qui manque
+  $("#u-pits").hidden = !stops.length;
+  if (!stops.length) { $("#read-pits").textContent = ""; $("#pitlist").innerHTML = ""; return; }
   const hasStop = stops.some((s) => s.stop != null);
   const key = (s) => (hasStop ? s.stop ?? Infinity : s.lane ?? Infinity);
   const sorted = stops.filter((s) => isFinite(key(s))).sort((a, b) => key(a) - key(b));
@@ -2012,7 +2066,8 @@ function renderPits() {
   const f = sorted[0], sl = sorted[sorted.length - 1];
   $("#read-pits").innerHTML = hasStop
     ? `Arrêt le plus rapide : <b>${esc(f.d.team)}</b> pour ${esc(f.d.last)}, <b>${fr(f.stop, 2)} s</b> à l'arrêt. Le plus lent : ${fr(sl.stop, 2)} s pour ${esc(sl.d.last)}.${laneMed ? ` Le temps total passé dans la voie des stands tourne autour de ${fr(laneMed, 1)} s.` : ""}`
-    : `Temps passé dans la voie des stands (entrée à sortie) : le plus court pour <b>${esc(f.d.last)}</b> (${esc(f.d.team)}), <b>${fr(f.lane, 1)} s</b>. OpenF1 ne donne pas le temps d'immobilisation seul pour cette course.`;
+    : `Temps passé dans la voie des stands (entrée à sortie) : le plus court pour <b>${esc(f.d.last)}</b> (${esc(f.d.team)}), <b>${fr(f.lane, 1)} s</b>.`;
+  $("#how-pits").innerHTML = hasStop ? "le temps de chaque arrêt : immobilisé sous le cric, et en tout dans la voie des stands." : "le temps de chaque passage aux stands, de l'entrée à la sortie de la voie.";
   $("#pitlist").innerHTML = sorted.slice(0, 10).map((s, i) => `<div class="pit"><span class="rk">${i + 1}</span><span><b class="mono">${s.d.code}</b> <span class="fine">${esc(s.d.team)} · T${s.lap}</span></span><span class="bar"><i style="width:${(key(s) / max) * 100}%"></i></span><span class="v">${hasStop ? `${fr(s.stop, 2)} s${s.lane != null ? ` <small>· voie ${fr(s.lane, 1)} s</small>` : ""}` : `${fr(s.lane, 1)} s <small>· voie</small>`}</span></div>`).join("");
 }
 function buildDrs(T) {
@@ -2031,7 +2086,7 @@ function readDrs() {
 }
 function renderSectors() {
   const rows = paced.filter((d) => d.bestS).slice(0, 14);
-  if (!rows.length) { $("#read-sect").textContent = "OpenF1 ne donne pas les temps de secteur pour cette course."; $("#tbl-sect").innerHTML = ""; return; }
+  if (!rows.length) { $("#read-sect").textContent = ""; $("#tbl-sect").innerHTML = ""; return; }
   const best = [0, 1, 2].map((k) => Math.min(...rows.map((d) => d.bestS[k])));
   const bestIdeal = Math.min(...rows.map((d) => d.ideal));
   $("#tbl-sect").innerHTML = `<thead><tr><th>Pilote</th><th>Secteur 1</th><th>Secteur 2</th><th>Secteur 3</th><th>Tour idéal</th><th>Meilleur tour</th><th>Marge</th></tr></thead><tbody>` +
@@ -2489,9 +2544,9 @@ async function loadGP(sk) {
   try {
     const pack = await fetchRace(sk);
     if (myLoad !== loadSeq) return; // un autre GP a été demandé entre-temps
-    if (!pack.data.laps.length) throw new Error("OpenF1 n'a pas encore les temps au tour de cette course. Réessaie un peu plus tard.");
+    if (!pack.data.laps.length) throw new Error("Les temps au tour de cette course ne sont pas encore disponibles. Réessaie un peu plus tard.");
     buildModel(session, pack);
-    setStatus(offline ? "OpenF1 est momentanément réservé aux abonnés (séance de F1 en direct) : seuls les GP déjà consultés sur cet appareil sont disponibles." : "");
+    setStatus(offline ? "Une séance de F1 est en cours : seuls les GP déjà disponibles sont affichés pour le moment." : "");
     renderAll();
     if (NAV.home) renderHome(); // l'accueil affiche le vainqueur dès que la course est chargée
     hcRun(hTok);
@@ -2508,7 +2563,7 @@ function renderAll() {
   replayLap = LAPS; $("#lapr").max = LAPS; $("#lapr").value = LAPS; $("#lapn").textContent = `Tour ${LAPS}/${LAPS}`;
   $("#play").innerHTML = IC.play + "Rejouer la course";
   $(".brows").innerHTML = "";
-  renderHero(); renderDuels();
+  renderHero(); renderMoments(); renderDuels();
   readCourse(); renderCourseChips(); renderBoard();
   readRythme(); readStrat(); renderExChips(); readEx();
   renderPits(); readDrs(); renderSectors(); readDsect(); readDeg();
@@ -2580,6 +2635,140 @@ if (!reduce && "IntersectionObserver" in window) {
     else { showHome(true); $("#gp").value = RACES.at(-1).session_key; await loadGP(RACES.at(-1).session_key); }
   } catch (e) { setStatus(e.message, "error"); $("main").classList.remove("loading"); }
 })();
+
+/* ======================= Les faits de course et les 3 moments ======================= */
+// Le site repère seul les faits marquants dans les données (règles fixes, aucune IA) :
+// changements de leader, safety car et ce qu'ils changent, départs, abandons qui comptent, plus belle remontée.
+// Chaque fait a un score ; le haut de page montre les 6 plus importants dans l'ordre des tours,
+// le chapitre « Les 3 moments » rejoue les 3 plus décisifs.
+const posAt = (d, lap) => { for (let l = Math.min(lap, LAPS); l >= 1; l--) if (d.pos[l - 1]) return d.pos[l - 1]; return d.grid || null; };
+const leaderAt = (lap) => drivers.find((d) => d.pos[lap - 1] === 1) || null;
+const deName = (n) => (/^[aeiouyhàâéèêîôû]/i.test(n) ? "d'" : "de ") + n;
+let FACTS = [], MOMENTS = [];
+const pAt = (d, l) => (l === 0 ? d.grid : d.pos[l - 1]) || null; // tour 0 = la grille de départ
+
+function buildFacts() {
+  const out = [], win = finishers[0];
+  // Départ : la plus grosse remontée au premier tour
+  const start = drivers.filter((d) => d.grid && d.pos[0]).map((d) => [d, d.grid - d.pos[0]]).sort((a, b) => b[1] - a[1])[0];
+  if (start && start[1] >= 3) {
+    const [d, g] = start, passed = drivers.filter((x) => x !== d && x.grid && x.pos[0] && x.grid < d.grid && x.pos[0] > d.pos[0]);
+    out.push({ lap: 1, cls: "up", label: "Départ", score: 40 + g * 4, txt: `<b>${esc(d.last)}</b> gagne ${g} places au départ`,
+      detail: `Parti P${d.grid}, il boucle le premier tour P${d.pos[0]}.`, ds: [d, ...passed.slice(0, 3)], win: [0, 3], main: d, from: 0, to: 1 });
+  }
+  // Changements de leader (on ignore les échanges de quelques tours dus aux arrêts aux stands)
+  let cur = drivers.find((d) => d.grid === 1) || leaderAt(1);
+  for (let lap = 1; lap <= LAPS; lap++) {
+    const L = leaderAt(lap); if (!L || L === cur) continue;
+    let held = 0; while (lap + held <= LAPS && leaderAt(lap + held) === L) held++;
+    if (held < 3 && lap + held <= LAPS) continue;
+    const prev = cur, inPit = prev && (prev.pits.includes(lap) || prev.pits.includes(lap - 1));
+    // Simple échange pendant les arrêts : l'ancien leader reprend la tête juste après, ce n'est pas un vrai changement
+    if (inPit && !(lap + held > LAPS)) { let back = false; for (let k = lap + held; k <= Math.min(LAPS, lap + held + 6); k++) if (leaderAt(k) === prev) { back = true; break; } if (back) continue; }
+    const toEnd = lap + held > LAPS;
+    out.push({ lap, cls: "lead", label: lap === 1 ? "Départ" : "Prise de tête", score: 70 + (L === win && toEnd ? 25 : 0) + Math.min(10, held / 3),
+      txt: lap === 1 ? `<b>${esc(L.last)}</b> prend la tête au départ` : `<b>${esc(L.last)}</b> prend la tête`,
+      detail: `${prev ? (inPit ? `Pendant l'arrêt aux stands ${deName(esc(prev.last))}. ` : `Devant ${esc(prev.last)}. `) : ""}${toEnd ? "Il ne la lâchera plus." : `Il la garde ${plural(held, "tour")}.`}`,
+      ds: [L, prev].filter(Boolean), win: [Math.max(1, lap - 3), Math.min(LAPS, lap + 4)], main: L, from: Math.max(1, lap - 1), to: lap });
+    cur = L;
+  }
+  // Safety car, VSC, drapeau rouge : qui en profite
+  NEUTRAL.filter((r) => r.kind !== "Ralenti").forEach((r) => {
+    const name = NKlong[r.kind], b = Math.max(1, r.start - 1), a = Math.min(LAPS, r.end + 3);
+    const pitters = drivers.filter((d) => d.pits.some((p) => p >= r.start && p <= r.end));
+    const gains = pitters.map((d) => [d, (posAt(d, b) || 0) - (posAt(d, a) || 0)]).filter(([d]) => posAt(d, b) && !(DNF[d.code] && DNF[d.code] < a)).sort((x, y) => y[1] - x[1]);
+    const best = gains[0];
+    if (best && best[1] >= 2) {
+      const [d, g] = best, passed = drivers.filter((x) => x !== d && posAt(x, b) < posAt(d, b) && posAt(x, a) > posAt(d, a));
+      out.push({ lap: r.start, cls: "sc", label: name, score: 50 + Math.min(40, g * 7) + (r.kind === "Rouge" ? 15 : 0),
+        txt: `<b>${name}</b> : ${esc(d.last)} s'arrête et gagne ${g} places`,
+        detail: `Tours ${r.start} à ${r.end}. Un arrêt sous ${r.kind === "VSC" ? "VSC" : r.kind === "Rouge" ? "drapeau rouge" : "safety car"} coûte moins de temps : P${posAt(d, b)} avant, P${posAt(d, a)} à la relance.${pitters.length > 1 ? ` ${pitters.length} pilotes en ont profité pour s'arrêter.` : ""}`,
+        ds: [d, ...passed.slice(0, 3)], win: [Math.max(1, r.start - 2), Math.min(LAPS, r.end + 4)], main: d, from: b, to: a });
+    } else {
+      out.push({ lap: r.start, cls: "sc", label: name, score: r.kind === "Rouge" ? 75 : 25 + (r.end - r.start),
+        txt: `<b>${name}</b>${r.end > r.start ? ` jusqu'au tour ${r.end}` : ""}`,
+        detail: `${plural(r.end - r.start + 1, "tour")} neutralisé${r.end > r.start ? "s" : ""}.${pitters.length ? ` ${pitters.length} pilote${pitters.length > 1 ? "s" : ""} en profite${pitters.length > 1 ? "nt" : ""} pour s'arrêter, sans gain de places notable.` : ""}` });
+    }
+  });
+  // Abandons qui comptent : un pilote dans le top 10 au moment de l'abandon
+  dnfs.filter((d) => d.result && !d.result.dns && d.outLap).forEach((d) => {
+    const p = posAt(d, d.outLap), lap = Math.min(LAPS, d.outLap + 1); if (!p || p > 10) return;
+    const behind = drivers.filter((x) => x !== d && posAt(x, d.outLap) > p).sort((x, y) => posAt(x, d.outLap) - posAt(y, d.outLap));
+    out.push({ lap, cls: "out", label: d.result.dsq ? "Disqualification" : "Abandon", score: 40 + (11 - p) * 5,
+      txt: `${d.result.dsq ? "Disqualification" : "Abandon"} ${deName(`<b>${esc(d.last)}</b>`)}, alors ${p === 1 ? "en tête" : "P" + p}`,
+      detail: `${esc(d.team)}, après ${plural(d.outLap, "tour")}.${behind[0] ? ` ${esc(behind[0].last)} récupère la place.` : ""}`,
+      ds: [d, ...behind.slice(0, 2)], win: [Math.max(1, d.outLap - 3), Math.min(LAPS, d.outLap + 3)], main: behind[0] || d, from: d.outLap - 1, to: Math.min(LAPS, d.outLap + 2) });
+  });
+  // Plus belle remontée de la course
+  const up = finishers.filter((d) => d.grid).map((d) => [d, d.grid - d.finish]).sort((a, b) => b[1] - a[1])[0];
+  if (up && up[1] >= 5) {
+    const [d, g] = up;
+    out.push({ lap: null, cls: "up", label: "Remontée", score: 45 + g * 2, txt: `<b>${esc(d.last)}</b> remonte de P${d.grid} à P${d.finish}`,
+      detail: `${plural(g, "place")} gagnée${g > 1 ? "s" : ""} entre la grille et l'arrivée.`, ds: [d], win: [1, LAPS], main: d, from: 0, to: LAPS });
+  }
+  return out;
+}
+// Les 6 faits les plus importants, dans l'ordre de la course, puis l'arrivée
+function selectFacts(all) {
+  const top = [...all].sort((a, b) => b.score - a.score).slice(0, 6).sort((a, b) => (a.lap ?? LAPS - 0.5) - (b.lap ?? LAPS - 0.5));
+  const [w, p2] = finishers;
+  if (w) { const g = winnerGap(); top.push({ lap: LAPS, cls: "", label: "Arrivée", score: 0, txt: `Drapeau à damier : <b>${esc(w.last)}</b> gagne`, detail: `${esc(w.name)} gagne${p2 && g != null ? ` avec ${gapS(g)} d'avance sur ${esc(p2.last)}` : ""}.` }); }
+  return top;
+}
+
+/* --- Les 3 moments : chaque fait rejoué sur les quelques tours qui l'entourent --- */
+function renderMoments() {
+  const box = $("#moments-list"); if (!box) return;
+  MOMENTS = [...FACTS].filter((f) => f.ds && f.ds.length).sort((a, b) => b.score - a.score).slice(0, 3).sort((a, b) => (a.lap ?? LAPS) - (b.lap ?? LAPS));
+  if (!MOMENTS.length) { $("#read-moments").textContent = "Une course sans rebondissement : l'ordre a peu changé du départ à l'arrivée."; box.innerHTML = ""; return; }
+  $("#read-moments").innerHTML = `Les ${MOMENTS.length > 1 ? MOMENTS.length + " tournants" : "tournant"} de la course, rejoué${MOMENTS.length > 1 ? "s" : ""} avec les voitures concernées.`;
+  box.innerHTML = MOMENTS.map((m, i) => {
+    const d = m.main, pa = m.from ? posAt(d, m.from) : d.grid, pb = posAt(d, m.to), mv = pa && pb ? pa - pb : 0;
+    return `<article class="mom" data-m="${i}">
+      <div class="mom-k"><span class="mom-n">Moment ${i + 1}</span><span>${m.lap ? "Tour " + m.lap : "Toute la course"} · ${esc(m.label)}</span></div>
+      <h3 class="mom-t">${m.txt}</h3>
+      <p class="mom-d">${m.detail}</p>
+      <div class="mom-ba"><span><small>${m.from ? "Tour " + m.from : "Grille"}</small><b>P${pa ?? "—"}</b></span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span><small>Tour ${m.to}</small><b>P${pb ?? "—"}</b></span>${mv ? `<span class="mv ${mv > 0 ? "up" : "down"}">${mv > 0 ? "▲" : "▼"}${Math.abs(mv)}</span>` : ""}<span class="mom-who"><i style="background:${d.color}"></i>${esc(d.last)}</span><button class="btn ghost mom-play">${IC.play}Rejouer</button></div>
+      <div class="mom-stage"><svg class="mom-svg" viewBox="0 0 640 ${momH(m)}" role="img" aria-label="Positions des pilotes concernés, tour par tour"></svg></div>
+    </article>`;
+  }).join("");
+  $$(".mom", box).forEach((el) => {
+    const m = MOMENTS[+el.dataset.m]; momDraw(el, m, m.win[0]);
+    $(".mom-play", el).addEventListener("click", () => momPlay(el, m));
+    whenVisible(el, () => setTimeout(() => momPlay(el, m), 300));
+  });
+}
+const momRange = (m) => { const ps = []; for (let l = m.win[0]; l <= m.win[1]; l++) m.ds.forEach((d) => { const p = pAt(d, l); if (p) ps.push(p); }); return ps.length ? [Math.max(1, Math.min(...ps) - 1), Math.max(...ps) + 1] : [1, 2]; };
+const momH = (m) => { const [a, b] = momRange(m); return 34 + Math.min(14, b - a + 1) * 24; };
+function momDraw(el, m, at) {
+  const svg = $(".mom-svg", el), W = Math.max(300, Math.round(svg.getBoundingClientRect().width) || 640), H = momH(m), [p0, p1] = momRange(m), [l0, l1] = m.win;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
+  const X = (l) => 46 + ((l - l0) / Math.max(1, l1 - l0)) * (W - 100), Y = (p) => 14 + ((p - p0) / Math.max(1, p1 - p0)) * (H - 34);
+  const posF = (d, t) => { const a = Math.floor(t), u = t - a, pa = pAt(d, a), pb = pAt(d, Math.min(l1, a + 1)); return pa && pb ? pa + (pb - pa) * u : pa || pb || null; };
+  let s = "";
+  NEUTRAL.forEach((r) => { if (r.end >= l0 && r.start <= l1) s += `<rect x="${X(Math.max(l0, r.start - 1))}" y="4" width="${Math.max(4, X(Math.min(l1, r.end)) - X(Math.max(l0, r.start - 1)))}" height="${H - 18}" class="mom-sc"/>`; });
+  for (let p = p0; p <= p1; p++) s += `<line x1="46" x2="${W - 54}" y1="${Y(p)}" y2="${Y(p)}" class="mom-grid"/><text x="36" y="${Y(p)}" class="mom-lbl" text-anchor="end" dominant-baseline="middle">P${p}</text>`;
+  const step = Math.max(1, Math.ceil((l1 - l0) / 8));
+  for (let l = l0; l <= l1; l += step) s += `<text x="${X(l)}" y="${H - 4}" class="mom-lbl" text-anchor="middle">${l ? "T" + l : "Grille"}</text>`;
+  m.ds.forEach((d) => {
+    const pts = []; for (let l = l0; l <= Math.min(at, l1); l++) { const p = pAt(d, l); if (p) pts.push(`${X(l).toFixed(1)},${Y(p).toFixed(1)}`); }
+    const pf = posF(d, Math.min(at, l1)); if (pf != null && at % 1) pts.push(`${X(at).toFixed(1)},${Y(pf).toFixed(1)}`);
+    if (pts.length > 1) s += `<polyline points="${pts.join(" ")}" fill="none" stroke="${d.color}" stroke-width="${d === m.main ? 3.2 : 2}" stroke-linejoin="round" opacity="${d === m.main ? 1 : .55}"/>`;
+  });
+  svg.innerHTML = s;
+  m.ds.forEach((d) => {
+    const p = posF(d, Math.min(at, l1)); if (p == null || (DNF[d.code] && at > DNF[d.code] + 1)) return;
+    const g = hcEl("g", { transform: `translate(${X(Math.min(at, l1)).toFixed(1)},${Y(p).toFixed(1)}) scale(.7)` }, svg);
+    drawTopCar(g, d.color, String(d.dn));
+    hcEl("text", { x: 30, y: 1, class: "mom-code", "dominant-baseline": "middle" }, g).textContent = d.code;
+  });
+}
+function momPlay(el, m) {
+  if (el._raf) cancelAnimationFrame(el._raf);
+  const [l0, l1] = m.win, dur = reduce ? 0 : Math.min(5200, 900 + (l1 - l0) * 380), t0 = performance.now();
+  const tick = (now) => { const u = dur ? Math.min(1, (now - t0) / dur) : 1; momDraw(el, m, l0 + (l1 - l0) * u); if (u < 1) el._raf = requestAnimationFrame(tick); else el._raf = 0; };
+  el._raf = requestAnimationFrame(tick);
+}
 
 /* ======================= Mobile : vertical pour changer de section, horizontal pour changer de vue ======================= */
 const MOB = () => matchMedia("(max-width: 640px)").matches;
@@ -2965,6 +3154,7 @@ async function hcRun(tok) {
 // Le bouton retour du navigateur ou du téléphone suit toujours le parcours.
 const NAV = { home: false, homeWait: [], chap: null, slot: null, pushed: false };
 const CHAPTERS = [
+  { id: "moments", sec: "moments", k: "Les 3 moments" },
   { id: "course", sec: "course", k: "La course" },
   { id: "duels", sec: "duels", k: "Les duels" },
   { id: "pneus", sec: "strategies", k: "Les pneus" },
@@ -3038,6 +3228,12 @@ function chapPreview(id) {
   const W = id === "course" ? 300 : 520, H = 92, svg = (inner) => `<svg class="mc-prev" viewBox="0 0 ${W} ${H}" preserveAspectRatio="${id === "course" ? "none" : "xMinYMid meet"}" aria-hidden="true">${inner}</svg>`;
   const t = (x, y, txt, cls = "pv-t", anchor = "start") => `<text x="${x}" y="${y}" class="${cls}" text-anchor="${anchor}" dominant-baseline="middle">${esc(txt)}</text>`;
   try {
+    if (id === "moments") {
+      if (!MOMENTS.length) return "";
+      const X = (lap) => 12 + ((lap ?? LAPS) - 1) / Math.max(1, LAPS - 1) * (W - 24);
+      return svg(`<line x1="12" x2="${W - 12}" y1="46" y2="46" class="pv-axis"/>` + NEUTRAL.map((r) => `<rect x="${X(r.start)}" y="40" width="${Math.max(3, X(r.end) - X(r.start))}" height="12" rx="3" fill="var(--sc)" opacity=".55"/>`).join("") +
+        MOMENTS.map((m, i) => `<circle cx="${X(m.lap)}" cy="46" r="11" fill="${m.main.color}"/><text x="${X(m.lap)}" y="47" class="pv-n" text-anchor="middle" dominant-baseline="middle">${i + 1}</text><text x="${X(m.lap)}" y="76" class="pv-t" text-anchor="middle" dominant-baseline="middle">${m.lap ? "T" + m.lap : "course"}</text>`).join(""));
+    }
     if (id === "course") {
       const N = Math.max(2, drivers.length), X = (lap) => 4 + ((lap - 1) / Math.max(1, LAPS - 1)) * (W - 8), Y = (p) => 6 + ((p - 1) / (N - 1)) * (H - 12);
       const line = (d, cls, col) => { const pts = d.pos.map((p, k) => (p ? `${X(k + 1).toFixed(1)},${Y(p).toFixed(1)}` : null)).filter(Boolean); return pts.length > 1 ? `<polyline points="${pts.join(" ")}" class="${cls}"${col ? ` stroke="${col}"` : ""}/>` : ""; };
@@ -3076,6 +3272,7 @@ function renderChapterCards() {
   const duels = computeDuels().filter((d) => d.valid);
   const sw = (cols) => `<span class="mc-sw">${cols.slice(0, 4).map((c) => `<i style="background:${c}"></i>`).join("")}</span>`;
   const info = {
+    moments: [(typeof MOMENTS !== "undefined" && MOMENTS.length ? MOMENTS.map((m) => (m.lap ? "T" + m.lap + " " : "") + m.txt.replace(/<[^>]+>/g, "")).join(" · ") : first("read-moments")), sw(MOMENTS.map((m) => m.main.color))],
     course: [first("read-course"), sw(finishers.slice(0, 3).map((d) => d.color))],
     rythme: [first("read-rythme"), sw(paced.slice(0, 3).map((d) => d.color))],
     duels: [first("read-duels"), sw(duels.slice(0, 3).map((d) => d.color))],
@@ -3184,21 +3381,64 @@ function wanderPuff(layer, x, y, r) {
   c.animate([{ opacity: .8, transform: "scale(1)" }, { opacity: 0, transform: "scale(3)" }], { duration: 800, easing: "ease-out" }).onfinish = () => c.remove();
 }
 // Trajet générique : pos(u) → [x, y], cap (rad) calculé sur la trajectoire, glisse(u) → angle ajouté
+// Easter egg (ordinateur) : on peut attraper la voiture. Elle grossit en roulant sur place sous la souris,
+// puis repart en dérapant et rapetisse jusqu'à disparaître quand on la lâche.
 function wanderDrive(pos, dur, slide, scale) {
   if (WANDER.busy) return; WANDER.busy = true; WANDER.last = performance.now();
   const layer = wanderLayer(), [col, num] = wanderCar(), car = drawTopCar(layer, col, num), t0 = performance.now();
-  let lastMark = null;
+  const st = { x: -99, y: -99, a: 0, s: scale, mode: "drive", lastMark: null };
+  const place = () => car.setAttribute("transform", `translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) rotate(${(st.a * 180 / Math.PI).toFixed(1)}) scale(${st.s.toFixed(3)})`);
+  const skid = (on, sl) => {
+    if (!on) { st.lastMark = null; return; }
+    const back = [st.x - Math.cos(st.a) * 16 * st.s, st.y - Math.sin(st.a) * 16 * st.s];
+    if (st.lastMark) { const l = hcEl("line", { x1: st.lastMark[0], y1: st.lastMark[1], x2: back[0], y2: back[1], class: "hc-skid", "stroke-width": 2.2 * st.s }, layer); l.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1800 }).onfinish = () => l.remove(); }
+    st.lastMark = back; if (Math.random() < (sl || 0.35)) wanderPuff(layer, back[0], back[1], 4 * st.s);
+  };
+  const end = () => { car.remove(); WANDER.busy = false; WANDER.last = performance.now(); };
   const frame = (now) => {
-    const u = Math.min(1, (now - t0) / dur), [x, y] = pos(u), [x2, y2] = pos(Math.min(1, u + 0.01)), a = Math.atan2(y2 - y, x2 - x) + slide(u);
-    car.setAttribute("transform", `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${(a * 180 / Math.PI).toFixed(1)}) scale(${scale})`);
-    if (Math.abs(slide(u)) > 0.25) {
-      const back = [x - Math.cos(a) * 16 * scale, y - Math.sin(a) * 16 * scale];
-      if (lastMark) { const l = hcEl("line", { x1: lastMark[0], y1: lastMark[1], x2: back[0], y2: back[1], class: "hc-skid", "stroke-width": 2.2 * scale }, layer); l.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1800 }).onfinish = () => l.remove(); }
-      lastMark = back; if (Math.random() < 0.35) wanderPuff(layer, back[0], back[1], 4 * scale);
-    } else lastMark = null;
-    if (u < 1) requestAnimationFrame(frame); else { car.remove(); WANDER.busy = false; }
+    if (st.mode !== "drive") return;
+    const u = Math.min(1, (now - t0) / dur), [x, y] = pos(u), [x2, y2] = pos(Math.min(1, u + 0.01));
+    st.x = x; st.y = y; st.a = Math.atan2(y2 - y, x2 - x) + slide(u); place();
+    skid(Math.abs(slide(u)) > 0.25);
+    if (u < 1) requestAnimationFrame(frame); else end();
   };
   requestAnimationFrame(frame);
+  if (MOB()) return;
+  // --- Attraper la voiture ---
+  car.style.pointerEvents = "auto"; car.style.cursor = "grab";
+  car.addEventListener("pointerdown", (e) => {
+    if (st.mode !== "drive") return;
+    e.preventDefault(); st.mode = "held"; car.style.cursor = "grabbing"; car.setPointerCapture(e.pointerId);
+    let px = e.clientX, py = e.clientY, last = performance.now(), vx = 0, vy = 0, spin = 0;
+    const move = (ev) => { const now = performance.now(), dt = Math.max(16, now - last); vx = vx * 0.6 + ((ev.clientX - px) / dt) * 0.4; vy = vy * 0.6 + ((ev.clientY - py) / dt) * 0.4; px = ev.clientX; py = ev.clientY; last = now; };
+    const held = (now) => {
+      if (st.mode !== "held") return;
+      st.s += (2.6 - st.s) * 0.18; st.x += (px - st.x) * 0.35; st.y += (py - st.y) * 0.35;
+      const sp = Math.hypot(vx, vy); if (sp > 0.15) { const want = Math.atan2(vy, vx); let d = want - st.a; d = Math.atan2(Math.sin(d), Math.cos(d)); st.a += d * 0.2; }
+      spin += 1; const shake = Math.sin(spin * 1.7) * 0.6; // les roues tournent dans le vide : la voiture vibre
+      car.setAttribute("transform", `translate(${(st.x + shake).toFixed(1)},${st.y.toFixed(1)}) rotate(${(st.a * 180 / Math.PI).toFixed(1)}) scale(${st.s.toFixed(3)})`);
+      if (spin % 5 === 0) wanderPuff(layer, st.x - Math.cos(st.a) * 18 * st.s, st.y - Math.sin(st.a) * 18 * st.s, 3 * st.s);
+      requestAnimationFrame(held);
+    };
+    const release = () => {
+      car.removeEventListener("pointermove", move); car.removeEventListener("pointerup", release); car.removeEventListener("pointercancel", release);
+      st.mode = "flee"; car.style.pointerEvents = "none";
+      const sp = Math.hypot(vx, vy), dir = sp > 0.3 ? Math.atan2(vy, vx) : st.a, s0 = st.s, f0 = performance.now();
+      let v = Math.max(700, Math.min(1500, sp * 900)), sl = (Math.random() < 0.5 ? -1 : 1) * 0.9, head = dir;
+      const flee = (now) => {
+        const t = (now - f0) / 1000; if (st.mode !== "flee") return;
+        const dt = 1 / 60; st.x += Math.cos(head) * v * dt; st.y += Math.sin(head) * v * dt;
+        head += sl * 0.9 * dt; sl *= 0.94; v *= 0.995; // coup de volant qui s'amortit
+        st.a = head + sl; st.s = Math.max(0.05, s0 * Math.max(0, 1 - t / 1.1)); place();
+        skid(Math.abs(sl) > 0.2, 0.5);
+        const off = st.x < -80 || st.y < -80 || st.x > innerWidth + 80 || st.y > innerHeight + 80;
+        if (t < 1.1 && !off) requestAnimationFrame(flee); else end();
+      };
+      requestAnimationFrame(flee);
+    };
+    car.addEventListener("pointermove", move); car.addEventListener("pointerup", release); car.addEventListener("pointercancel", release);
+    requestAnimationFrame(held);
+  });
 }
 const wanderOk = () => !reduce && !NAV.home && document.visibilityState === "visible" && !["in", "grid", "lap"].includes(HC.phase);
 

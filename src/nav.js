@@ -4,6 +4,7 @@
 // Le bouton retour du navigateur ou du téléphone suit toujours le parcours.
 const NAV = { home: false, homeWait: [], chap: null, slot: null, pushed: false };
 const CHAPTERS = [
+  { id: "moments", sec: "moments", k: "Les 3 moments" },
   { id: "course", sec: "course", k: "La course" },
   { id: "duels", sec: "duels", k: "Les duels" },
   { id: "pneus", sec: "strategies", k: "Les pneus" },
@@ -77,6 +78,12 @@ function chapPreview(id) {
   const W = id === "course" ? 300 : 520, H = 92, svg = (inner) => `<svg class="mc-prev" viewBox="0 0 ${W} ${H}" preserveAspectRatio="${id === "course" ? "none" : "xMinYMid meet"}" aria-hidden="true">${inner}</svg>`;
   const t = (x, y, txt, cls = "pv-t", anchor = "start") => `<text x="${x}" y="${y}" class="${cls}" text-anchor="${anchor}" dominant-baseline="middle">${esc(txt)}</text>`;
   try {
+    if (id === "moments") {
+      if (!MOMENTS.length) return "";
+      const X = (lap) => 12 + ((lap ?? LAPS) - 1) / Math.max(1, LAPS - 1) * (W - 24);
+      return svg(`<line x1="12" x2="${W - 12}" y1="46" y2="46" class="pv-axis"/>` + NEUTRAL.map((r) => `<rect x="${X(r.start)}" y="40" width="${Math.max(3, X(r.end) - X(r.start))}" height="12" rx="3" fill="var(--sc)" opacity=".55"/>`).join("") +
+        MOMENTS.map((m, i) => `<circle cx="${X(m.lap)}" cy="46" r="11" fill="${m.main.color}"/><text x="${X(m.lap)}" y="47" class="pv-n" text-anchor="middle" dominant-baseline="middle">${i + 1}</text><text x="${X(m.lap)}" y="76" class="pv-t" text-anchor="middle" dominant-baseline="middle">${m.lap ? "T" + m.lap : "course"}</text>`).join(""));
+    }
     if (id === "course") {
       const N = Math.max(2, drivers.length), X = (lap) => 4 + ((lap - 1) / Math.max(1, LAPS - 1)) * (W - 8), Y = (p) => 6 + ((p - 1) / (N - 1)) * (H - 12);
       const line = (d, cls, col) => { const pts = d.pos.map((p, k) => (p ? `${X(k + 1).toFixed(1)},${Y(p).toFixed(1)}` : null)).filter(Boolean); return pts.length > 1 ? `<polyline points="${pts.join(" ")}" class="${cls}"${col ? ` stroke="${col}"` : ""}/>` : ""; };
@@ -115,6 +122,7 @@ function renderChapterCards() {
   const duels = computeDuels().filter((d) => d.valid);
   const sw = (cols) => `<span class="mc-sw">${cols.slice(0, 4).map((c) => `<i style="background:${c}"></i>`).join("")}</span>`;
   const info = {
+    moments: [(typeof MOMENTS !== "undefined" && MOMENTS.length ? MOMENTS.map((m) => (m.lap ? "T" + m.lap + " " : "") + m.txt.replace(/<[^>]+>/g, "")).join(" · ") : first("read-moments")), sw(MOMENTS.map((m) => m.main.color))],
     course: [first("read-course"), sw(finishers.slice(0, 3).map((d) => d.color))],
     rythme: [first("read-rythme"), sw(paced.slice(0, 3).map((d) => d.color))],
     duels: [first("read-duels"), sw(duels.slice(0, 3).map((d) => d.color))],
