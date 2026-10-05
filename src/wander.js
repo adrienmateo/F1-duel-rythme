@@ -34,9 +34,12 @@ function wanderDrive(pos, dur, slide, scale) {
     st.lastMark = back; if (Math.random() < (sl || 0.35)) wanderPuff(layer, back[0], back[1], 4 * st.s);
   };
   const end = () => { car.remove(); WANDER.busy = false; WANDER.last = performance.now(); };
+  // Survolée, la voiture ralentit nettement : on a le temps de l'attraper
+  let prog = 0, prev = t0, hover = false;
   const frame = (now) => {
     if (st.mode !== "drive") return;
-    const u = Math.min(1, (now - t0) / dur), [x, y] = pos(u), [x2, y2] = pos(Math.min(1, u + 0.01));
+    prog += (now - prev) * (hover ? 0.25 : 1); prev = now;
+    const u = Math.min(1, prog / dur), [x, y] = pos(u), [x2, y2] = pos(Math.min(1, u + 0.01));
     st.x = x; st.y = y; st.a = Math.atan2(y2 - y, x2 - x) + slide(u); place();
     skid(Math.abs(slide(u)) > 0.25);
     if (u < 1) requestAnimationFrame(frame); else end();
@@ -45,6 +48,8 @@ function wanderDrive(pos, dur, slide, scale) {
   if (MOB()) return;
   // --- Attraper la voiture ---
   car.style.pointerEvents = "auto"; car.style.cursor = "grab";
+  hcEl("circle", { cx: 0, cy: 0, r: 34, fill: "transparent" }, car); // zone de prise plus large que la voiture
+  car.addEventListener("pointerenter", () => (hover = true)); car.addEventListener("pointerleave", () => (hover = false));
   car.addEventListener("pointerdown", (e) => {
     if (st.mode !== "drive") return;
     e.preventDefault(); st.mode = "held"; car.style.cursor = "grabbing"; car.setPointerCapture(e.pointerId);
@@ -96,7 +101,7 @@ addEventListener("scroll", () => {
     const m = wanderMargin(); if (!m) return;
     const H = innerHeight, amp = Math.min(m.w * 0.22, 26);
     // Remonte la marge en S, avec un coup de glisse au milieu
-    wanderDrive((u) => { const e = u * u * (3 - 2 * u); return [m.x + Math.sin(e * Math.PI * 2) * amp, H + 40 - e * (H + 80)]; }, 3400,
+    wanderDrive((u) => { const e = u * u * (3 - 2 * u); return [m.x + Math.sin(e * Math.PI * 2) * amp, H + 40 - e * (H + 80)]; }, 7000,
       (u) => (u > 0.4 && u < 0.62 ? Math.sin(((u - 0.4) / 0.22) * Math.PI) * 0.6 : 0), 1);
   }, 700);
 }, { passive: true });
