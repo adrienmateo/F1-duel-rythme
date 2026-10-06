@@ -160,7 +160,7 @@
         <button role="tab" aria-selected="false" data-ex="box">Régularité</button>
         <button role="tab" aria-selected="false" data-ex="circuit">Sur le circuit</button>
       </div>
-      <span class="fine">Jusqu'à 4 pilotes</span>
+      <span class="fine" id="ex-fine">Jusqu'à 4 pilotes</span>
     </div>
     <div class="chips" id="ex-chips"></div>
     <div class="ex-ref" id="ex-ref" role="group" aria-label="Pilote de référence"></div>
@@ -169,7 +169,8 @@
     <p class="howread" id="how-ex"></p>
     <div class="chart mid" id="ch-ex" role="img" aria-label="Comparaison des pilotes sélectionnés"></div>
     <div class="ex-circ" id="ex-circ" hidden>
-      <p class="howto"><span><b>Ce que ça montre :</b> les deux premiers pilotes choisis, rejoués sur leur meilleur tour, sur le vrai tracé.</span><span><b>Comment le lire :</b> chaque secteur prend la couleur du plus rapide, et le chiffre donne le temps qu'il y a gagné.</span></p>
+      <p class="howto"><span><b>Ce que ça montre :</b> deux pilotes rejoués sur leur meilleur tour, sur le vrai tracé. Si tu en as sélectionné plus, choisis les deux juste en dessous.</span><span><b>Comment le lire :</b> chaque secteur prend la couleur du plus rapide, et le chiffre donne le temps qu'il y a gagné.</span></p>
+      <div class="circ-pair" id="circ-pair"></div>
       <div class="circ-top"><span class="fine" id="circ-note"></span><button class="btn ghost" id="cplay"></button></div>
       <div class="circ-wrap">
         <div><div class="circ-who" id="circ-who"></div><div class="circ-stage"><svg id="circ" viewBox="0 0 680 400" role="img" aria-label="Tracé du circuit découpé en trois secteurs : meilleur tour de chaque pilote"></svg><p class="fine circ-msg" id="circ-msg" hidden></p></div></div>

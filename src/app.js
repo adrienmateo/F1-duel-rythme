@@ -781,14 +781,14 @@ function renderHow() {
     laps: `Une ligne par pilote, un point par tour : <b>plus c'est bas, plus le tour est rapide</b>. ${exAll ? "Tous les tours sont tracés, sauf le départ ; chaque point a la couleur du pneu utilisé (" + sw(COMP.S.c, 1) + "tendre " + sw(COMP.M.c, 1) + "médium " + sw(COMP.H.c, 1) + "dur). Survole un pic pour sa raison (stands, safety car…)." : "Seuls les tours rapides sont tracés ; « Afficher tous les tours » ajoute les tours aux stands et sous neutralisation."}`,
     gap: `Distance en piste entre chaque pilote et ${rn}, tour par tour. <b>Au-dessus de zéro = derrière ${rn}</b>, en dessous = devant lui.`,
     box: `Une case par tour, comparée au rythme habituel du pilote sur le même train de pneus : ${sw("var(--good)")}dans son rythme ${sw("#e3a008")}un peu lent ${sw("var(--bad)")}tour perdu ${sw("var(--track)")}départ, stands ou safety car.`,
-    circuit: `Les deux pilotes refont leur meilleur tour sur le vrai tracé : ${rn} contre le deuxième pilote choisi. Chaque secteur prend la couleur du plus rapide.`,
+    circuit: `Deux pilotes refont leur meilleur tour sur le vrai tracé. Chaque secteur prend la couleur du plus rapide. Avec plus de 2 pilotes sélectionnés, choisis les deux à rejouer juste en dessous.`,
   }[$("[data-ex][aria-selected=true]")?.dataset.ex || exMode] || "");
 }
 // « Comparé à » : le premier pilote de la sélection sert de référence ; un clic en choisit un autre
 function renderExRef() {
   const el = $("#ex-ref"); if (!el) return;
   const mode = $("[data-ex][aria-selected=true]")?.dataset.ex || exMode, sel = exSel.filter((c) => byCode[c]);
-  el.hidden = sel.length < 2 || mode === "box";
+  el.hidden = sel.length < 2 || mode === "box" || mode === "circuit";
   const all = $("#ex-all"); if (all) { all.hidden = mode !== "laps"; all.setAttribute("aria-pressed", exAll); }
   el.innerHTML = `<span class="ex-ref-k">Comparé à</span>` + sel.map((c, i) => `<button aria-pressed="${!i}" data-ref="${c}"><i style="background:${byCode[c].color}"></i>${byCode[c].last}</button>`).join("");
   $$("#ex-ref [data-ref]").forEach((b) => b.addEventListener("click", () => setExRef(b.dataset.ref)));
@@ -984,17 +984,28 @@ async function fetchTrace(d, lap) {
 }
 function setupCircuit() {
   // Le circuit vit dans l'Explorer : il rejoue les deux premiers pilotes choisis
-  circ.custom = {}; circ.duel = null;
+  circ.custom = {}; circ.duel = null; circ.pairSel = null;
   $("#circ").innerHTML = ""; $("#cside").innerHTML = ""; $("#circ-who").innerHTML = ""; msgCircuit("");
   syncCircuitDuel();
 }
 function syncCircuitDuel() {
-  const pair = exSel.map((c) => byCode[c]).filter((d) => d && bestLapOf(d)).slice(0, 2);
-  const note = $("#circ-note");
-  if (pair.length < 2) { circ.duel = null; if (note) note.textContent = "Choisis au moins deux pilotes ci-dessus pour les voir sur le circuit."; return false; }
-  const [a, b] = pair, key = a.code + "-" + b.code;
+  // Sur le circuit, on rejoue toujours 2 pilotes : ceux choisis dans « Sur le circuit », sinon les deux premiers de la sélection
+  const ok = exSel.map((c) => byCode[c]).filter((d) => d && bestLapOf(d));
+  const note = $("#circ-note"), box = $("#circ-pair");
+  if (ok.length < 2) { circ.duel = null; if (box) box.innerHTML = ""; if (note) note.textContent = "Choisis au moins deux pilotes ci-dessus pour les voir sur le circuit."; return false; }
+  let ps = (circ.pairSel || []).map((c) => ok.find((d) => d.code === c)).filter(Boolean);
+  if (ps.length < 2 || ps[0] === ps[1]) ps = ok.slice(0, 2);
+  circ.pairSel = ps.map((d) => d.code);
+  const [a, b] = ps, key = a.code + "-" + b.code;
   circ.duel = (circ.custom[key] ||= { team: a.team === b.team ? a.team : `${a.team} / ${b.team}`, color: a.color, valid: true, fast: a, slow: b });
-  if (note) note.textContent = exSel.length > 2 ? `${a.last} (référence) contre ${b.last}. Change la référence avec « Comparé à ».` : "";
+  if (note) note.textContent = "";
+  if (box) {
+    const opt = (sel, other) => ok.filter((d) => d !== other).map((d) => `<option value="${d.code}"${d === sel ? " selected" : ""}>${esc(d.last)}</option>`).join("");
+    box.innerHTML = ok.length > 2
+      ? `<span class="circ-pair-k">Sur le circuit, 2 pilotes :</span><label class="visually-hidden" for="cp-a">Premier pilote</label><select id="cp-a" style="--c:${a.color}">${opt(a, b)}</select><span>contre</span><label class="visually-hidden" for="cp-b">Second pilote</label><select id="cp-b" style="--c:${b.color}">${opt(b, a)}</select>`
+      : "";
+    $$("#circ-pair select").forEach((s) => s.addEventListener("change", () => { circ.pairSel = [$("#cp-a").value, $("#cp-b").value]; exCircuitRefresh(); }));
+  }
   return true;
 }
 // L'onglet « Sur le circuit » de l'Explorer
@@ -1193,7 +1204,8 @@ $$("[data-course]").forEach((b) => b.addEventListener("click", () => selectCours
 function sizeEx() { const el = $("#ch-ex"), h = exMode === "box" ? `${90 + exSel.length * 56}px` : ""; if (el.style.height !== h) { el.style.height = h; charts["ch-ex"]?.inst?.resize(); } }
 function selectEx(m) {
   $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m));
-  if (m === "circuit") { showExCircuit(true); renderExRef(); renderHow(); return; }
+  const fine = $("#ex-fine"); if (fine) fine.textContent = m === "circuit" ? "2 pilotes sur le circuit" : "Jusqu'à 4 pilotes";
+  if (m === "circuit") { showExCircuit(true); renderExRef(); renderHow(); exCircuitRefresh(); return; }
   showExCircuit(false); exMode = m; readEx(); sizeEx(); update("ch-ex");
 }
 $$("[data-ex]").forEach((b) => b.addEventListener("click", () => selectEx(b.dataset.ex)));
