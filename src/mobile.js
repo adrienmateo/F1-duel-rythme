@@ -22,7 +22,7 @@ function makeSwipe(anchor, slides) {
     const sl = document.createElement("div"); sl.className = "mslide" + (xs ? " xs" : "");
     els.forEach((e) => e && sl.appendChild(e)); track.appendChild(sl);
     const b = document.createElement("button"); b.textContent = label; b.className = xs ? "xs" : ""; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === 0);
-    b.addEventListener("click", () => track.scrollTo({ left: sl.offsetLeft - track.offsetLeft, behavior: reduce ? "auto" : "smooth" }));
+    b.addEventListener("click", () => goTo(i));
     tabs.appendChild(b); const dot = document.createElement("i"); if (xs) dot.className = "xs"; dots.appendChild(dot);
   });
   dots.firstChild?.classList.add("on");
@@ -31,9 +31,17 @@ function makeSwipe(anchor, slides) {
   setTimeout(() => fit(0), 50);
   const ro = new ResizeObserver(() => fit(idx())); [...track.children].forEach((c) => ro.observe(c));
   wrap.append(tabs, track, dots);
-  let raf = 0, lastI = 0;
+  let raf = 0, lastI = 0, target = -1, tgo = 0;
+  // Safari iPhone : un défilement animé + un changement de hauteur + l'aimantation « mandatory » le ramènent
+  // sur la 1re carte. On coupe l'aimantation le temps du trajet, on fixe la hauteur d'arrivée tout de suite.
+  function goTo(i) {
+    const sl = track.children[i]; if (!sl) return;
+    target = i; fit(i); track.style.scrollSnapType = "none";
+    track.scrollTo({ left: sl.offsetLeft - track.firstChild.offsetLeft, behavior: reduce ? "auto" : "smooth" });
+    clearTimeout(tgo); tgo = setTimeout(() => { track.scrollLeft = sl.offsetLeft - track.firstChild.offsetLeft; track.style.scrollSnapType = ""; target = -1; onScroll(); }, reduce ? 30 : 520);
+  }
   const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
-    const i = idx();
+    const i = target >= 0 ? target : idx();
     fit(i);
     [...tabs.children].forEach((b, k) => b.setAttribute("aria-selected", k === i));
     [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i));
@@ -167,7 +175,7 @@ function setupMobileOnce() {
   read.classList.remove("clamp"); if (read.nextElementSibling?.classList.contains("more-btn")) read.nextElementSibling.remove();
   const aE = document.createElement("div"); read.after(aE);
   const exc = $("#ex-circ"); exc.hidden = false;
-  swipes.push(makeSwipe(aE, EXM.map(([m, label]) => { const d = document.createElement("div"); d.className = "chart exc"; d.id = "ch-ex-" + m; return [label, [d]]; }).concat([["Sur le circuit", [exc]]])));
+  swipes.push(makeSwipe(aE, EXM.map(([m, label]) => { const d = document.createElement("div"); d.className = "chart exc"; d.id = "ch-ex-" + m; if (m !== "box") return [label, [d]]; const k = document.createElement("div"); k.innerHTML = REG_KEY; return [label, [d, k.firstChild]]; }).concat([["Sur le circuit", [exc]]])));
   aE.remove();
   EXM.forEach(([m]) => { charts["ch-ex-" + m] = { el: $("#ch-ex-" + m), build: exBuild(m), inst: null }; });
   whenVisible(sec, () => EXM.forEach(([m]) => draw("ch-ex-" + m)));
@@ -181,7 +189,7 @@ function setupMobileOnce() {
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) tabs.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id)); }), { rootMargin: "-40% 0px -55% 0px" });
   $$("main > section[id]").forEach((x) => io.observe(x));
   addEventListener("scroll", () => { if (scrollY < 120) tabs.forEach((a, k) => a.classList.toggle("on", k === 0)); }, { passive: true });
-  tabs[0].classList.add("on");
+  tabs[0]?.classList.add("on");
 }
 // Après chaque chargement de GP
 function mobileRender() {

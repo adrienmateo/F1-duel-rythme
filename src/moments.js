@@ -94,7 +94,7 @@ function renderMoments() {
   const box = $("#moments-list"); if (!box) return;
   MOMENTS = [...FACTS].filter((f) => f.ds && f.ds.length).sort((a, b) => b.score - a.score).slice(0, 3).sort((a, b) => (a.lap ?? LAPS) - (b.lap ?? LAPS));
   if (!MOMENTS.length) { $("#read-moments").textContent = "Une course sans rebondissement : l'ordre a peu changé du départ à l'arrivée."; box.innerHTML = ""; return; }
-  $("#read-moments").innerHTML = `Les ${MOMENTS.length > 1 ? MOMENTS.length + " tournants" : "tournant"} de la course, rejoué${MOMENTS.length > 1 ? "s" : ""} avec les voitures concernées.`;
+  $("#read-moments").innerHTML = `Les ${MOMENTS.length > 1 ? MOMENTS.length + " tournants" : "tournant"} de la course, rejoué${MOMENTS.length > 1 ? "s" : ""} avec les voitures concernées. <span class="mom-key">Chaque voiture est à la couleur de son écurie ; la ligne suit sa position tour par tour.</span>`;
   box.innerHTML = MOMENTS.map((m, i) => {
     const d = m.main, pa = m.from ? posAt(d, m.from) : d.grid, pb = posAt(d, m.to), mv = pa && pb ? pa - pb : 0;
     return `<article class="mom" data-m="${i}">
@@ -145,37 +145,32 @@ function momPlay(el, m) {
 
 /* --- « La course en un coup d'œil » : une frise du départ à l'arrivée, avec les neutralisations et les faits --- */
 function renderFrise() {
+  // « Bande de course » : la course en piste sombre, neutralisations hachurées, faits numérotés, une carte par fait
   const X = (lap) => ((Math.max(1, lap) - 1) / Math.max(1, LAPS - 1)) * 100;
-  const evs = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX).sort((a, b) => a.lap - b.lap), w = finishers[0];
-  // Étiquettes sur deux étages quand deux faits sont trop proches
-  let lastX = [-99, -99, -99];
-  const items = evs.map((e) => { const x = X(e.lap); let row = lastX.findIndex((lx) => x - lx >= 24); if (row < 0) row = lastX.indexOf(Math.min(...lastX)); lastX[row] = x; return { e, x, row }; });
-  const bands = NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `<span class="fr-band" style="left:${X(r.start)}%;width:${Math.max(0.8, X(r.end) - X(r.start))}%" title="${NKlong[r.kind]} T${r.start}–${r.end}"><b>${NK[r.kind]}</b></span>`).join("");
-  const ticks = [1, Math.round(LAPS / 4), Math.round(LAPS / 2), Math.round((3 * LAPS) / 4), LAPS].map((l) => `<span class="fr-tick" style="left:${X(l)}%">T${l}</span>`).join("");
-  const edge = (x) => (x < 12 ? "l" : x > 85 ? "r" : "");
-  const flat = `<div class="frise">
-      <div class="fr-track">${bands}<span class="fr-flag" title="Arrivée"></span></div>
-      <div class="fr-ticks">${ticks}</div>
-      <div class="fr-evs">${items.map(({ e, x, row }, i) => `<button class="fr-ev r${row} ${edge(x)}" style="left:${x}%;--c:${e.who.color}" data-f="${i}"><i class="fr-dot"></i><span class="fr-lbl"><span class="fr-k">Tour ${e.lap}</span><b>${esc(e.who.last)}</b><span class="fr-t">${esc(e.short)}</span></span></button>`).join("")}</div>
-    </div>`;
-  const list = `<div class="fr-list">${items.map(({ e }, i) => `<button class="fr-li" style="--c:${e.who.color}" data-f="${i}"><span class="fr-lap">T${e.lap}</span><i class="fr-dot"></i><span><b>${e.who.last}</b> ${esc(e.short)}</span></button>`).join("")}
-      ${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `<div class="fr-li sc"><span class="fr-lap">T${r.start}</span><i class="fr-dot"></i><span>${NKlong[r.kind]} jusqu'au tour ${r.end}</span></div>`).join("")}
-      ${w ? `<div class="fr-li end"><span class="fr-lap">T${LAPS}</span><i class="fr-dot"></i><span>Drapeau à damier : <b>${esc(w.last)}</b> gagne</span></div>` : ""}</div>`;
-  $("#log").innerHTML = `<div class="eyebrow fr-title">La course en un coup d'œil</div>${flat}${list}`;
-  // Étages des étiquettes : on mesure, puis chaque étiquette prend le premier étage où elle ne chevauche pas sa voisine
-  const evEls = $$("#log .fr-ev"); if (evEls.length && $("#log .frise").offsetParent) {
-    // Deux étages au plus : si ça ne tient pas, on bascule sur la liste (jamais d'étiquettes qui se chevauchent)
-    const rowsEnd = [-1e9, -1e9]; let fits = true;
-    evEls.forEach((el) => { el.classList.remove("r0", "r1", "r2"); const r = el.querySelector(".fr-lbl").getBoundingClientRect();
-      // Étage où l'étiquette demande le moins de décalage ; jusqu'à 70 px on la pousse à droite, au-delà on bascule sur la liste
-      const shifts = rowsEnd.map((end) => Math.max(0, end + 10 - r.left)), row = shifts.indexOf(Math.min(...shifts)), dx = shifts[row];
-      const lbl = el.querySelector(".fr-lbl"); lbl.style.transform = dx ? `translateX(${dx}px)` : "";
-      if (dx > 70 || r.right + dx > $("#log .frise").getBoundingClientRect().right + 12) { fits = false; return; }
-      rowsEnd[row] = r.right + dx; el.classList.add("r" + row); });
-    $("#log").classList.toggle("fr-fallback", !fits);
-    $("#log .fr-evs").style.height = (rowsEnd.filter((v) => v > -1e9).length * 64 + 40) + "px";
-  }
-  // La liste mobile se trie par tour
-  const L = $("#log .fr-list"); [...L.children].sort((a, b) => +a.querySelector(".fr-lap").textContent.slice(1) - +b.querySelector(".fr-lap").textContent.slice(1)).forEach((n) => L.appendChild(n));
-  $$("#log [data-f]").forEach((b) => b.addEventListener("click", () => { const e = items[+b.dataset.f].e; openDialog(`Tour ${e.lap} · ${e.label}`, `<p class="read">${e.txt}. ${e.detail}</p>`); }));
+  const facts = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX);
+  const neut = NEUTRAL.filter((r) => r.kind !== "Ralenti").slice(0, 3);
+  const w = finishers[0], p2 = finishers[1];
+  const items = [
+    ...facts.map((e) => ({ lap: e.lap, kind: "fact", e, color: e.who.color, meta: `Tour ${e.lap}`, title: e.who.last, txt: e.short })),
+    ...neut.map((r) => ({ lap: r.start, kind: "neut", r, color: r.kind === "Rouge" ? "#e10600" : "#f5c518", meta: r.end > r.start ? `Tours ${r.start} à ${r.end}` : `Tour ${r.start}`, title: NKlong[r.kind], txt: r.end > r.start ? `Course neutralisée pendant ${r.end - r.start + 1} tours.` : "Course neutralisée." })),
+  ].sort((a, b) => a.lap - b.lap);
+  items.forEach((it, i) => { it.n = i + 1; it.x = it.r ? X((it.r.start + it.r.end) / 2) : X(it.lap); });
+  // Deux pastilles trop proches : la seconde passe au-dessus de la piste
+  let lastX = -99, up = false; items.forEach((it) => { up = it.x - lastX < 4.5 ? !up : false; it.up = up; lastX = it.x; });
+  const ink = (hex) => { const h = String(hex || "#888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const L = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255); return L > 165 ? "#14161a" : "#fff"; };
+  let zlX = -99, zlHi = false;
+  const zones = neut.map((r) => { zlHi = X(r.start) - zlX < 16 ? !zlHi : false; zlX = X(r.start); return `<span class="fr-zone${r.kind === "Rouge" ? " red" : ""}" style="left:${X(r.start)}%;width:${Math.max(1.2, X(r.end) - X(r.start))}%"></span><span class="fr-zl${zlHi ? " hi" : ""}${X(r.start) > 80 ? " rt" : ""}" style="left:${X(r.start)}%">${NK[r.kind] === "Drapeau rouge" ? "Rouge" : NK[r.kind]} · T${r.start}${r.end > r.start ? "–" + r.end : ""}</span>`; }).join("");
+  const step = LAPS > 40 ? 10 : 5, ticks = [1]; for (let l = step; l < LAPS - step * 0.8; l += step) ticks.push(l); ticks.push(LAPS);
+  const pins = items.map((it) => `<button class="fr-pin${it.up ? " up" : ""}" style="left:${it.x}%;background:${it.color};color:${ink(it.color)}" data-i="${it.n - 1}" aria-label="${esc(it.meta + " : " + it.title)}">${it.n}</button>`).join("");
+  const card = (it) => `<button class="fr-card" data-i="${it.n - 1}"><span class="fr-meta"><span class="fr-n" style="background:${it.color};color:${ink(it.color)}">${it.n}</span>${it.meta}</span><b>${esc(it.title)}</b><span class="fr-t">${esc(it.txt)}</span></button>`;
+  const end = w ? `<div class="fr-card end"><span class="fr-meta"><span class="fr-n flag"></span>Tour ${LAPS} · Arrivée</span><b style="color:${w.color}">${esc(w.last)} gagne</b><span class="fr-t">${p2 ? `Devant ${esc(p2.last)}.` : ""}</span></div>` : "";
+  $("#log").innerHTML = `<div class="fr-head"><span class="eyebrow">La course en un coup d'œil</span><span class="fr-laps">${LAPS} tours</span></div>
+    <div class="frise"><div class="fr-road">${zones}<span class="fr-flag" title="Arrivée"></span>${pins}</div>
+      <div class="fr-ticks">${ticks.map((l) => `<span style="left:${X(l)}%">T${l}</span>`).join("")}</div></div>
+    <div class="fr-cards">${items.map(card).join("")}${end}</div>`;
+  $$("#log [data-i]").forEach((b) => b.addEventListener("click", () => {
+    const it = items[+b.dataset.i];
+    if (it.kind === "fact") openDialog(`Tour ${it.e.lap} · ${it.e.label}`, `<p class="read">${it.e.txt}. ${it.e.detail}</p>`);
+    else openDialog(`${it.meta} · ${it.title}`, `<p class="read">${it.title} ${it.r.end > it.r.start ? `du tour ${it.r.start} au tour ${it.r.end}` : `au tour ${it.r.start}`}. Ces tours ne comptent pas dans le rythme des pilotes.</p>`);
+  }));
 }

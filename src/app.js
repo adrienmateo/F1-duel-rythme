@@ -350,7 +350,7 @@ function renderHero() {
   const [p1, p2, p3] = finishers;
   const g = winnerGap();
   const verb = g == null ? "remporte le GP devant" : g < 1.5 ? "résiste à" : g < 8 ? "devance" : "domine";
-  $("#headline").textContent = p1 ? (p2 ? `${p1.last} ${verb} ${p2.last}` : `${p1.last} gagne`) : `${RACE.country_name} ${RACE.year}`;
+  $("#headline").textContent = p1 ? (p2 ? `${p1.last} ${verb} ${p2.last}` : `${p1.last} gagne`) : `${gpName(RACE)} ${RACE.year}`;
   $("#gp-eyebrow").textContent = `Le GP en 30 secondes · ${new Date(RACE.date_start).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`;
   $("#gp-meta").textContent = `${LAPS} tours · ${RACE.location || RACE.circuit_short_name || ""}`;
   const fastest = paced[0];
@@ -446,16 +446,16 @@ function renderDuels() {
   const duels = computeDuels();
   const valid = duels.filter((d) => d.valid);
   if (!valid.length) { $("#read-duels").textContent = "Aucun duel comparable sur cette course."; $("#duel-list").innerHTML = ""; return; }
-  const max = valid[0].gap;
+  const max = Math.max(0.25, Math.ceil(valid[0].gap / 0.25) * 0.25); // échelle commune, arrondie au quart de seconde
   const strat = valid.filter((d) => d.same != null && d.same < 0);
   const tight = valid[valid.length - 1];
   $("#read-duels").innerHTML = `<b>${valid[0].fast.last}</b> a dominé ${valid[0].slow.last} de <b>${gapS(valid[0].gap)}</b> au tour.` + (tight !== valid[0] ? ` Le duel le plus serré est chez ${tight.team} (${gapS(tight.gap)}).` : "") +
     (strat.length ? ` Chez ${strat[0].team}, l'écart venait de la stratégie : à pneus égaux, ${strat[0].slow.last} était plus rapide.` : "");
-  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme médian</span><span class="fine who-h">Duel</span></div>` +
+  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme par tour · barre entière = ${fr(max, 2)} s</span><span class="fine who-h">Qui était le plus rapide</span></div>` +
     duels.map((d, i) => d.valid ? `<button class="duel lift" data-d="${i}" data-codes="${d.fast.code} ${d.slow.code}">
       <span class="team"><i class="dot" style="background:${d.color}"></i>${esc(d.team)}</span>
       <span class="track"><span class="fill" style="display:block;background:${d.color}" data-w="${Math.max(0.6, (d.gap / max) * 100)}"></span></span>
-      <span class="who"><span class="pair"><b>${d.fast.code}</b> <span class="slow">› ${d.slow.code}</span></span>${d.same != null && d.same < 0 ? `<span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide">STRAT</span>` : "<span></span>"}<span class="gap">${gapS(d.gap)}</span></span>
+      <span class="who"><span class="pair"><b>${d.fast.code}</b> plus rapide que <span class="slow">${d.slow.code}</span></span><span class="gap">${gapS(d.gap)} <small>/ tour</small></span>${d.same != null && d.same < 0 ? `<span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide : l'écart vient de la stratégie">STRAT</span>` : ""}</span>
     </button>` : `<div class="na">${esc(d.team)} non comparable : ${esc(d.out.join(", "))} sans assez de tours représentatifs.</div>`).join("");
   $$("#duel-list .duel[data-d]").forEach((b) => b.addEventListener("click", () => showDuel(duels[+b.dataset.d])));
   const grow = () => $$("#duels .duel .fill").forEach((f, k) => setTimeout(() => (f.style.width = f.dataset.w + "%"), reduce ? 0 : k * 60));
@@ -758,10 +758,12 @@ function buildStrat(T) {
 function readStrat() {
   const fin = finishers;
   const counts = {}; fin.forEach((d) => { const n = d.pits.length; counts[n] = (counts[n] || 0) + 1; });
-  const parts = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([n, c]) => `${c} pilote${c > 1 ? "s" : ""} à <b>${n == 0 ? "zéro arrêt" : plural(+n, "arrêt")}</b>`);
+  // Nombre d'arrêts : mini barres, du plus petit nombre d'arrêts au plus grand
+  const cmax = Math.max(1, ...Object.values(counts));
+  const stops = Object.entries(counts).sort((a, b) => +a[0] - +b[0]).map(([n, c]) => `<span class="st-row"><span class="st-n">${n == 0 ? "Aucun arrêt" : plural(+n, "arrêt")}</span><span class="st-bar"><i style="width:${(c / cmax) * 100}%"></i></span><span class="st-c">${c} pilote${c > 1 ? "s" : ""}</span></span>`).join("");
   const sc = NEUTRAL.filter((r) => r.kind === "SC" || r.kind === "VSC");
   const scStop = drivers.filter((d) => d.pits.some((p) => sc.some((r) => p >= r.start && p <= r.end)));
-  $("#read-strat").innerHTML = (parts.length ? parts.join(", ") + " parmi les classés." : "") +
+  $("#read-strat").innerHTML = (stops ? `<span class="stops"><span class="st-h">Arrêts aux stands, pilotes classés</span>${stops}</span>` : "") +
     (scStop.length ? ` ${scStop.length} pilote${scStop.length > 1 ? "s se sont arrêtés" : " s'est arrêté"} <b>sous neutralisation</b>, dont ${scStop.slice(0, 3).map((d) => d.last).join(", ")} : un arrêt qui coûte moins de temps.` : "");
   const used = [...new Set(drivers.flatMap((d) => d.stints.map((s) => s[0])))];
   $("#tyre-legend").innerHTML = Object.entries(COMP).filter(([k]) => used.includes(k)).map(([, c]) => `<span><i class="dot" style="background:${c.c}"></i>${c.name}</span>`).join("");
@@ -806,6 +808,7 @@ function exChanged() {
 }
 
 /* --- Explorer --- */
+const REG_KEY = `<span class="reg-key"><span><i style="background:var(--good)"></i>Dans son rythme</span><span><i style="background:#e3a008"></i>Un peu lent (jusqu'à 1 s)</span><span><i style="background:var(--bad)"></i>Tour perdu</span><span><i style="background:var(--track);box-shadow:inset 0 0 0 1px var(--line)"></i>Départ, stands ou neutralisation</span></span>`;
 // Régularité d'un pilote : chaque tour comparé à son temps médian sur le même relais, carburant retiré.
 // 0 = dans son rythme (moins de 0,4 s au-dessus), 1 = un peu lent (jusqu'à 1 s), 2 = tour perdu, 3 = hors course (départ, stands, neutralisation)
 function regOf(d) {
@@ -1205,6 +1208,7 @@ function sizeEx() { const el = $("#ch-ex"), h = exMode === "box" ? `${90 + exSel
 function selectEx(m) {
   $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m));
   const fine = $("#ex-fine"); if (fine) fine.textContent = m === "circuit" ? "2 pilotes sur le circuit" : "Jusqu'à 4 pilotes";
+  const rk = $("#reg-key-d"); if (rk) { if (!rk.innerHTML) rk.innerHTML = REG_KEY; rk.hidden = m !== "box"; }
   if (m === "circuit") { showExCircuit(true); renderExRef(); renderHow(); exCircuitRefresh(); return; }
   showExCircuit(false); exMode = m; readEx(); sizeEx(); update("ch-ex");
 }
@@ -1295,10 +1299,10 @@ addEventListener("scroll", () => { const h = document.documentElement; $("#progr
     $("#sub-intro").textContent = unsub ? "Indique l'adresse inscrite : tu ne recevras plus les comptes rendus." : "Le résumé de la course, les duels entre coéquipiers et les stratégies, par mail.";
     $("#sub-btn").textContent = unsub ? "Me désinscrire" : "S'inscrire";
     $("#sub-consent-wrap").hidden = unsub; $("#sub-fine").hidden = unsub;
-    $("#sub-switch").textContent = unsub ? "Revenir à l'inscription" : "Se désinscrire";
+    if ($("#sub-switch")) $("#sub-switch").textContent = unsub ? "Revenir à l'inscription" : "Se désinscrire";
     status.textContent = ""; status.className = "sub-status";
   };
-  $("#sub-switch").addEventListener("click", () => setMode(mode === "abonnement" ? "desabonnement" : "abonnement"));
+  $("#sub-switch")?.addEventListener("click", () => setMode(mode === "abonnement" ? "desabonnement" : "abonnement"));
   const fromHash = () => { if (location.hash === "#desinscription") { setMode("desabonnement"); $("#abonnement").scrollIntoView(); } };
   fromHash(); addEventListener("hashchange", fromHash);
   form.addEventListener("submit", async (e) => {
@@ -1352,13 +1356,17 @@ async function loadRaces(year) {
   }
   const now = new Date();
   RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  // Courses annoncées mais restées sans données (annulées, remplacées) : on ne les propose pas
+  const empty = emptyRaces(), weekAgo = Date.now() - 8 * 864e5;
+  RACES = RACES.filter((r) => !empty.has(r.session_key) && !(arch.length && !ARCH.has(r.session_key) && new Date(r.date_end) < weekAgo));
   const am = new Map(arch.map((x) => [x.session_key, x]));
   RACES.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
   if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
-  $("#gp").innerHTML = RACES.map((r) => `<option value="${r.session_key}">${esc(r.country_name)} ${r.year}</option>`).join("");
-  $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
+  fillGpSelect(); $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
   return true;
 }
+function fillGpSelect() { const v = $("#gp").value; $("#gp").innerHTML = RACES.map((r) => `<option value="${r.session_key}">${esc(gpName(r))} ${r.year}</option>`).join(""); if (RACES.some((r) => String(r.session_key) === v)) $("#gp").value = v; }
+function emptyRaces() { try { return new Set(JSON.parse(localStorage.getItem("f1duel:v4:empty")) || []); } catch { return new Set(); } }
 async function fetchRace(sk) {
   const cached = store.get(sk);
   if (cached) return cached;
@@ -1403,13 +1411,21 @@ async function loadGP(sk) {
   try {
     const pack = await fetchRace(sk);
     if (myLoad !== loadSeq) return; // un autre GP a été demandé entre-temps
-    if (!pack.data.laps.length) throw new Error("Les temps au tour de cette course ne sont pas encore disponibles. Réessaie un peu plus tard.");
+    if (!pack.data.laps.length) {
+      // Course passée depuis plus de 2 jours et toujours vide : elle n'a pas eu lieu, on la retire de la liste
+      if (Date.now() - new Date(session.date_end) > 2 * 864e5 && RACES.length > 1) {
+        const e = emptyRaces(); e.add(session.session_key); try { localStorage.setItem("f1duel:v4:empty", JSON.stringify([...e])); } catch {}
+        RACES = RACES.filter((r) => r !== session); fillGpSelect();
+        navGP(RACES.at(-1).session_key, true); return;
+      }
+      throw new Error("Les temps au tour de cette course ne sont pas encore disponibles. Réessaie un peu plus tard.");
+    }
     buildModel(session, pack);
     setStatus(offline ? "Une séance de F1 est en cours : seuls les GP déjà disponibles sont affichés pour le moment." : "");
     renderAll();
     if (NAV.home) renderHome(); // l'accueil affiche le vainqueur dès que la course est chargée
     hcRun(hTok);
-    if (!first && !NAV.home) toast(`${esc(session.country_name)} ${session.year} chargé`);
+    if (!first && !NAV.home) toast(`${esc(gpName(session))} ${session.year} chargé`);
     first = false;
   } catch (e) {
     setStatus(e.message, "error"); hcFail();

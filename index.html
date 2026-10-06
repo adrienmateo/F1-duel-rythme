@@ -689,7 +689,10 @@ body.at-home { overflow: hidden; }
 .home-years { display: flex; gap: 6px; }
 .home-years button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font: 600 13px var(--body); color: var(--ink-2); cursor: pointer; }
 .home-years button[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
-.home-h { margin: 0 0 6px; }
+.home-h { margin: 0 0 6px; font: 800 clamp(30px, 5vw, 50px)/1 var(--display); font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; text-wrap: balance; }
+.subscribe[hidden] { display: none !important; }
+.mc { transition: transform .15s, border-color .15s, box-shadow .15s; }
+@media (hover: hover) { .mc:hover { transform: translateY(-2px); border-color: var(--accent); } .mc:hover .mc-go { color: var(--accent); } }
 .home-side { display: grid; gap: 10px; }
 .home .home-brand { font-size: 15px; gap: 10px; }
 .home-feat .hf { width: 100%; display: grid; gap: 10px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 16px; box-shadow: var(--sh-md); cursor: pointer; color: inherit; font: inherit; transition: transform .15s, box-shadow .2s; }
@@ -868,16 +871,16 @@ body.in-chap { overflow: hidden; }
 /* Les duels : une ligne par écurie, barre à la couleur de l'écurie, duel et écart alignés à droite */
 .duel .fill { opacity: .85; }
 .duel .who { white-space: nowrap; }
-.duel .who .gap { font-weight: 600; color: var(--ink); }
+.duel .who .gap { font-weight: 600; color: var(--ink); white-space: nowrap; }
+.duel .who .gap small { font-weight: 500; color: var(--muted); }
+.duel .who .pair { color: var(--ink-2); } .duel .who .pair b { color: var(--ink); }
 @media (min-width: 641px) {
   .duel .team { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .duel .team .dot { flex: none; margin: 0; }
-  .duel { grid-template-columns: 150px minmax(0, 1fr) 236px; }
-  .duel .who { display: grid; grid-template-columns: 58px 96px 1fr; align-items: center; gap: 8px; }
-  .duel .who .strat { order: -1; justify-self: start; }
-  .duel .who > span:empty { order: -1; }
+  .duel { grid-template-columns: 150px minmax(0, 1fr) 300px; }
+  .duel .who { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; }
+  .duel .who .strat { grid-column: 1 / -1; justify-self: start; }
   .duel .who .gap { text-align: right; }
-  .duel-head .who-h { padding-left: 66px; }
 }
 
 /* Les faits de course (haut de page) */
@@ -915,41 +918,47 @@ body.in-chap { overflow: hidden; }
 .ex-all[aria-pressed="true"] .box::after { content: ""; width: 7px; height: 4px; border: 2px solid var(--page); border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
 
 /* « La course en un coup d'œil » : frise (ordinateur), liste verticale (mobile) */
-.frise { position: relative; margin: 34px 10px 0; }
-.fr-track { position: relative; height: 10px; border-radius: 5px; background: var(--track); }
-.fr-band { position: absolute; top: -3px; height: 16px; border-radius: 4px; background: var(--sc); opacity: .85; }
-.fr-band b { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: var(--sc-ink); white-space: nowrap; }
-.fr-flag { position: absolute; right: -6px; top: -7px; width: 18px; height: 24px; border-radius: 3px; background: repeating-conic-gradient(var(--ink) 0 25%, var(--surface) 0 50%) 0 0 / 8px 8px; border: 1px solid var(--ink); }
-.fr-ticks { position: relative; height: 18px; margin-top: 4px; }
-.fr-tick { position: absolute; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: var(--muted); }
-.fr-tick:first-child { transform: none; } .fr-tick:last-child { transform: translateX(-100%); }
-.fr-evs { position: relative; height: 170px; }
-.fr-ev { position: absolute; top: -40px; transform: translateX(-50%); display: grid; justify-items: center; gap: 0; border: 0; background: none; padding: 0; cursor: pointer; color: inherit; font: inherit; }
-.fr-ev::before { content: ""; width: 1.5px; height: 40px; background: var(--c); opacity: .5; }
-.fr-ev.r1::before { height: 104px; } .fr-ev.r2::before { height: 168px; }
-.fr-ev .fr-lbl { background: var(--surface); border-radius: 6px; }
-.fr-ev .fr-dot { position: absolute; top: -7px; width: 14px; height: 14px; border-radius: 50%; background: var(--c); border: 2.5px solid var(--surface); box-shadow: 0 0 0 1px var(--c); transition: transform .15s; }
-.fr-ev:hover .fr-dot { transform: scale(1.25); }
-.fr-lbl { display: grid; gap: 0; text-align: center; font-size: 14px; line-height: 1.3; color: var(--ink); width: max-content; max-width: 150px; padding-top: 4px; }
-.fr-k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
-.fr-lbl b { font-weight: 700; font-size: 15px; color: var(--ink); }
-.fr-t { color: var(--ink-2); font-size: 13.5px; }
-.fr-title { margin-bottom: 6px; }
-.fr-ev.l { transform: translateX(-7px); justify-items: start; } .fr-ev.l .fr-lbl { text-align: left; } .fr-ev.l::before { margin-left: 6px; } .fr-ev.l .fr-dot { left: 0; }
-.fr-ev.r { transform: translateX(calc(-100% + 7px)); justify-items: end; } .fr-ev.r .fr-lbl { text-align: right; } .fr-ev.r::before { margin-right: 6px; } .fr-ev.r .fr-dot { right: 0; }
-.fr-ev:hover .fr-lbl b { color: var(--accent); }
-@media (max-width: 640px) { .frise { display: none; } .fr-list { display: grid !important; } }
-#log.fr-fallback .frise { display: none; }
-#log.fr-fallback .fr-list { display: grid !important; }
-  .fr-list { display: none; gap: 0; position: relative; margin-top: 4px; }
-  .fr-list::before { content: ""; position: absolute; left: 49px; top: 10px; bottom: 10px; width: 2px; background: var(--track); }
-  .fr-li { display: grid; grid-template-columns: 38px 14px 1fr; gap: 10px; align-items: center; text-align: left; border: 0; background: none; padding: 9px 0; font: inherit; color: var(--ink-2); font-size: 14px; position: relative; }
-  .fr-li .fr-lap { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
-  .fr-li .fr-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c, var(--grey-line)); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--c, var(--grey-line)); position: relative; z-index: 1; }
-  .fr-li b { color: var(--ink); }
-  .fr-li.sc .fr-dot { background: var(--sc); box-shadow: 0 0 0 1px var(--sc); border-radius: 3px; }
-  .fr-li.end .fr-dot { background: repeating-conic-gradient(var(--ink) 0 25%, var(--surface) 0 50%) 0 0 / 6px 6px; box-shadow: 0 0 0 1px var(--ink); border-radius: 2px; }
-@media (max-width: 640px) { #log:has(.frise) { display: grid; } }
+.fr-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.fr-laps { font: 600 12.5px var(--mono); color: var(--muted); }
+.frise { position: relative; margin: 52px 14px 0; }
+.fr-road { position: relative; height: 22px; border-radius: 11px; background: #2a2d33; }
+.fr-road::before { content: ""; position: absolute; left: 14px; right: 14px; top: 10px; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.5) 0 10px, transparent 10px 22px); }
+.fr-zone { position: absolute; top: 0; height: 22px; background: repeating-linear-gradient(135deg, #f5c518 0 6px, #e0b000 6px 12px); }
+.fr-zone.red { background: repeating-linear-gradient(135deg, #e10600 0 6px, #b30500 6px 12px); }
+.fr-zl.hi { bottom: 46px; } .fr-zl.rt { transform: translateX(-60%); }
+.fr-zl { position: absolute; bottom: 28px; font: 700 12.5px var(--mono); color: #8a6a00; white-space: nowrap; }
+:root[data-theme="dark"] .fr-zl { color: #f5c518; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fr-zl { color: #f5c518; } }
+.fr-flag { position: absolute; right: -6px; top: -6px; width: 34px; height: 34px; border-radius: 8px; border: 3px solid var(--surface); box-sizing: border-box; background: repeating-conic-gradient(#14161a 0 25%, #fff 0 50%) 0 0 / 10px 10px; }
+.fr-pin { position: absolute; top: -5px; width: 32px; height: 32px; margin-left: -16px; border-radius: 50%; border: 3px solid var(--surface); box-sizing: border-box; font: 700 13px var(--body); display: grid; place-items: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.25); padding: 0; transition: transform .15s; z-index: 2; }
+.fr-pin.up { top: -34px; }
+.fr-pin:hover { transform: scale(1.12); }
+.fr-ticks { position: relative; height: 18px; margin-top: 10px; }
+.fr-ticks span { position: absolute; transform: translateX(-50%); font: 500 11.5px var(--mono); color: var(--muted); }
+.fr-ticks span:first-child { transform: none; } .fr-ticks span:last-child { transform: translateX(-100%); }
+.fr-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 22px; }
+.fr-card { display: flex; flex-direction: column; gap: 6px; text-align: left; border: 1px solid var(--line); border-radius: 16px; padding: 14px 14px 16px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; transition: border-color .15s; }
+.fr-card:hover { border-color: var(--accent); }
+.fr-card.end { cursor: default; background: color-mix(in srgb, var(--surface) 92%, #ff8000); }
+.fr-card.end:hover { border-color: var(--line); }
+.fr-meta { display: flex; align-items: center; gap: 8px; font: 500 12px var(--mono); color: var(--muted); }
+.fr-n { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font: 700 11.5px var(--body); flex: none; }
+.fr-n.flag { border-radius: 6px; border: 1px solid var(--ink); box-sizing: border-box; background: repeating-conic-gradient(#14161a 0 25%, #fff 0 50%) 0 0 / 8px 8px; }
+.fr-card b { font: 800 18px/1.15 var(--display); font-stretch: 112%; color: var(--ink); }
+.fr-t { font-size: 14px; color: var(--ink-2); line-height: 1.4; }
+@media (max-width: 640px) {
+  .frise { margin: 30px 6px 0; }
+  .fr-road { height: 16px; border-radius: 8px; } .fr-road::before { top: 7px; } .fr-zone { height: 16px; }
+  .fr-zl { display: none; }
+  .fr-pin { width: 24px; height: 24px; margin-left: -12px; top: -4px; font-size: 11px; border-width: 2.5px; }
+  .fr-pin.up { top: -28px; }
+  .fr-flag { width: 26px; height: 26px; top: -5px; border-radius: 6px; }
+  .fr-ticks { margin-top: 8px; }
+  .fr-cards { grid-template-columns: 1fr; gap: 8px; margin-top: 16px; }
+  .fr-card { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 10px 12px; border-radius: 14px; }
+  .fr-card b { font: 700 14.5px var(--body); }
+  .fr-card .fr-t { flex-basis: 100%; font-size: 13px; padding-left: 30px; }
+}
 
 /* ---------- Le paddock : pilotes à attraper ---------- */
 .pk-peek { position: fixed; bottom: 0; z-index: 66; padding: 0; border: 0; background: none; cursor: pointer; overflow: hidden; }
@@ -1006,9 +1015,12 @@ body.in-chap { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .pk-card, .pk-stage .pk-fig { animation: none; } }
 
 /* « Ma collection » : bouton du menu, de l'accueil, et sauvegarde */
-.hdr-coll { color: var(--ink-2); }
-.hdr-coll svg { stroke: currentColor; }
-@media (max-width: 640px) { .hdr-coll { display: none !important; } }
+.hdr-coll { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 600 13.5px var(--body); cursor: pointer; box-shadow: var(--sh-sm); flex: none; transition: transform .15s, box-shadow .15s; }
+.hdr-coll:hover { transform: translateY(-1px); box-shadow: var(--sh-md); }
+.helm { flex: none; color: var(--ink); }
+.chip .helm { vertical-align: -3px; margin-right: 6px; }
+@media (max-width: 1379px) { .hdr-coll { width: 38px; padding: 0; justify-content: center; } .hdr-coll span { display: none; } }
+@media (max-width: 640px) { .hdr-coll { width: 40px; height: 40px; } }
 .pk-cells.wide .pk-empty { grid-column: 1 / -1; }
 .home-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
 .home-coll { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font: 600 13px var(--body); color: var(--ink-2); cursor: pointer; }
@@ -1022,6 +1034,18 @@ body.in-chap { overflow: hidden; }
 .circ-pair:empty { display: none; }
 .circ-pair-k { font-weight: 600; color: var(--ink); }
 .circ-pair select { border: 1.5px solid var(--c, var(--line)); background: var(--surface); color: var(--ink); border-radius: 10px; padding: 7px 10px; font: 700 14px var(--body); }
+
+.mom-key { display: block; margin-top: 4px; font-size: 13px; color: var(--muted); }
+.stops { display: grid; gap: 5px; max-width: 460px; margin-bottom: 8px; }
+.st-h { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.st-row { display: grid; grid-template-columns: 90px 1fr 92px; white-space: nowrap; align-items: center; gap: 10px; font-size: 14px; }
+.st-n { color: var(--ink); font-weight: 600; }
+.st-bar { height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
+.st-bar i { display: block; height: 100%; border-radius: 5px; background: var(--ink-2); }
+.st-c { font: 500 13px var(--mono); color: var(--ink-2); text-align: right; }
+.pk-tip { position: fixed; z-index: 67; width: 220px; box-sizing: border-box; padding: 9px 12px; border-radius: 12px; background: var(--ink); color: var(--page); font: 600 13px/1.35 var(--body); box-shadow: var(--sh-md); opacity: 0; transform: translateY(6px); transition: opacity .3s, transform .3s; pointer-events: none; }
+.pk-tip.on { opacity: 1; transform: none; }
+#reg-key-d[hidden] { display: none; }
 
 </style>
 </head>
@@ -1040,9 +1064,9 @@ body.in-chap { overflow: hidden; }
     <nav class="sections" aria-label="Sections">
       <a href="#gp-section">Le GP<i class="xdot" aria-hidden="true"></i></a><a href="#moments">Les moments</a><a href="#course">La course<i class="xdot" aria-hidden="true"></i></a><a href="#duels">Les duels<i class="xdot" aria-hidden="true"></i></a><a href="#strategies">Stratégies<i class="xdot" aria-hidden="true"></i></a><a href="#explorer">Explorer</a>
     </nav>
+    <button class="pk-open hdr-coll" type="button" aria-label="Ma collection de pilotes" title="Ma collection de pilotes"><svg class="helm" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c-4.9 0-8.4 3.6-8.4 8.5v4.1c0 3.4 2.4 6.2 5.5 6.2h5.8c3.1 0 5.5-2.8 5.5-6.2v-4.1c0-4.9-3.5-8.5-8.4-8.5z" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 9.7h13.2v3.4c0 .8-.6 1.4-1.4 1.4H6.8c-.8 0-1.4-.6-1.4-1.4z" fill="currentColor"/><path d="M12 3v6.7" stroke="#e10600" stroke-width="2.2"/><path d="M10.2 18.3h3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Collection</span></button>
     <button class="mburger" id="mburger" aria-label="Menu" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-    <button class="icon-btn pk-open hdr-coll" type="button" aria-label="Ma collection de pilotes" title="Ma collection de pilotes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11a7 7 0 0 1 14 0v4H5z"/><path d="M5 11h14M9 15v4h6v-4"/></svg></button>
-    <button class="icon-btn" id="theme" aria-label="Passer en mode sombre">
+        <button class="icon-btn" id="theme" aria-label="Passer en mode sombre">
       <svg id="ico-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg id="ico-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     </button>
@@ -1052,9 +1076,9 @@ body.in-chap { overflow: hidden; }
 
 <section class="home" id="home" aria-label="Choisir un Grand Prix" hidden>
   <div class="home-in">
-    <div class="home-top"><div class="brand home-brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M4 17h7M9 12h10M6 7h12"/></svg></span>Duel de rythme</div><div class="home-tools"><button type="button" class="home-coll pk-open"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11a7 7 0 0 1 14 0v4H5z"/><path d="M5 11h14M9 15v4h6v-4"/></svg>Ma collection</button><div class="home-years" id="home-years" role="group" aria-label="Saison"></div></div></div>
+    <div class="home-top"><div class="brand home-brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M4 17h7M9 12h10M6 7h12"/></svg></span>Duel de rythme</div><div class="home-tools"><button type="button" class="home-coll pk-open"><svg class="helm" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c-4.9 0-8.4 3.6-8.4 8.5v4.1c0 3.4 2.4 6.2 5.5 6.2h5.8c3.1 0 5.5-2.8 5.5-6.2v-4.1c0-4.9-3.5-8.5-8.4-8.5z" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 9.7h13.2v3.4c0 .8-.6 1.4-1.4 1.4H6.8c-.8 0-1.4-.6-1.4-1.4z" fill="currentColor"/><path d="M12 3v6.7" stroke="#e10600" stroke-width="2.2"/><path d="M10.2 18.3h3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ma collection</button><div class="home-years" id="home-years" role="group" aria-label="Saison"></div></div></div>
     <div class="eyebrow">Saison <span id="home-y"></span></div>
-    <h1 class="home-h">Choisis ton Grand Prix</h1>
+    <h2 class="home-h">Choisis ton Grand Prix</h2>
     <div class="home-feat" id="home-feat"><p class="home-empty">Chargement des Grands Prix…</p></div>
     <div class="home-side"><div class="home-t">Les autres Grands Prix</div>
     <div class="home-list" id="home-list"></div></div>
@@ -1196,6 +1220,7 @@ body.in-chap { overflow: hidden; }
     <p class="read" id="read-ex"></p>
     <p class="howread" id="how-ex"></p>
     <div class="chart mid" id="ch-ex" role="img" aria-label="Comparaison des pilotes sélectionnés"></div>
+    <div id="reg-key-d" hidden></div>
     <div class="ex-circ" id="ex-circ" hidden>
       <p class="howto"><span><b>Ce que ça montre :</b> deux pilotes rejoués sur leur meilleur tour, sur le vrai tracé. Si tu en as sélectionné plus, choisis les deux juste en dessous.</span><span><b>Comment le lire :</b> chaque secteur prend la couleur du plus rapide, et le chiffre donne le temps qu'il y a gagné.</span></p>
       <div class="circ-pair" id="circ-pair"></div>
@@ -1208,8 +1233,8 @@ body.in-chap { overflow: hidden; }
     </div>
   </section>
 
-  <!-- Inscription (Netlify Forms) -->
-  <section class="card subscribe" id="abonnement" aria-labelledby="sub-title">
+  <!-- Inscription : masquée tant que le webhook Make n'est pas branché (Netlify Forms ne fonctionne pas sur GitHub Pages) -->
+  <section class="card subscribe" id="abonnement" aria-labelledby="sub-title" hidden>
     <div><div class="eyebrow">Newsletter</div><h2 id="sub-title">Le compte rendu après chaque GP</h2><p class="read" id="sub-intro" style="font-size:14px">Le résumé de la course, les duels entre coéquipiers et les stratégies, par mail.</p></div>
     <!-- Formulaire géré par Netlify Forms (aucun serveur). Les inscrits sont lus par le script d'envoi. -->
     <form name="abonnement" id="sub-form" method="POST" data-netlify="true" netlify-honeypot="site_web" novalidate>
@@ -1223,7 +1248,6 @@ body.in-chap { overflow: hidden; }
       <label class="consent" id="sub-consent-wrap"><input type="checkbox" id="sub-consent" name="consentement" value="oui"> J'accepte de recevoir les comptes rendus par mail.</label>
       <p class="fine" id="sub-fine" style="margin:6px 0 0">Ton adresse sert uniquement à t'envoyer ces comptes rendus. Elle n'est jamais partagée. Désinscription en un clic à tout moment.</p>
       <p class="sub-status" id="sub-status" role="status" aria-live="polite"></p>
-      <button type="button" class="linklike" id="sub-switch">Se désinscrire</button>
     </form>
     <!-- Formulaire jumeau, caché : permet à Netlify de détecter le formulaire de désinscription au déploiement -->
     <form name="desabonnement" data-netlify="true" netlify-honeypot="site_web" hidden>
@@ -1235,7 +1259,7 @@ body.in-chap { overflow: hidden; }
   <details class="method card">
     <summary>Méthode de calcul</summary>
     <ul>
-      <li>Tours exclus : tour de départ, tours d'entrée et de sortie des stands, tours sous safety car, VSC ou drapeau rouge (plus 1 tour de marge à la relance), et tours au-delà de 107 % du temps médian du pilote.</li>
+      <li>Tours exclus : tour de départ, tours d'entrée et de sortie des stands, tours sous safety car, VSC ou drapeau rouge (plus 1 tour de marge à la relance), tours où tout le peloton roule nettement plus lentement que d'habitude (départ lancé, piste qui sèche), et tours au-delà de 107 % du temps médian du pilote.</li>
       <li>Rythme d'un pilote = <strong>temps médian</strong> sur les tours restants. La médiane limite l'effet des tours perdus dans le trafic. Tous les écarts sont en secondes par tour.</li>
       <li>Moins de 10 tours représentatifs (abandon, problème) : le pilote est affiché mais exclu de la comparaison.</li>
       <li>« À pneus égaux » : écart recalculé uniquement sur les gommes que les deux pilotes ont utilisées (au moins 3 tours propres chacun), pondéré par le nombre de tours. Il sépare le rythme pur de l'effet de la stratégie.</li>
@@ -1245,14 +1269,13 @@ body.in-chap { overflow: hidden; }
   </details>
 </main>
 <footer>Données OpenF1 · projet personnel, non affilié à la Formule 1.</footer>
-<nav class="mbar" aria-label="Sections"><a href="#gp-section"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V4M4 4h11l-2 4 2 4H4"/></svg>GP</a><a href="#course"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 3 5-7 4 4"/></svg>Course</a><a href="#rythme"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-3M12 3v2"/></svg>Rythme</a><a href="#duels"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/></svg>Duels</a><a href="#strategies"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Pneus</a></nav>
 <div class="mscrim" id="mscrim"></div>
 <div class="msheet" id="msheet-menu" role="dialog" aria-label="Menu">
   <span class="grab"></span>
   <h3>Affichage</h3>
   <div class="row"><span>Mode sombre</span><button class="btn ghost" id="m-theme">Activer</button></div>
   <h3>Aller à</h3>
-  <div class="chips"><a class="chip" href="#explorer">Explorer</a><a class="chip" href="#abonnement">Newsletter</a><button type="button" class="chip pk-open">Ma collection de pilotes</button></div>
+  <div class="chips"><a class="chip" href="#gp-section">Le GP</a><a class="chip" href="#moments">Les moments</a><a class="chip" href="#course">La course</a><a class="chip" href="#duels">Les duels</a><a class="chip" href="#strategies">Stratégies</a><a class="chip" href="#explorer">Explorer</a><button type="button" class="chip pk-open"><svg class="helm" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c-4.9 0-8.4 3.6-8.4 8.5v4.1c0 3.4 2.4 6.2 5.5 6.2h5.8c3.1 0 5.5-2.8 5.5-6.2v-4.1c0-4.9-3.5-8.5-8.4-8.5z" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 9.7h13.2v3.4c0 .8-.6 1.4-1.4 1.4H6.8c-.8 0-1.4-.6-1.4-1.4z" fill="currentColor"/><path d="M12 3v6.7" stroke="#e10600" stroke-width="2.2"/><path d="M10.2 18.3h3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ma collection de pilotes</button></div>
 </div>
 <div class="msheet" id="msheet-pilots" role="dialog" aria-label="Choisir les pilotes">
   <span class="grab"></span>
@@ -1631,7 +1654,7 @@ function renderHero() {
   const [p1, p2, p3] = finishers;
   const g = winnerGap();
   const verb = g == null ? "remporte le GP devant" : g < 1.5 ? "résiste à" : g < 8 ? "devance" : "domine";
-  $("#headline").textContent = p1 ? (p2 ? `${p1.last} ${verb} ${p2.last}` : `${p1.last} gagne`) : `${RACE.country_name} ${RACE.year}`;
+  $("#headline").textContent = p1 ? (p2 ? `${p1.last} ${verb} ${p2.last}` : `${p1.last} gagne`) : `${gpName(RACE)} ${RACE.year}`;
   $("#gp-eyebrow").textContent = `Le GP en 30 secondes · ${new Date(RACE.date_start).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`;
   $("#gp-meta").textContent = `${LAPS} tours · ${RACE.location || RACE.circuit_short_name || ""}`;
   const fastest = paced[0];
@@ -1727,16 +1750,16 @@ function renderDuels() {
   const duels = computeDuels();
   const valid = duels.filter((d) => d.valid);
   if (!valid.length) { $("#read-duels").textContent = "Aucun duel comparable sur cette course."; $("#duel-list").innerHTML = ""; return; }
-  const max = valid[0].gap;
+  const max = Math.max(0.25, Math.ceil(valid[0].gap / 0.25) * 0.25); // échelle commune, arrondie au quart de seconde
   const strat = valid.filter((d) => d.same != null && d.same < 0);
   const tight = valid[valid.length - 1];
   $("#read-duels").innerHTML = `<b>${valid[0].fast.last}</b> a dominé ${valid[0].slow.last} de <b>${gapS(valid[0].gap)}</b> au tour.` + (tight !== valid[0] ? ` Le duel le plus serré est chez ${tight.team} (${gapS(tight.gap)}).` : "") +
     (strat.length ? ` Chez ${strat[0].team}, l'écart venait de la stratégie : à pneus égaux, ${strat[0].slow.last} était plus rapide.` : "");
-  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme médian</span><span class="fine who-h">Duel</span></div>` +
+  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme par tour · barre entière = ${fr(max, 2)} s</span><span class="fine who-h">Qui était le plus rapide</span></div>` +
     duels.map((d, i) => d.valid ? `<button class="duel lift" data-d="${i}" data-codes="${d.fast.code} ${d.slow.code}">
       <span class="team"><i class="dot" style="background:${d.color}"></i>${esc(d.team)}</span>
       <span class="track"><span class="fill" style="display:block;background:${d.color}" data-w="${Math.max(0.6, (d.gap / max) * 100)}"></span></span>
-      <span class="who"><span class="pair"><b>${d.fast.code}</b> <span class="slow">› ${d.slow.code}</span></span>${d.same != null && d.same < 0 ? `<span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide">STRAT</span>` : "<span></span>"}<span class="gap">${gapS(d.gap)}</span></span>
+      <span class="who"><span class="pair"><b>${d.fast.code}</b> plus rapide que <span class="slow">${d.slow.code}</span></span><span class="gap">${gapS(d.gap)} <small>/ tour</small></span>${d.same != null && d.same < 0 ? `<span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide : l'écart vient de la stratégie">STRAT</span>` : ""}</span>
     </button>` : `<div class="na">${esc(d.team)} non comparable : ${esc(d.out.join(", "))} sans assez de tours représentatifs.</div>`).join("");
   $$("#duel-list .duel[data-d]").forEach((b) => b.addEventListener("click", () => showDuel(duels[+b.dataset.d])));
   const grow = () => $$("#duels .duel .fill").forEach((f, k) => setTimeout(() => (f.style.width = f.dataset.w + "%"), reduce ? 0 : k * 60));
@@ -2039,10 +2062,12 @@ function buildStrat(T) {
 function readStrat() {
   const fin = finishers;
   const counts = {}; fin.forEach((d) => { const n = d.pits.length; counts[n] = (counts[n] || 0) + 1; });
-  const parts = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([n, c]) => `${c} pilote${c > 1 ? "s" : ""} à <b>${n == 0 ? "zéro arrêt" : plural(+n, "arrêt")}</b>`);
+  // Nombre d'arrêts : mini barres, du plus petit nombre d'arrêts au plus grand
+  const cmax = Math.max(1, ...Object.values(counts));
+  const stops = Object.entries(counts).sort((a, b) => +a[0] - +b[0]).map(([n, c]) => `<span class="st-row"><span class="st-n">${n == 0 ? "Aucun arrêt" : plural(+n, "arrêt")}</span><span class="st-bar"><i style="width:${(c / cmax) * 100}%"></i></span><span class="st-c">${c} pilote${c > 1 ? "s" : ""}</span></span>`).join("");
   const sc = NEUTRAL.filter((r) => r.kind === "SC" || r.kind === "VSC");
   const scStop = drivers.filter((d) => d.pits.some((p) => sc.some((r) => p >= r.start && p <= r.end)));
-  $("#read-strat").innerHTML = (parts.length ? parts.join(", ") + " parmi les classés." : "") +
+  $("#read-strat").innerHTML = (stops ? `<span class="stops"><span class="st-h">Arrêts aux stands, pilotes classés</span>${stops}</span>` : "") +
     (scStop.length ? ` ${scStop.length} pilote${scStop.length > 1 ? "s se sont arrêtés" : " s'est arrêté"} <b>sous neutralisation</b>, dont ${scStop.slice(0, 3).map((d) => d.last).join(", ")} : un arrêt qui coûte moins de temps.` : "");
   const used = [...new Set(drivers.flatMap((d) => d.stints.map((s) => s[0])))];
   $("#tyre-legend").innerHTML = Object.entries(COMP).filter(([k]) => used.includes(k)).map(([, c]) => `<span><i class="dot" style="background:${c.c}"></i>${c.name}</span>`).join("");
@@ -2087,6 +2112,7 @@ function exChanged() {
 }
 
 /* --- Explorer --- */
+const REG_KEY = `<span class="reg-key"><span><i style="background:var(--good)"></i>Dans son rythme</span><span><i style="background:#e3a008"></i>Un peu lent (jusqu'à 1 s)</span><span><i style="background:var(--bad)"></i>Tour perdu</span><span><i style="background:var(--track);box-shadow:inset 0 0 0 1px var(--line)"></i>Départ, stands ou neutralisation</span></span>`;
 // Régularité d'un pilote : chaque tour comparé à son temps médian sur le même relais, carburant retiré.
 // 0 = dans son rythme (moins de 0,4 s au-dessus), 1 = un peu lent (jusqu'à 1 s), 2 = tour perdu, 3 = hors course (départ, stands, neutralisation)
 function regOf(d) {
@@ -2486,6 +2512,7 @@ function sizeEx() { const el = $("#ch-ex"), h = exMode === "box" ? `${90 + exSel
 function selectEx(m) {
   $$("[data-ex]").forEach((b) => b.setAttribute("aria-selected", b.dataset.ex === m));
   const fine = $("#ex-fine"); if (fine) fine.textContent = m === "circuit" ? "2 pilotes sur le circuit" : "Jusqu'à 4 pilotes";
+  const rk = $("#reg-key-d"); if (rk) { if (!rk.innerHTML) rk.innerHTML = REG_KEY; rk.hidden = m !== "box"; }
   if (m === "circuit") { showExCircuit(true); renderExRef(); renderHow(); exCircuitRefresh(); return; }
   showExCircuit(false); exMode = m; readEx(); sizeEx(); update("ch-ex");
 }
@@ -2576,10 +2603,10 @@ addEventListener("scroll", () => { const h = document.documentElement; $("#progr
     $("#sub-intro").textContent = unsub ? "Indique l'adresse inscrite : tu ne recevras plus les comptes rendus." : "Le résumé de la course, les duels entre coéquipiers et les stratégies, par mail.";
     $("#sub-btn").textContent = unsub ? "Me désinscrire" : "S'inscrire";
     $("#sub-consent-wrap").hidden = unsub; $("#sub-fine").hidden = unsub;
-    $("#sub-switch").textContent = unsub ? "Revenir à l'inscription" : "Se désinscrire";
+    if ($("#sub-switch")) $("#sub-switch").textContent = unsub ? "Revenir à l'inscription" : "Se désinscrire";
     status.textContent = ""; status.className = "sub-status";
   };
-  $("#sub-switch").addEventListener("click", () => setMode(mode === "abonnement" ? "desabonnement" : "abonnement"));
+  $("#sub-switch")?.addEventListener("click", () => setMode(mode === "abonnement" ? "desabonnement" : "abonnement"));
   const fromHash = () => { if (location.hash === "#desinscription") { setMode("desabonnement"); $("#abonnement").scrollIntoView(); } };
   fromHash(); addEventListener("hashchange", fromHash);
   form.addEventListener("submit", async (e) => {
@@ -2633,13 +2660,17 @@ async function loadRaces(year) {
   }
   const now = new Date();
   RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  // Courses annoncées mais restées sans données (annulées, remplacées) : on ne les propose pas
+  const empty = emptyRaces(), weekAgo = Date.now() - 8 * 864e5;
+  RACES = RACES.filter((r) => !empty.has(r.session_key) && !(arch.length && !ARCH.has(r.session_key) && new Date(r.date_end) < weekAgo));
   const am = new Map(arch.map((x) => [x.session_key, x]));
   RACES.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
   if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
-  $("#gp").innerHTML = RACES.map((r) => `<option value="${r.session_key}">${esc(r.country_name)} ${r.year}</option>`).join("");
-  $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
+  fillGpSelect(); $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
   return true;
 }
+function fillGpSelect() { const v = $("#gp").value; $("#gp").innerHTML = RACES.map((r) => `<option value="${r.session_key}">${esc(gpName(r))} ${r.year}</option>`).join(""); if (RACES.some((r) => String(r.session_key) === v)) $("#gp").value = v; }
+function emptyRaces() { try { return new Set(JSON.parse(localStorage.getItem("f1duel:v4:empty")) || []); } catch { return new Set(); } }
 async function fetchRace(sk) {
   const cached = store.get(sk);
   if (cached) return cached;
@@ -2684,13 +2715,21 @@ async function loadGP(sk) {
   try {
     const pack = await fetchRace(sk);
     if (myLoad !== loadSeq) return; // un autre GP a été demandé entre-temps
-    if (!pack.data.laps.length) throw new Error("Les temps au tour de cette course ne sont pas encore disponibles. Réessaie un peu plus tard.");
+    if (!pack.data.laps.length) {
+      // Course passée depuis plus de 2 jours et toujours vide : elle n'a pas eu lieu, on la retire de la liste
+      if (Date.now() - new Date(session.date_end) > 2 * 864e5 && RACES.length > 1) {
+        const e = emptyRaces(); e.add(session.session_key); try { localStorage.setItem("f1duel:v4:empty", JSON.stringify([...e])); } catch {}
+        RACES = RACES.filter((r) => r !== session); fillGpSelect();
+        navGP(RACES.at(-1).session_key, true); return;
+      }
+      throw new Error("Les temps au tour de cette course ne sont pas encore disponibles. Réessaie un peu plus tard.");
+    }
     buildModel(session, pack);
     setStatus(offline ? "Une séance de F1 est en cours : seuls les GP déjà disponibles sont affichés pour le moment." : "");
     renderAll();
     if (NAV.home) renderHome(); // l'accueil affiche le vainqueur dès que la course est chargée
     hcRun(hTok);
-    if (!first && !NAV.home) toast(`${esc(session.country_name)} ${session.year} chargé`);
+    if (!first && !NAV.home) toast(`${esc(gpName(session))} ${session.year} chargé`);
     first = false;
   } catch (e) {
     setStatus(e.message, "error"); hcFail();
@@ -2871,7 +2910,7 @@ function renderMoments() {
   const box = $("#moments-list"); if (!box) return;
   MOMENTS = [...FACTS].filter((f) => f.ds && f.ds.length).sort((a, b) => b.score - a.score).slice(0, 3).sort((a, b) => (a.lap ?? LAPS) - (b.lap ?? LAPS));
   if (!MOMENTS.length) { $("#read-moments").textContent = "Une course sans rebondissement : l'ordre a peu changé du départ à l'arrivée."; box.innerHTML = ""; return; }
-  $("#read-moments").innerHTML = `Les ${MOMENTS.length > 1 ? MOMENTS.length + " tournants" : "tournant"} de la course, rejoué${MOMENTS.length > 1 ? "s" : ""} avec les voitures concernées.`;
+  $("#read-moments").innerHTML = `Les ${MOMENTS.length > 1 ? MOMENTS.length + " tournants" : "tournant"} de la course, rejoué${MOMENTS.length > 1 ? "s" : ""} avec les voitures concernées. <span class="mom-key">Chaque voiture est à la couleur de son écurie ; la ligne suit sa position tour par tour.</span>`;
   box.innerHTML = MOMENTS.map((m, i) => {
     const d = m.main, pa = m.from ? posAt(d, m.from) : d.grid, pb = posAt(d, m.to), mv = pa && pb ? pa - pb : 0;
     return `<article class="mom" data-m="${i}">
@@ -2922,39 +2961,34 @@ function momPlay(el, m) {
 
 /* --- « La course en un coup d'œil » : une frise du départ à l'arrivée, avec les neutralisations et les faits --- */
 function renderFrise() {
+  // « Bande de course » : la course en piste sombre, neutralisations hachurées, faits numérotés, une carte par fait
   const X = (lap) => ((Math.max(1, lap) - 1) / Math.max(1, LAPS - 1)) * 100;
-  const evs = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX).sort((a, b) => a.lap - b.lap), w = finishers[0];
-  // Étiquettes sur deux étages quand deux faits sont trop proches
-  let lastX = [-99, -99, -99];
-  const items = evs.map((e) => { const x = X(e.lap); let row = lastX.findIndex((lx) => x - lx >= 24); if (row < 0) row = lastX.indexOf(Math.min(...lastX)); lastX[row] = x; return { e, x, row }; });
-  const bands = NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `<span class="fr-band" style="left:${X(r.start)}%;width:${Math.max(0.8, X(r.end) - X(r.start))}%" title="${NKlong[r.kind]} T${r.start}–${r.end}"><b>${NK[r.kind]}</b></span>`).join("");
-  const ticks = [1, Math.round(LAPS / 4), Math.round(LAPS / 2), Math.round((3 * LAPS) / 4), LAPS].map((l) => `<span class="fr-tick" style="left:${X(l)}%">T${l}</span>`).join("");
-  const edge = (x) => (x < 12 ? "l" : x > 85 ? "r" : "");
-  const flat = `<div class="frise">
-      <div class="fr-track">${bands}<span class="fr-flag" title="Arrivée"></span></div>
-      <div class="fr-ticks">${ticks}</div>
-      <div class="fr-evs">${items.map(({ e, x, row }, i) => `<button class="fr-ev r${row} ${edge(x)}" style="left:${x}%;--c:${e.who.color}" data-f="${i}"><i class="fr-dot"></i><span class="fr-lbl"><span class="fr-k">Tour ${e.lap}</span><b>${esc(e.who.last)}</b><span class="fr-t">${esc(e.short)}</span></span></button>`).join("")}</div>
-    </div>`;
-  const list = `<div class="fr-list">${items.map(({ e }, i) => `<button class="fr-li" style="--c:${e.who.color}" data-f="${i}"><span class="fr-lap">T${e.lap}</span><i class="fr-dot"></i><span><b>${e.who.last}</b> ${esc(e.short)}</span></button>`).join("")}
-      ${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `<div class="fr-li sc"><span class="fr-lap">T${r.start}</span><i class="fr-dot"></i><span>${NKlong[r.kind]} jusqu'au tour ${r.end}</span></div>`).join("")}
-      ${w ? `<div class="fr-li end"><span class="fr-lap">T${LAPS}</span><i class="fr-dot"></i><span>Drapeau à damier : <b>${esc(w.last)}</b> gagne</span></div>` : ""}</div>`;
-  $("#log").innerHTML = `<div class="eyebrow fr-title">La course en un coup d'œil</div>${flat}${list}`;
-  // Étages des étiquettes : on mesure, puis chaque étiquette prend le premier étage où elle ne chevauche pas sa voisine
-  const evEls = $$("#log .fr-ev"); if (evEls.length && $("#log .frise").offsetParent) {
-    // Deux étages au plus : si ça ne tient pas, on bascule sur la liste (jamais d'étiquettes qui se chevauchent)
-    const rowsEnd = [-1e9, -1e9]; let fits = true;
-    evEls.forEach((el) => { el.classList.remove("r0", "r1", "r2"); const r = el.querySelector(".fr-lbl").getBoundingClientRect();
-      // Étage où l'étiquette demande le moins de décalage ; jusqu'à 70 px on la pousse à droite, au-delà on bascule sur la liste
-      const shifts = rowsEnd.map((end) => Math.max(0, end + 10 - r.left)), row = shifts.indexOf(Math.min(...shifts)), dx = shifts[row];
-      const lbl = el.querySelector(".fr-lbl"); lbl.style.transform = dx ? `translateX(${dx}px)` : "";
-      if (dx > 70 || r.right + dx > $("#log .frise").getBoundingClientRect().right + 12) { fits = false; return; }
-      rowsEnd[row] = r.right + dx; el.classList.add("r" + row); });
-    $("#log").classList.toggle("fr-fallback", !fits);
-    $("#log .fr-evs").style.height = (rowsEnd.filter((v) => v > -1e9).length * 64 + 40) + "px";
-  }
-  // La liste mobile se trie par tour
-  const L = $("#log .fr-list"); [...L.children].sort((a, b) => +a.querySelector(".fr-lap").textContent.slice(1) - +b.querySelector(".fr-lap").textContent.slice(1)).forEach((n) => L.appendChild(n));
-  $$("#log [data-f]").forEach((b) => b.addEventListener("click", () => { const e = items[+b.dataset.f].e; openDialog(`Tour ${e.lap} · ${e.label}`, `<p class="read">${e.txt}. ${e.detail}</p>`); }));
+  const facts = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX);
+  const neut = NEUTRAL.filter((r) => r.kind !== "Ralenti").slice(0, 3);
+  const w = finishers[0], p2 = finishers[1];
+  const items = [
+    ...facts.map((e) => ({ lap: e.lap, kind: "fact", e, color: e.who.color, meta: `Tour ${e.lap}`, title: e.who.last, txt: e.short })),
+    ...neut.map((r) => ({ lap: r.start, kind: "neut", r, color: r.kind === "Rouge" ? "#e10600" : "#f5c518", meta: r.end > r.start ? `Tours ${r.start} à ${r.end}` : `Tour ${r.start}`, title: NKlong[r.kind], txt: r.end > r.start ? `Course neutralisée pendant ${r.end - r.start + 1} tours.` : "Course neutralisée." })),
+  ].sort((a, b) => a.lap - b.lap);
+  items.forEach((it, i) => { it.n = i + 1; it.x = it.r ? X((it.r.start + it.r.end) / 2) : X(it.lap); });
+  // Deux pastilles trop proches : la seconde passe au-dessus de la piste
+  let lastX = -99, up = false; items.forEach((it) => { up = it.x - lastX < 4.5 ? !up : false; it.up = up; lastX = it.x; });
+  const ink = (hex) => { const h = String(hex || "#888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const L = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255); return L > 165 ? "#14161a" : "#fff"; };
+  let zlX = -99, zlHi = false;
+  const zones = neut.map((r) => { zlHi = X(r.start) - zlX < 16 ? !zlHi : false; zlX = X(r.start); return `<span class="fr-zone${r.kind === "Rouge" ? " red" : ""}" style="left:${X(r.start)}%;width:${Math.max(1.2, X(r.end) - X(r.start))}%"></span><span class="fr-zl${zlHi ? " hi" : ""}${X(r.start) > 80 ? " rt" : ""}" style="left:${X(r.start)}%">${NK[r.kind] === "Drapeau rouge" ? "Rouge" : NK[r.kind]} · T${r.start}${r.end > r.start ? "–" + r.end : ""}</span>`; }).join("");
+  const step = LAPS > 40 ? 10 : 5, ticks = [1]; for (let l = step; l < LAPS - step * 0.8; l += step) ticks.push(l); ticks.push(LAPS);
+  const pins = items.map((it) => `<button class="fr-pin${it.up ? " up" : ""}" style="left:${it.x}%;background:${it.color};color:${ink(it.color)}" data-i="${it.n - 1}" aria-label="${esc(it.meta + " : " + it.title)}">${it.n}</button>`).join("");
+  const card = (it) => `<button class="fr-card" data-i="${it.n - 1}"><span class="fr-meta"><span class="fr-n" style="background:${it.color};color:${ink(it.color)}">${it.n}</span>${it.meta}</span><b>${esc(it.title)}</b><span class="fr-t">${esc(it.txt)}</span></button>`;
+  const end = w ? `<div class="fr-card end"><span class="fr-meta"><span class="fr-n flag"></span>Tour ${LAPS} · Arrivée</span><b style="color:${w.color}">${esc(w.last)} gagne</b><span class="fr-t">${p2 ? `Devant ${esc(p2.last)}.` : ""}</span></div>` : "";
+  $("#log").innerHTML = `<div class="fr-head"><span class="eyebrow">La course en un coup d'œil</span><span class="fr-laps">${LAPS} tours</span></div>
+    <div class="frise"><div class="fr-road">${zones}<span class="fr-flag" title="Arrivée"></span>${pins}</div>
+      <div class="fr-ticks">${ticks.map((l) => `<span style="left:${X(l)}%">T${l}</span>`).join("")}</div></div>
+    <div class="fr-cards">${items.map(card).join("")}${end}</div>`;
+  $$("#log [data-i]").forEach((b) => b.addEventListener("click", () => {
+    const it = items[+b.dataset.i];
+    if (it.kind === "fact") openDialog(`Tour ${it.e.lap} · ${it.e.label}`, `<p class="read">${it.e.txt}. ${it.e.detail}</p>`);
+    else openDialog(`${it.meta} · ${it.title}`, `<p class="read">${it.title} ${it.r.end > it.r.start ? `du tour ${it.r.start} au tour ${it.r.end}` : `au tour ${it.r.start}`}. Ces tours ne comptent pas dans le rythme des pilotes.</p>`);
+  }));
 }
 
 /* ======================= Mobile : vertical pour changer de section, horizontal pour changer de vue ======================= */
@@ -2980,7 +3014,7 @@ function makeSwipe(anchor, slides) {
     const sl = document.createElement("div"); sl.className = "mslide" + (xs ? " xs" : "");
     els.forEach((e) => e && sl.appendChild(e)); track.appendChild(sl);
     const b = document.createElement("button"); b.textContent = label; b.className = xs ? "xs" : ""; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === 0);
-    b.addEventListener("click", () => track.scrollTo({ left: sl.offsetLeft - track.offsetLeft, behavior: reduce ? "auto" : "smooth" }));
+    b.addEventListener("click", () => goTo(i));
     tabs.appendChild(b); const dot = document.createElement("i"); if (xs) dot.className = "xs"; dots.appendChild(dot);
   });
   dots.firstChild?.classList.add("on");
@@ -2989,9 +3023,17 @@ function makeSwipe(anchor, slides) {
   setTimeout(() => fit(0), 50);
   const ro = new ResizeObserver(() => fit(idx())); [...track.children].forEach((c) => ro.observe(c));
   wrap.append(tabs, track, dots);
-  let raf = 0, lastI = 0;
+  let raf = 0, lastI = 0, target = -1, tgo = 0;
+  // Safari iPhone : un défilement animé + un changement de hauteur + l'aimantation « mandatory » le ramènent
+  // sur la 1re carte. On coupe l'aimantation le temps du trajet, on fixe la hauteur d'arrivée tout de suite.
+  function goTo(i) {
+    const sl = track.children[i]; if (!sl) return;
+    target = i; fit(i); track.style.scrollSnapType = "none";
+    track.scrollTo({ left: sl.offsetLeft - track.firstChild.offsetLeft, behavior: reduce ? "auto" : "smooth" });
+    clearTimeout(tgo); tgo = setTimeout(() => { track.scrollLeft = sl.offsetLeft - track.firstChild.offsetLeft; track.style.scrollSnapType = ""; target = -1; onScroll(); }, reduce ? 30 : 520);
+  }
   const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
-    const i = idx();
+    const i = target >= 0 ? target : idx();
     fit(i);
     [...tabs.children].forEach((b, k) => b.setAttribute("aria-selected", k === i));
     [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i));
@@ -3125,7 +3167,7 @@ function setupMobileOnce() {
   read.classList.remove("clamp"); if (read.nextElementSibling?.classList.contains("more-btn")) read.nextElementSibling.remove();
   const aE = document.createElement("div"); read.after(aE);
   const exc = $("#ex-circ"); exc.hidden = false;
-  swipes.push(makeSwipe(aE, EXM.map(([m, label]) => { const d = document.createElement("div"); d.className = "chart exc"; d.id = "ch-ex-" + m; return [label, [d]]; }).concat([["Sur le circuit", [exc]]])));
+  swipes.push(makeSwipe(aE, EXM.map(([m, label]) => { const d = document.createElement("div"); d.className = "chart exc"; d.id = "ch-ex-" + m; if (m !== "box") return [label, [d]]; const k = document.createElement("div"); k.innerHTML = REG_KEY; return [label, [d, k.firstChild]]; }).concat([["Sur le circuit", [exc]]])));
   aE.remove();
   EXM.forEach(([m]) => { charts["ch-ex-" + m] = { el: $("#ch-ex-" + m), build: exBuild(m), inst: null }; });
   whenVisible(sec, () => EXM.forEach(([m]) => draw("ch-ex-" + m)));
@@ -3139,7 +3181,7 @@ function setupMobileOnce() {
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) tabs.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id)); }), { rootMargin: "-40% 0px -55% 0px" });
   $$("main > section[id]").forEach((x) => io.observe(x));
   addEventListener("scroll", () => { if (scrollY < 120) tabs.forEach((a, k) => a.classList.toggle("on", k === 0)); }, { passive: true });
-  tabs[0].classList.add("on");
+  tabs[0]?.classList.add("on");
 }
 // Après chaque chargement de GP
 function mobileRender() {
@@ -3341,10 +3383,10 @@ async function hcRun(tok) {
 // Le bouton retour du navigateur ou du téléphone suit toujours le parcours.
 const NAV = { home: false, homeWait: [], chap: null, slot: null, pushed: false };
 const CHAPTERS = [
-  { id: "moments", sec: "moments", k: "Les 3 moments" },
+  { id: "moments", sec: "moments", k: "Les moments" },
   { id: "course", sec: "course", k: "La course" },
   { id: "duels", sec: "duels", k: "Les duels" },
-  { id: "pneus", sec: "strategies", k: "Les pneus" },
+  { id: "pneus", sec: "strategies", k: "Stratégies" },
   { id: "explorer", sec: "explorer", k: "Explorer" },
 ];
 const slugify = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -3358,7 +3400,16 @@ const homeClosed = () => (NAV.home ? new Promise((r) => NAV.homeWait.push(r)) : 
 
 /* --- Accueil --- */
 const PAYS = { Australia: "Australie", China: "Chine", Japan: "Japon", Bahrain: "Bahreïn", "Saudi Arabia": "Arabie saoudite", "United States": "États-Unis", Italy: "Italie", Monaco: "Monaco", Spain: "Espagne", Canada: "Canada", Austria: "Autriche", "United Kingdom": "Grande-Bretagne", Hungary: "Hongrie", Belgium: "Belgique", Netherlands: "Pays-Bas", Azerbaijan: "Azerbaïdjan", Singapore: "Singapour", Mexico: "Mexique", Brazil: "Brésil", "United Arab Emirates": "Abu Dhabi", Qatar: "Qatar" };
-const paysFr = (r) => (r.country_name === "United States" && r.location && !/austin/i.test(r.location) ? r.location : PAYS[r.country_name] || r.country_name);
+// Lieux qui ne sont pas dans le pays annoncé par OpenF1 (course de remplacement mal étiquetée)
+const LIEU_PAYS = { "Kuala Lumpur": "Malaisie", Sepang: "Malaisie", Imola: "Émilie-Romagne", "Portimão": "Portugal", Istanbul: "Turquie", Mugello: "Toscane", "Nürburg": "Eifel" };
+const VILLES = { "Monte Carlo": "Monaco", "Mexico City": "Mexico", "São Paulo": "São Paulo", "Spa-Francorchamps": "Spa", "Miami Gardens": "Miami", "Marina Bay": "Singapour", "Yas Marina": "Abou Dabi", Barcelona: "Barcelone", Montréal: "Montréal" };
+const villeFr = (r) => VILLES[r.location] || r.location || "";
+const paysFr = (r) => LIEU_PAYS[r.location] || (r.country_name === "United States" && r.location && !/austin/i.test(r.location) ? villeFr(r) : PAYS[r.country_name] || r.country_name);
+// Nom affiché d'un GP : pays en français, plus la ville quand le pays a deux courses dans l'année
+function gpName(r) {
+  const p = paysFr(r), twin = RACES.some((x) => x !== r && x.year === r.year && paysFr(x) === p);
+  return twin && r.location ? `${p} · ${villeFr(r)}` : p;
+}
 const dateFr = (iso) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 function winnerOf(r) {
   if (r.winner) return r.winner;
@@ -3393,12 +3444,12 @@ function renderHome() {
   $("#home-feat").innerHTML = `<button class="hf" data-sk="${f.session_key}">
       <span class="hf-top"><span class="eyebrow">Dernier GP · ${round(f)}</span><span class="mono">${dateFr(f.date_start)}</span></span>
       ${outlineSvg(outlineOf(f), 320, 150, 14, "hf-map")}
-      <span class="hf-name">${esc(paysFr(f))}</span>
+      <span class="hf-name">${esc(gpName(f))}</span>
       ${fw ? `<span class="hf-win"><i style="background:${fw.color}"></i>Vainqueur : <b>${esc(fw.name)}</b></span>` : ""}
       <span class="hf-cta">Voir le GP <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span>
     </button>`;
   $("#home-list").innerHTML = list.slice(1).map((r) => { const w = winnerOf(r); return `<button class="hr" data-sk="${r.session_key}">
-      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(paysFr(r))}</b><small>${dateFr(r.date_start)}${w ? " · " + esc(w.name) : ""}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`; }).join("");
+      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(gpName(r))}</b><small>${dateFr(r.date_start)}${w ? " · " + esc(w.name) : ""}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`; }).join("");
   $$("#home [data-sk]").forEach((b) => b.addEventListener("click", () => navGP(b.dataset.sk)));
 }
 function showHome(on) {
@@ -3463,7 +3514,7 @@ function renderChapterCards() {
     course: [first("read-course"), sw(finishers.slice(0, 3).map((d) => d.color))],
     rythme: [first("read-rythme"), sw(paced.slice(0, 3).map((d) => d.color))],
     duels: [first("read-duels"), sw(duels.slice(0, 3).map((d) => d.color))],
-    pneus: [first("read-strat"), `<span class="mc-sw">${["S", "M", "H"].map((c) => `<i style="background:${COMP[c].c}"></i>`).join("")}</span>`],
+    pneus: [(() => { const c = {}; finishers.forEach((d) => (c[d.pits.length] = (c[d.pits.length] || 0) + 1)); const top = Object.entries(c).sort((a, b) => b[1] - a[1])[0]; return top ? `Le plus courant : ${+top[0] === 0 ? "aucun arrêt" : plural(+top[0], "arrêt")} (${top[1]} pilote${top[1] > 1 ? "s" : ""}). Qui a choisi quels pneus, et quand.` : ""; })(), `<span class="mc-sw">${["S", "M", "H"].map((c) => `<i style="background:${COMP[c].c}"></i>`).join("")}</span>`],
     explorer: ["Choisis jusqu'à 4 pilotes : temps au tour, écart en piste, régularité, et leur meilleur tour sur le circuit.", sw(finishers.slice(0, 2).map((d) => d.color))],
   };
   box.innerHTML = `<div class="mc-title">Comprendre la course</div>` + CHAPTERS.map((c, i) => {
@@ -3484,7 +3535,7 @@ function openChapter(id) {
     const i = CHAPTERS.indexOf(c), nx = CHAPTERS[(i + 1) % CHAPTERS.length];
     $("#mchap-next").innerHTML = `<span><small>Chapitre suivant</small><b>${nx.k}</b></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>`;
     $("#mchap-next").onclick = () => { const { g } = parseHash(); navGo(`#${g}/${nx.id}`, true); };
-    $("#mchap-title").textContent = RACE ? `${typeof paysFr === "function" ? paysFr(RACE) : RACE.country_name} ${RACE.year}` : "";
+    $("#mchap-title").textContent = RACE ? `${gpName(RACE)} ${RACE.year}` : "";
     $("#mchap-k").textContent = `${String(i + 1).padStart(2, "0")} · ${c.k}`;
     ov.scrollTop = 0;
   }
@@ -3682,7 +3733,19 @@ const PK_RARES = {
   marshal: { code: "CDP", name: "Le commissaire de piste", color: "#F28C28", number: "", how: "Drapeau à la main, au bord de la piste." },
   mech: { code: "MEC", name: "Le mécanicien", color: "#3a3f48", number: "", how: "Toujours prêt pour l'arrêt aux stands." },
 };
-function pkLoad() { try { const v = JSON.parse(localStorage.getItem(PK.key)); if (v && v.drivers) return { drivers: v.drivers, gold: v.gold || {}, rares: v.rares || {} }; } catch {} return { drivers: {}, gold: {}, rares: {} }; }
+function pkLoad() {
+  try {
+    const v = JSON.parse(localStorage.getItem(PK.key));
+    if (v && v.drivers) {
+      // Nettoyage : entrées fantômes créées par d'anciens tests (pilote sans nom, spécial inconnu)
+      const drivers = Object.fromEntries(Object.entries(v.drivers).filter(([k, e]) => k && k !== "undefined" && e && e.name));
+      const rares = Object.fromEntries(Object.entries(v.rares || {}).filter(([k]) => PK_RARES[k]));
+      const gold = Object.fromEntries(Object.entries(v.gold || {}).filter(([k, e]) => k && k !== "undefined" && e && e.name));
+      return { drivers, gold, rares };
+    }
+  } catch {}
+  return { drivers: {}, gold: {}, rares: {} };
+}
 function pkSave(c) { try { localStorage.setItem(PK.key, JSON.stringify(c)); } catch {} }
 const pkShade = (hex, k) => { const h = String(hex || "#888888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const f = (v) => Math.max(0, Math.min(255, Math.round(v * k))); return "#" + [f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, "0")).join(""); };
 
@@ -3732,7 +3795,7 @@ function pkPick() {
   if (!grid.length) return null;
   const r = Math.random() * 20, w = finishers[0];
   const hasSc = NEUTRAL.some((n) => n.kind === "SC" || n.kind === "VSC");
-  if (r < 2 && w && RACE) return { kind: "gold", key: String(RACE.session_key), code: w.code, name: w.last, team: w.team, color: w.color, number: String(w.dn), gold: true, gp: `${typeof paysFr === "function" ? paysFr(RACE) : RACE.country_name} ${RACE.year}` };
+  if (r < 2 && w && RACE) return { kind: "gold", key: String(RACE.session_key), code: w.code, name: w.last, team: w.team, color: w.color, number: String(w.dn), gold: true, gp: `${gpName(RACE)} ${RACE.year}` };
   if (r < 3 && hasSc) return { kind: "rare", key: "sc", ...PK_RARES.sc };
   if (r < 4) { const k = Math.random() < 0.5 ? "marshal" : "mech"; return { kind: "rare", key: k, ...PK_RARES[k] }; }
   // Pilote de la grille : ceux qu'on n'a pas encore ont trois fois plus de chances
@@ -3745,13 +3808,36 @@ const pkOk = () => (!reduce || PK_TEST) && !NAV.home && document.visibilityState
 function pkSchedule(ms) { clearTimeout(PK.timer); PK.timer = setTimeout(() => { if (pkOk()) pkShow(); else pkSchedule(PK_TEST ? 2000 : 20000); }, ms ?? (PK_TEST ? 8000 : 90000 + Math.random() * 90000)); }
 
 /* --- L'apparition --- */
-function pkShow(forced) {
-  const who = forced || pkPick(); if (!who) return pkSchedule();
+// Test en console : pkShow() = au hasard ; pkShow("VER") = ce pilote du GP affiché ; pkShow("or" | "sc" | "commissaire" | "mecano")
+function pkResolve(q) {
+  const k = String(q).trim().toLowerCase(), w = finishers[0];
+  if (["or", "gold", "dore", "doré"].includes(k) && w && RACE) return { kind: "gold", key: String(RACE.session_key), code: w.code, name: w.last, team: w.team, color: w.color, number: String(w.dn), gold: true, gp: `${gpName(RACE)} ${RACE.year}` };
+  const rare = { sc: "sc", "safety car": "sc", commissaire: "marshal", marshal: "marshal", mecano: "mech", "mécano": "mech", mecanicien: "mech", "mécanicien": "mech", mech: "mech" }[k];
+  if (rare) return { kind: "rare", key: rare, ...PK_RARES[rare] };
+  const d = drivers.find((x) => String(x.code).toLowerCase() === k || String(x.last).toLowerCase() === k || String(x.dn) === k);
+  if (d) return { kind: "driver", key: d.code, code: d.code, name: d.last, team: d.team, color: d.color, number: String(d.dn) };
+  console.info(`pkShow : « ${q} » inconnu. Codes possibles : ${drivers.map((x) => x.code).join(", ")}, or, sc, commissaire, mecano.`);
+  return null;
+}
+function pkShow(q) {
+  if (PK.busy) return;
+  const who = q != null && q !== "" ? pkResolve(q) : pkPick(); if (!who) return q != null ? undefined : pkSchedule();
+  // Jamais pendant une saisie, jamais devant un bouton, un lien ou un champ : on cherche une place libre en bas de l'écran
+  const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return q != null ? undefined : pkSchedule(20000);
+  const w = MOB() ? 112 : 140, h = Math.round(w * 0.6), min = 16, max = innerWidth - w - 16;
+  const busyAt = (x, y) => { const el = document.elementFromPoint(x, y); return !!el?.closest("button, a, input, select, textarea, label, [role=button], .mc, .fr-card, .chart, .pk-modal"); };
+  const free = (left) => { for (const fx of [0.1, 0.5, 0.9]) for (const fy of [0.15, 0.6, 0.95]) if (busyAt(left + fx * w, innerHeight - h + fy * h)) return false; return true; };
+  let left = null;
+  for (let t = 0; t < 14 && left == null; t++) { const c = Math.round(min + Math.random() * Math.max(0, max - min)); if (free(c)) left = c; }
+  if (left == null) { if (q == null) pkSchedule(20000); else left = Math.round(min + Math.random() * Math.max(0, max - min)); if (left == null) return; }
   PK.busy = true; PK.cur = who; PK.hold = false;
   const b = document.createElement("button"); b.className = "pk-peek"; b.setAttribute("aria-label", `Attraper ${who.name}`);
-  const w = MOB() ? 112 : 140, min = 16, max = innerWidth - w - 16;
-  b.style.left = Math.round(min + Math.random() * Math.max(0, max - min)) + "px"; b.style.width = w + "px"; b.style.height = Math.round(w * 0.6) + "px";
+  b.style.left = left + "px"; b.style.width = w + "px"; b.style.height = h + "px";
   b.innerHTML = peekSvg(who); document.body.appendChild(b);
+  // La première fois, une bulle explique le jeu
+  let tip = null;
+  try { if (!localStorage.getItem("f1duel:pkhint")) { localStorage.setItem("f1duel:pkhint", "1"); tip = document.createElement("div"); tip.className = "pk-tip"; tip.textContent = "Un pilote se cache ! Attrape-le pour ta collection."; tip.style.left = Math.max(12, Math.min(innerWidth - 232, left + w / 2 - 110)) + "px"; tip.style.bottom = h + 10 + "px"; document.body.appendChild(tip); requestAnimationFrame(() => tip.classList.add("on")); } } catch {}
+  const dropTip = () => { if (tip) { tip.remove(); tip = null; } };
   const head = b.querySelector(".pk-head"), hands = b.querySelector(".pk-hands");
   const set = (h, hd) => { head.style.transform = h; hands.style.transform = hd; };
   set("translateY(76px)", "translateY(26px)");
@@ -3759,13 +3845,13 @@ function pkShow(forced) {
   let i = 0;
   const run = () => {
     if (!b.isConnected) return;
-    if (i >= steps.length) { b.remove(); PK.busy = false; pkSchedule(); return; }
+    if (i >= steps.length) { b.remove(); dropTip(); PK.busy = false; pkSchedule(); return; }
     if (PK.hold && i >= 2 && i < 5) { PK.t = setTimeout(run, 200); return; } // figé tant que la souris est dessus
     const [h, hd, ms] = steps[i++]; set(h, hd); PK.t = setTimeout(run, ms);
   };
   requestAnimationFrame(() => requestAnimationFrame(run));
   b.addEventListener("pointerenter", () => (PK.hold = true)); b.addEventListener("pointerleave", () => (PK.hold = false));
-  b.addEventListener("click", () => { clearTimeout(PK.t); const r = b.getBoundingClientRect(); b.remove(); pkCatch(who, r); });
+  b.addEventListener("click", () => { clearTimeout(PK.t); const r = b.getBoundingClientRect(); b.remove(); dropTip(); pkCatch(who, r); });
 }
 
 /* --- Attrapé : il grossit vers le centre, « Bravo ! », et rejoint la collection --- */

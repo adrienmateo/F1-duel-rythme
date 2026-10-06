@@ -4,10 +4,10 @@
 // Le bouton retour du navigateur ou du téléphone suit toujours le parcours.
 const NAV = { home: false, homeWait: [], chap: null, slot: null, pushed: false };
 const CHAPTERS = [
-  { id: "moments", sec: "moments", k: "Les 3 moments" },
+  { id: "moments", sec: "moments", k: "Les moments" },
   { id: "course", sec: "course", k: "La course" },
   { id: "duels", sec: "duels", k: "Les duels" },
-  { id: "pneus", sec: "strategies", k: "Les pneus" },
+  { id: "pneus", sec: "strategies", k: "Stratégies" },
   { id: "explorer", sec: "explorer", k: "Explorer" },
 ];
 const slugify = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -21,7 +21,16 @@ const homeClosed = () => (NAV.home ? new Promise((r) => NAV.homeWait.push(r)) : 
 
 /* --- Accueil --- */
 const PAYS = { Australia: "Australie", China: "Chine", Japan: "Japon", Bahrain: "Bahreïn", "Saudi Arabia": "Arabie saoudite", "United States": "États-Unis", Italy: "Italie", Monaco: "Monaco", Spain: "Espagne", Canada: "Canada", Austria: "Autriche", "United Kingdom": "Grande-Bretagne", Hungary: "Hongrie", Belgium: "Belgique", Netherlands: "Pays-Bas", Azerbaijan: "Azerbaïdjan", Singapore: "Singapour", Mexico: "Mexique", Brazil: "Brésil", "United Arab Emirates": "Abu Dhabi", Qatar: "Qatar" };
-const paysFr = (r) => (r.country_name === "United States" && r.location && !/austin/i.test(r.location) ? r.location : PAYS[r.country_name] || r.country_name);
+// Lieux qui ne sont pas dans le pays annoncé par OpenF1 (course de remplacement mal étiquetée)
+const LIEU_PAYS = { "Kuala Lumpur": "Malaisie", Sepang: "Malaisie", Imola: "Émilie-Romagne", "Portimão": "Portugal", Istanbul: "Turquie", Mugello: "Toscane", "Nürburg": "Eifel" };
+const VILLES = { "Monte Carlo": "Monaco", "Mexico City": "Mexico", "São Paulo": "São Paulo", "Spa-Francorchamps": "Spa", "Miami Gardens": "Miami", "Marina Bay": "Singapour", "Yas Marina": "Abou Dabi", Barcelona: "Barcelone", Montréal: "Montréal" };
+const villeFr = (r) => VILLES[r.location] || r.location || "";
+const paysFr = (r) => LIEU_PAYS[r.location] || (r.country_name === "United States" && r.location && !/austin/i.test(r.location) ? villeFr(r) : PAYS[r.country_name] || r.country_name);
+// Nom affiché d'un GP : pays en français, plus la ville quand le pays a deux courses dans l'année
+function gpName(r) {
+  const p = paysFr(r), twin = RACES.some((x) => x !== r && x.year === r.year && paysFr(x) === p);
+  return twin && r.location ? `${p} · ${villeFr(r)}` : p;
+}
 const dateFr = (iso) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 function winnerOf(r) {
   if (r.winner) return r.winner;
@@ -56,12 +65,12 @@ function renderHome() {
   $("#home-feat").innerHTML = `<button class="hf" data-sk="${f.session_key}">
       <span class="hf-top"><span class="eyebrow">Dernier GP · ${round(f)}</span><span class="mono">${dateFr(f.date_start)}</span></span>
       ${outlineSvg(outlineOf(f), 320, 150, 14, "hf-map")}
-      <span class="hf-name">${esc(paysFr(f))}</span>
+      <span class="hf-name">${esc(gpName(f))}</span>
       ${fw ? `<span class="hf-win"><i style="background:${fw.color}"></i>Vainqueur : <b>${esc(fw.name)}</b></span>` : ""}
       <span class="hf-cta">Voir le GP <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span>
     </button>`;
   $("#home-list").innerHTML = list.slice(1).map((r) => { const w = winnerOf(r); return `<button class="hr" data-sk="${r.session_key}">
-      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(paysFr(r))}</b><small>${dateFr(r.date_start)}${w ? " · " + esc(w.name) : ""}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`; }).join("");
+      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(gpName(r))}</b><small>${dateFr(r.date_start)}${w ? " · " + esc(w.name) : ""}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`; }).join("");
   $$("#home [data-sk]").forEach((b) => b.addEventListener("click", () => navGP(b.dataset.sk)));
 }
 function showHome(on) {
@@ -126,7 +135,7 @@ function renderChapterCards() {
     course: [first("read-course"), sw(finishers.slice(0, 3).map((d) => d.color))],
     rythme: [first("read-rythme"), sw(paced.slice(0, 3).map((d) => d.color))],
     duels: [first("read-duels"), sw(duels.slice(0, 3).map((d) => d.color))],
-    pneus: [first("read-strat"), `<span class="mc-sw">${["S", "M", "H"].map((c) => `<i style="background:${COMP[c].c}"></i>`).join("")}</span>`],
+    pneus: [(() => { const c = {}; finishers.forEach((d) => (c[d.pits.length] = (c[d.pits.length] || 0) + 1)); const top = Object.entries(c).sort((a, b) => b[1] - a[1])[0]; return top ? `Le plus courant : ${+top[0] === 0 ? "aucun arrêt" : plural(+top[0], "arrêt")} (${top[1]} pilote${top[1] > 1 ? "s" : ""}). Qui a choisi quels pneus, et quand.` : ""; })(), `<span class="mc-sw">${["S", "M", "H"].map((c) => `<i style="background:${COMP[c].c}"></i>`).join("")}</span>`],
     explorer: ["Choisis jusqu'à 4 pilotes : temps au tour, écart en piste, régularité, et leur meilleur tour sur le circuit.", sw(finishers.slice(0, 2).map((d) => d.color))],
   };
   box.innerHTML = `<div class="mc-title">Comprendre la course</div>` + CHAPTERS.map((c, i) => {
@@ -147,7 +156,7 @@ function openChapter(id) {
     const i = CHAPTERS.indexOf(c), nx = CHAPTERS[(i + 1) % CHAPTERS.length];
     $("#mchap-next").innerHTML = `<span><small>Chapitre suivant</small><b>${nx.k}</b></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>`;
     $("#mchap-next").onclick = () => { const { g } = parseHash(); navGo(`#${g}/${nx.id}`, true); };
-    $("#mchap-title").textContent = RACE ? `${typeof paysFr === "function" ? paysFr(RACE) : RACE.country_name} ${RACE.year}` : "";
+    $("#mchap-title").textContent = RACE ? `${gpName(RACE)} ${RACE.year}` : "";
     $("#mchap-k").textContent = `${String(i + 1).padStart(2, "0")} · ${c.k}`;
     ov.scrollTop = 0;
   }

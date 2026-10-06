@@ -51,7 +51,7 @@ with sync_playwright() as p:
             page.locator("#mchaps").scroll_into_view_if_needed(); page.wait_for_timeout(600)
             page.screenshot(path=f"{SHOTS}/site_chapitres.png")
             chap = lambda c: (page.evaluate(f"navGo(`#${{parseHash().g}}/{c}`)"), page.wait_for_timeout(1500))
-            print("Frise :", " | ".join(page.locator("#log .fr-ev").all_inner_texts()).replace("\n", " "), "| KPI :", page.locator("#kpis .kpi").count())
+            print("Frise :", " | ".join(page.locator("#log .fr-card").all_inner_texts()).replace("\n", " "), "| KPI :", page.locator("#kpis .kpi").count())
             page.locator("#log").scroll_into_view_if_needed(); page.screenshot(path=f"{SHOTS}/site_frise.png")
             chap("moments"); page.wait_for_timeout(6000)
             print("Moments :", " | ".join(page.locator("#moments .mom-t").all_inner_texts()))

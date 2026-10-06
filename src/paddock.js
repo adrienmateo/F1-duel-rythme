@@ -13,7 +13,19 @@ const PK_RARES = {
   marshal: { code: "CDP", name: "Le commissaire de piste", color: "#F28C28", number: "", how: "Drapeau à la main, au bord de la piste." },
   mech: { code: "MEC", name: "Le mécanicien", color: "#3a3f48", number: "", how: "Toujours prêt pour l'arrêt aux stands." },
 };
-function pkLoad() { try { const v = JSON.parse(localStorage.getItem(PK.key)); if (v && v.drivers) return { drivers: v.drivers, gold: v.gold || {}, rares: v.rares || {} }; } catch {} return { drivers: {}, gold: {}, rares: {} }; }
+function pkLoad() {
+  try {
+    const v = JSON.parse(localStorage.getItem(PK.key));
+    if (v && v.drivers) {
+      // Nettoyage : entrées fantômes créées par d'anciens tests (pilote sans nom, spécial inconnu)
+      const drivers = Object.fromEntries(Object.entries(v.drivers).filter(([k, e]) => k && k !== "undefined" && e && e.name));
+      const rares = Object.fromEntries(Object.entries(v.rares || {}).filter(([k]) => PK_RARES[k]));
+      const gold = Object.fromEntries(Object.entries(v.gold || {}).filter(([k, e]) => k && k !== "undefined" && e && e.name));
+      return { drivers, gold, rares };
+    }
+  } catch {}
+  return { drivers: {}, gold: {}, rares: {} };
+}
 function pkSave(c) { try { localStorage.setItem(PK.key, JSON.stringify(c)); } catch {} }
 const pkShade = (hex, k) => { const h = String(hex || "#888888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const f = (v) => Math.max(0, Math.min(255, Math.round(v * k))); return "#" + [f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, "0")).join(""); };
 
@@ -63,7 +75,7 @@ function pkPick() {
   if (!grid.length) return null;
   const r = Math.random() * 20, w = finishers[0];
   const hasSc = NEUTRAL.some((n) => n.kind === "SC" || n.kind === "VSC");
-  if (r < 2 && w && RACE) return { kind: "gold", key: String(RACE.session_key), code: w.code, name: w.last, team: w.team, color: w.color, number: String(w.dn), gold: true, gp: `${typeof paysFr === "function" ? paysFr(RACE) : RACE.country_name} ${RACE.year}` };
+  if (r < 2 && w && RACE) return { kind: "gold", key: String(RACE.session_key), code: w.code, name: w.last, team: w.team, color: w.color, number: String(w.dn), gold: true, gp: `${gpName(RACE)} ${RACE.year}` };
   if (r < 3 && hasSc) return { kind: "rare", key: "sc", ...PK_RARES.sc };
   if (r < 4) { const k = Math.random() < 0.5 ? "marshal" : "mech"; return { kind: "rare", key: k, ...PK_RARES[k] }; }
   // Pilote de la grille : ceux qu'on n'a pas encore ont trois fois plus de chances
@@ -76,13 +88,36 @@ const pkOk = () => (!reduce || PK_TEST) && !NAV.home && document.visibilityState
 function pkSchedule(ms) { clearTimeout(PK.timer); PK.timer = setTimeout(() => { if (pkOk()) pkShow(); else pkSchedule(PK_TEST ? 2000 : 20000); }, ms ?? (PK_TEST ? 8000 : 90000 + Math.random() * 90000)); }
 
 /* --- L'apparition --- */
-function pkShow(forced) {
-  const who = forced || pkPick(); if (!who) return pkSchedule();
+// Test en console : pkShow() = au hasard ; pkShow("VER") = ce pilote du GP affiché ; pkShow("or" | "sc" | "commissaire" | "mecano")
+function pkResolve(q) {
+  const k = String(q).trim().toLowerCase(), w = finishers[0];
+  if (["or", "gold", "dore", "doré"].includes(k) && w && RACE) return { kind: "gold", key: String(RACE.session_key), code: w.code, name: w.last, team: w.team, color: w.color, number: String(w.dn), gold: true, gp: `${gpName(RACE)} ${RACE.year}` };
+  const rare = { sc: "sc", "safety car": "sc", commissaire: "marshal", marshal: "marshal", mecano: "mech", "mécano": "mech", mecanicien: "mech", "mécanicien": "mech", mech: "mech" }[k];
+  if (rare) return { kind: "rare", key: rare, ...PK_RARES[rare] };
+  const d = drivers.find((x) => String(x.code).toLowerCase() === k || String(x.last).toLowerCase() === k || String(x.dn) === k);
+  if (d) return { kind: "driver", key: d.code, code: d.code, name: d.last, team: d.team, color: d.color, number: String(d.dn) };
+  console.info(`pkShow : « ${q} » inconnu. Codes possibles : ${drivers.map((x) => x.code).join(", ")}, or, sc, commissaire, mecano.`);
+  return null;
+}
+function pkShow(q) {
+  if (PK.busy) return;
+  const who = q != null && q !== "" ? pkResolve(q) : pkPick(); if (!who) return q != null ? undefined : pkSchedule();
+  // Jamais pendant une saisie, jamais devant un bouton, un lien ou un champ : on cherche une place libre en bas de l'écran
+  const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return q != null ? undefined : pkSchedule(20000);
+  const w = MOB() ? 112 : 140, h = Math.round(w * 0.6), min = 16, max = innerWidth - w - 16;
+  const busyAt = (x, y) => { const el = document.elementFromPoint(x, y); return !!el?.closest("button, a, input, select, textarea, label, [role=button], .mc, .fr-card, .chart, .pk-modal"); };
+  const free = (left) => { for (const fx of [0.1, 0.5, 0.9]) for (const fy of [0.15, 0.6, 0.95]) if (busyAt(left + fx * w, innerHeight - h + fy * h)) return false; return true; };
+  let left = null;
+  for (let t = 0; t < 14 && left == null; t++) { const c = Math.round(min + Math.random() * Math.max(0, max - min)); if (free(c)) left = c; }
+  if (left == null) { if (q == null) pkSchedule(20000); else left = Math.round(min + Math.random() * Math.max(0, max - min)); if (left == null) return; }
   PK.busy = true; PK.cur = who; PK.hold = false;
   const b = document.createElement("button"); b.className = "pk-peek"; b.setAttribute("aria-label", `Attraper ${who.name}`);
-  const w = MOB() ? 112 : 140, min = 16, max = innerWidth - w - 16;
-  b.style.left = Math.round(min + Math.random() * Math.max(0, max - min)) + "px"; b.style.width = w + "px"; b.style.height = Math.round(w * 0.6) + "px";
+  b.style.left = left + "px"; b.style.width = w + "px"; b.style.height = h + "px";
   b.innerHTML = peekSvg(who); document.body.appendChild(b);
+  // La première fois, une bulle explique le jeu
+  let tip = null;
+  try { if (!localStorage.getItem("f1duel:pkhint")) { localStorage.setItem("f1duel:pkhint", "1"); tip = document.createElement("div"); tip.className = "pk-tip"; tip.textContent = "Un pilote se cache ! Attrape-le pour ta collection."; tip.style.left = Math.max(12, Math.min(innerWidth - 232, left + w / 2 - 110)) + "px"; tip.style.bottom = h + 10 + "px"; document.body.appendChild(tip); requestAnimationFrame(() => tip.classList.add("on")); } } catch {}
+  const dropTip = () => { if (tip) { tip.remove(); tip = null; } };
   const head = b.querySelector(".pk-head"), hands = b.querySelector(".pk-hands");
   const set = (h, hd) => { head.style.transform = h; hands.style.transform = hd; };
   set("translateY(76px)", "translateY(26px)");
@@ -90,13 +125,13 @@ function pkShow(forced) {
   let i = 0;
   const run = () => {
     if (!b.isConnected) return;
-    if (i >= steps.length) { b.remove(); PK.busy = false; pkSchedule(); return; }
+    if (i >= steps.length) { b.remove(); dropTip(); PK.busy = false; pkSchedule(); return; }
     if (PK.hold && i >= 2 && i < 5) { PK.t = setTimeout(run, 200); return; } // figé tant que la souris est dessus
     const [h, hd, ms] = steps[i++]; set(h, hd); PK.t = setTimeout(run, ms);
   };
   requestAnimationFrame(() => requestAnimationFrame(run));
   b.addEventListener("pointerenter", () => (PK.hold = true)); b.addEventListener("pointerleave", () => (PK.hold = false));
-  b.addEventListener("click", () => { clearTimeout(PK.t); const r = b.getBoundingClientRect(); b.remove(); pkCatch(who, r); });
+  b.addEventListener("click", () => { clearTimeout(PK.t); const r = b.getBoundingClientRect(); b.remove(); dropTip(); pkCatch(who, r); });
 }
 
 /* --- Attrapé : il grossit vers le centre, « Bravo ! », et rejoint la collection --- */
