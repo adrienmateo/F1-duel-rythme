@@ -2039,7 +2039,7 @@ function renderHow() {
   setHow("how-strat", `Une ligne par pilote, du départ (à gauche) à l'arrivée (à droite). La couleur indique le pneu : ${sw(COMP.S.c)}tendre ${sw(COMP.M.c)}médium ${sw(COMP.H.c)}dur. <b>Chaque changement de couleur = un arrêt aux stands.</b>`);
   const ref = byCode[exSel[0]], rn = ref ? `<b>${esc(ref.last)}</b>` : "le pilote de référence";
   setHow("how-ex", {
-    laps: `Une ligne par pilote, un point par tour : <b>plus c'est bas, plus le tour est rapide</b>. ${exAll ? "Les points creux sont les tours lents (stands, safety car, trafic) : survole-les pour la raison." : "Les trous sont les tours aux stands ou sous neutralisation : « Afficher tous les tours » les fait apparaître."}`,
+    laps: `Une ligne par pilote, un point par tour : <b>plus c'est bas, plus le tour est rapide</b>. ${exAll ? "Tous les tours sont tracés, sauf le départ ; chaque point a la couleur du pneu utilisé (" + sw(COMP.S.c, 1) + "tendre " + sw(COMP.M.c, 1) + "médium " + sw(COMP.H.c, 1) + "dur). Survole un pic pour sa raison (stands, safety car…)." : "Seuls les tours rapides sont tracés ; « Afficher tous les tours » ajoute les tours aux stands et sous neutralisation."}`,
     gap: `Distance en piste entre chaque pilote et ${rn}, tour par tour. <b>Au-dessus de zéro = derrière ${rn}</b>, en dessous = devant lui.`,
     box: `Une case par tour, comparée au rythme habituel du pilote sur le même train de pneus : ${sw("var(--good)")}dans son rythme ${sw("#e3a008")}un peu lent ${sw("var(--bad)")}tour perdu ${sw("var(--track)")}départ, stands ou safety car.`,
     circuit: `Les deux pilotes refont leur meilleur tour sur le vrai tracé : ${rn} contre le deuxième pilote choisi. Chaque secteur prend la couleur du plus rapide.`,
@@ -2114,17 +2114,18 @@ function buildEx(T) {
         ...(i === 0 ? { markArea: neutralArea(T, LAPS, false) } : {}) })) };
   }
   // Tours lents (stands, neutralisation, trafic) : cachés par défaut, en points creux avec le bouton « Afficher tous les tours »
-  const slow = exAll ? sel.map((d, i) => ({ name: d.code + " · tour lent", type: "scatter", symbol: "emptyCircle", symbolSize: 8, z: 3,
-    itemStyle: { color: col(i), borderWidth: 2 }, data: Array.from({ length: LAPS }, (_, k) => { const l = d.laps[k]; return l && l.reason && l.t ? [k, +l.t.toFixed(3)] : null; }).filter(Boolean) })) : [];
+  // Comme GP Tempo : une ligne continue par pilote. Avec « Afficher tous les tours », les tours lents rejoignent la ligne
+  // et chaque tour devient un point à la couleur du pneu (le tour 1, trop à part, reste toujours exclu).
   return { ...o, legend: { top: 0, textStyle: { color: T.ink2 }, data: sel.map((d) => d.code) },
     tooltip: { ...o.tooltip, trigger: "axis", formatter: (ps) => { const k = ps[0]?.dataIndex ?? 0, lap = (ps[0]?.axisValue ?? k + 1);
-      return `<b>Tour ${lap}</b><br>` + sel.map((d, i) => { const l = d.laps[+lap - 1]; if (!l || !l.t) return ""; if (l.reason && !exAll) return "";
+      return `<b>Tour ${lap}</b><br>` + sel.map((d, i) => { const l = d.laps[+lap - 1]; if (!l || !l.t || l.lap <= 1) return ""; if (l.reason && !exAll) return "";
         return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col(i)};margin-right:6px"></span>${d.code} <b>${lapT(l.t)}</b>${l.reason ? ` <span style="color:${T.muted}">· ${esc(slowWhy(l.reason))}</span>` : ""}`; }).filter(Boolean).join("<br>"); } },
     xAxis: { type: "category", data: Array.from({ length: LAPS }, (_, i) => i + 1), boundaryGap: false, name: "Tour", ...axisCommon(T), splitLine: { show: false } },
     yAxis: { type: "value", scale: true, ...axisCommon(T), axisLabel: { ...axisCommon(T).axisLabel, formatter: (v) => lapT(v).slice(0, -2) } },
-    series: sel.map((d, i) => ({ name: d.code, type: "line", symbol: "circle", symbolSize: 5, showSymbol: false, smooth: 0.2, connectNulls: false, lineStyle: { width: 2.5, color: col(i), type: dashIf(d, exSel) }, itemStyle: { color: col(i) },
-      data: Array.from({ length: LAPS }, (_, k) => { const l = d.laps[k]; return l && !l.reason ? +l.t.toFixed(3) : null; }),
-      ...(i === 0 ? { markArea: neutralArea(T) } : {}) })).concat(slow) };
+    series: sel.map((d, i) => ({ name: d.code, type: "line", symbol: "circle", symbolSize: exAll ? 8 : 5, showSymbol: exAll, smooth: 0.35, connectNulls: true, lineStyle: { width: 2.2, color: col(i), type: dashIf(d, exSel) }, itemStyle: { color: col(i) },
+      data: Array.from({ length: LAPS }, (_, k) => { const l = d.laps[k]; if (!l || !l.t || l.lap <= 1 || (l.reason && !exAll)) return null;
+        const v = +l.t.toFixed(3); return exAll ? { value: v, itemStyle: { color: (COMP[l.comp] || COMP["?"]).c, borderColor: col(i), borderWidth: 1.6 } } : v; }),
+      ...(i === 0 ? { markArea: neutralArea(T) } : {}) })) };
 }
 function renderExChips() {
   renderExRef(); renderHow();
