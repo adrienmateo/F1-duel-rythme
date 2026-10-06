@@ -144,16 +144,23 @@ function pkCollection() {
     <div class="pk-stats"><div><span>Pilotes</span><b>${st.got} <small>/ ${st.tot}</small></b><i><b style="width:${Math.round((st.got / Math.max(1, st.tot)) * 100)}%"></b></i></div>
       <div class="gold"><span>Vainqueurs dorés</span><b>${st.gold} <small>GP</small></b></div><div class="gold"><span>Rares</span><b>${st.rares} <small>/ 3</small></b></div></div>
     <div class="pk-teams">${[...teams].map(([t, v]) => `<div class="pk-team"><div class="pk-tn"><i style="background:${v.color}"></i>${esc(t)}</div><div class="pk-cells">${v.ds.map((d) => cell(d.code, col.drivers[d.code], d.color, d.dn)).join("")}</div></div>`).join("")}</div>
-    ${others.length ? `<h3>D'autres saisons</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
+    ${others.length ? `<h3>${drivers.length ? "D'autres saisons" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
     <h3>Les vainqueurs dorés <small>un par GP, sur le GP que tu regardes</small></h3>
     <div class="pk-cells wide">${golds.length ? golds.map((g) => `<div class="pk-cell gold">${figSvg({ color: g.color, number: g.number, gold: true, label: g.name + " doré" })}<b>${esc(g.code)}</b><small>${esc(g.gp)}</small></div>`).join("") : `<p class="pk-empty">Aucun pour l'instant : le vainqueur du GP affiché passe parfois, en or.</p>`}</div>
     <h3>Les rares</h3>
     <div class="pk-cells wide">${Object.entries(PK_RARES).map(([k, r]) => { const n = col.rares[k]; return `<div class="pk-cell ${n ? "gold" : "off"}">${figSvg({ color: r.color, number: r.number, ghost: !n, label: n ? r.name : "Rare pas encore attrapé" })}<b>${n ? esc(r.name) : "???"}</b><small>${esc(r.how)}</small></div>`; }).join("")}</div>
+    <div class="pk-save"><div><b>Garder ta collection sur un autre navigateur ou téléphone</b><span>La collection est enregistrée dans ce navigateur. Copie ton lien de sauvegarde et ouvre-le ailleurs : elle s'y ajoute.</span></div>
+      <button class="btn pk-copy">Copier mon lien de sauvegarde</button><input class="pk-linkbox" readonly hidden aria-label="Lien de sauvegarde"></div>
   </div>`;
   document.body.appendChild(m); requestAnimationFrame(() => m.classList.add("on"));
   const close = () => { m.classList.remove("on"); setTimeout(() => m.remove(), 250); pkSchedule(); };
   m.addEventListener("click", (e) => { if (e.target === m) close(); });
   m.querySelector(".pk-x").addEventListener("click", close); m.querySelector(".pk-x").focus();
+  m.querySelector(".pk-copy").addEventListener("click", async () => {
+    const link = pkLink(), box = m.querySelector(".pk-linkbox"), btn = m.querySelector(".pk-copy");
+    try { await navigator.clipboard.writeText(link); btn.textContent = "Lien copié !"; setTimeout(() => (btn.textContent = "Copier mon lien de sauvegarde"), 2500); }
+    catch { box.hidden = false; box.value = link; box.select(); btn.textContent = "Copie le lien ci-dessous"; }
+  });
 }
 // Un lien discret en bas de page, seulement une fois le premier pilote attrapé (l'easter egg reste une surprise)
 function pkFooter() {
@@ -166,3 +173,23 @@ function pkFooter() {
 addEventListener("keydown", (e) => { if (e.key === "Escape") { const m = document.querySelector(".pk-modal"); if (m) { m.querySelector(".pk-close, .pk-x")?.click(); e.stopPropagation(); } } }, true);
 setTimeout(pkFooter, 1500);
 pkSchedule(60000 + Math.random() * 60000);
+
+/* --- Sauvegarde : un lien qui contient la collection, à ouvrir sur un autre navigateur --- */
+function pkLink() {
+  const c = pkLoad(), z = { d: c.drivers, g: c.gold, r: c.rares };
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(z)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return location.origin + location.pathname + "#paddock=" + b64;
+}
+function pkImport(code) {
+  try {
+    const z = JSON.parse(decodeURIComponent(escape(atob(code.replace(/-/g, "+").replace(/_/g, "/")))));
+    const c = pkLoad(); let added = 0;
+    Object.entries(z.d || {}).forEach(([k, v]) => { if (!v || typeof v !== "object") return; const cur = c.drivers[k]; if (!cur) added++; c.drivers[k] = { ...v, n: Math.max(+v.n || 1, cur?.n || 0) }; });
+    Object.entries(z.g || {}).forEach(([k, v]) => { if (v && typeof v === "object" && !c.gold[k]) { c.gold[k] = v; added++; } });
+    Object.entries(z.r || {}).forEach(([k, v]) => { if (PK_RARES[k]) { if (!c.rares[k]) added++; c.rares[k] = Math.max(+v || 0, c.rares[k] || 0); } });
+    pkSave(c); pkFooter();
+    setTimeout(() => toast(added ? `Collection récupérée : ${added} nouveau${added > 1 ? "x" : ""} personnage${added > 1 ? "s" : ""} ajouté${added > 1 ? "s" : ""}.` : "Collection déjà à jour."), 600);
+  } catch { setTimeout(() => toast("Ce lien de sauvegarde n'est pas valide."), 600); }
+}
+// « Ma collection » : dans le menu du haut, l'accueil et le menu mobile
+document.addEventListener("click", (e) => { const b = e.target.closest(".pk-open"); if (!b) return; e.preventDefault(); if (typeof closeSheets === "function") closeSheets(); pkCollection(); });

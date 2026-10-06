@@ -171,6 +171,7 @@ function chapBack() { const { g } = parseHash(); if (NAV.pushed) { NAV.pushed = 
 let navLoading = null;
 async function navRoute() {
   const { g, c } = parseHash();
+  if (g.startsWith("paddock=")) { pkImport(g.slice(8)); history.replaceState(null, "", location.pathname); closeChapter(); showHome(true); return; } // lien de sauvegarde de la collection
   if (!g) { closeChapter(); showHome(true); return; }
   let r = RACES.find((x) => slugOf(x) === g);
   if (!r) { // GP d'une autre saison : on charge sa liste
