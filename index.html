@@ -3655,6 +3655,8 @@ wanderIO.observe($("#mchap-next"));
 // avec « Bravo ! » et rejoint la collection, gardée dans ce navigateur. Sur 20 apparitions : 16 pilotes
 // de la grille (ceux qu'on n'a pas encore sortent plus souvent), 2 vainqueurs dorés du GP affiché,
 // 1 pilote de la safety car (seulement sur un GP avec safety car), 1 commissaire ou mécanicien.
+// Mode test : ouvrir le site avec ?pilote à la fin de l'adresse fait passer un pilote toutes les 8 s environ
+const PK_TEST = new URLSearchParams(location.search).has("pilote");
 const PK = { key: "f1duel:paddock", timer: 0, busy: false, uid: 0, cur: null, steps: 0, hold: false };
 const PK_RARES = {
   sc: { code: "SC", name: "Le pilote de la safety car", color: "#F5C400", number: "SC", how: "Seulement sur un GP avec safety car." },
@@ -3721,7 +3723,7 @@ function pkPick() {
   return { kind: "driver", key: d.code, code: d.code, name: d.last, team: d.team, color: d.color, number: String(d.dn) };
 }
 const pkOk = () => !reduce && !NAV.home && document.visibilityState === "visible" && !PK.busy && drivers.length && $("#overlay")?.hidden !== false && !document.querySelector(".pk-modal");
-function pkSchedule(ms) { clearTimeout(PK.timer); PK.timer = setTimeout(() => { if (pkOk()) pkShow(); else pkSchedule(20000); }, ms ?? (90000 + Math.random() * 90000)); }
+function pkSchedule(ms) { clearTimeout(PK.timer); PK.timer = setTimeout(() => { if (pkOk()) pkShow(); else pkSchedule(PK_TEST ? 2000 : 20000); }, ms ?? (PK_TEST ? 8000 : 90000 + Math.random() * 90000)); }
 
 /* --- L'apparition --- */
 function pkShow(forced) {
@@ -3822,7 +3824,7 @@ function pkFooter() {
 }
 addEventListener("keydown", (e) => { if (e.key === "Escape") { const m = document.querySelector(".pk-modal"); if (m) { m.querySelector(".pk-close, .pk-x")?.click(); e.stopPropagation(); } } }, true);
 setTimeout(pkFooter, 1500);
-pkSchedule(60000 + Math.random() * 60000);
+pkSchedule(PK_TEST ? 4000 : 60000 + Math.random() * 60000);
 
 /* --- Sauvegarde : un lien qui contient la collection, à ouvrir sur un autre navigateur --- */
 function pkLink() {
