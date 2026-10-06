@@ -156,12 +156,12 @@ function renderFrise() {
   const flat = `<div class="frise">
       <div class="fr-track">${bands}<span class="fr-flag" title="Arrivée"></span></div>
       <div class="fr-ticks">${ticks}</div>
-      <div class="fr-evs">${items.map(({ e, x, row }, i) => `<button class="fr-ev r${row} ${edge(x)}" style="left:${x}%;--c:${e.who.color}" data-f="${i}"><i class="fr-dot"></i><span class="fr-lbl"><span class="fr-k">T${e.lap} · ${e.who.code}</span>${esc(e.short)}</span></button>`).join("")}</div>
+      <div class="fr-evs">${items.map(({ e, x, row }, i) => `<button class="fr-ev r${row} ${edge(x)}" style="left:${x}%;--c:${e.who.color}" data-f="${i}"><i class="fr-dot"></i><span class="fr-lbl"><span class="fr-k">Tour ${e.lap}</span><b>${esc(e.who.last)}</b><span class="fr-t">${esc(e.short)}</span></span></button>`).join("")}</div>
     </div>`;
   const list = `<div class="fr-list">${items.map(({ e }, i) => `<button class="fr-li" style="--c:${e.who.color}" data-f="${i}"><span class="fr-lap">T${e.lap}</span><i class="fr-dot"></i><span><b>${e.who.last}</b> ${esc(e.short)}</span></button>`).join("")}
       ${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `<div class="fr-li sc"><span class="fr-lap">T${r.start}</span><i class="fr-dot"></i><span>${NKlong[r.kind]} jusqu'au tour ${r.end}</span></div>`).join("")}
       ${w ? `<div class="fr-li end"><span class="fr-lap">T${LAPS}</span><i class="fr-dot"></i><span>Drapeau à damier : <b>${esc(w.last)}</b> gagne</span></div>` : ""}</div>`;
-  $("#log").innerHTML = `<div class="log-title">LA COURSE EN UN COUP D'ŒIL</div>${flat}${list}`;
+  $("#log").innerHTML = `<div class="eyebrow fr-title">La course en un coup d'œil</div>${flat}${list}`;
   // Étages des étiquettes : on mesure, puis chaque étiquette prend le premier étage où elle ne chevauche pas sa voisine
   const evEls = $$("#log .fr-ev"); if (evEls.length && $("#log .frise").offsetParent) {
     // Deux étages au plus : si ça ne tient pas, on bascule sur la liste (jamais d'étiquettes qui se chevauchent)
@@ -173,7 +173,7 @@ function renderFrise() {
       if (dx > 70 || r.right + dx > $("#log .frise").getBoundingClientRect().right + 12) { fits = false; return; }
       rowsEnd[row] = r.right + dx; el.classList.add("r" + row); });
     $("#log").classList.toggle("fr-fallback", !fits);
-    $("#log .fr-evs").style.height = (rowsEnd.filter((v) => v > -1e9).length * 46 + 34) + "px";
+    $("#log .fr-evs").style.height = (rowsEnd.filter((v) => v > -1e9).length * 64 + 40) + "px";
   }
   // La liste mobile se trie par tour
   const L = $("#log .fr-list"); [...L.children].sort((a, b) => +a.querySelector(".fr-lap").textContent.slice(1) - +b.querySelector(".fr-lap").textContent.slice(1)).forEach((n) => L.appendChild(n));
