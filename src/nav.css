@@ -196,9 +196,8 @@ body.in-chap { overflow: hidden; }
 @media (min-width: 641px) {
   .duel .team { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .duel .team .dot { flex: none; margin: 0; }
-  .duel { grid-template-columns: 150px minmax(0, 1fr) 300px; }
+  .duel { grid-template-columns: 150px minmax(0, 1fr) 210px; }
   .duel .who { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; }
-  .duel .who .strat { grid-column: 1 / -1; justify-self: start; }
   .duel .who .gap { text-align: right; }
 }
 
@@ -386,3 +385,4 @@ button.fr-row:hover { background: var(--track); }
 .fr-n.hatch { border-radius: 6px; background: repeating-linear-gradient(135deg, #f5c518 0 4px, #e0b000 4px 8px); }
 .fr-row .fr-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
 @media (max-width: 640px) { .fr-row { font-size: 14px; padding: 6px 4px; gap: 8px; grid-template-columns: 22px 38px minmax(0, 1fr); } .fr-rows { margin-top: 12px; } }
+.duel .who .sep { color: var(--muted); margin: 0 2px; } .duel .who .strat { margin-left: 6px; vertical-align: 1px; }
