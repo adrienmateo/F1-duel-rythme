@@ -74,15 +74,21 @@ async function archiveRace(s) {
   return true;
 }
 
-// Résumé pour l'écran d'accueil du site : vainqueur et petit tracé (environ 90 points)
+// Points marqués dans une séance (course ou sprint) : [code, nom, écurie, couleur, points]
+const capName = (d) => String(d.last_name || d.full_name || d.name_acronym || "").toLowerCase().replace(/(^|[\s-])\p{L}/gu, (m) => m.toUpperCase());
+function pointsOf(results, drivers) {
+  return results.filter((r) => r.points > 0).map((r) => { const d = drivers.find((x) => x.driver_number === r.driver_number) || {}; return [d.name_acronym || String(r.driver_number), capName(d), d.team_name || "", "#" + (d.team_colour || "898781"), r.points]; });
+}
+// Résumé pour l'écran d'accueil du site : vainqueur, petit tracé (environ 90 points) et points (page Championnat)
 function summary(sk) {
   try {
     const { pack, trace } = JSON.parse(fs.readFileSync(path.join(DATA, `${sk}.json`), "utf8"));
     const w = pack.results.find((r) => r.position === 1 && !r.dnf && !r.dns && !r.dsq);
     const d = w && pack.drivers.find((x) => x.driver_number === w.driver_number);
     const out = {};
-    if (d) out.winner = { code: d.name_acronym, name: String(d.last_name || d.full_name || d.name_acronym).toLowerCase().replace(/(^|[\s-])\p{L}/gu, (m) => m.toUpperCase()), color: "#" + (d.team_colour || "898781") };
+    if (d) out.winner = { code: d.name_acronym, name: capName(d), color: "#" + (d.team_colour || "898781"), team: d.team_name || "" };
     if (trace && trace.length > 20) { const step = Math.max(1, Math.floor(trace.length / 90)); out.outline = trace.filter((_, i) => i % step === 0); }
+    out.pts = pointsOf(pack.results, pack.drivers);
     return out;
   } catch { return {}; }
 }
@@ -112,6 +118,23 @@ try {
     // Pages de partage (titre + image par GP, pour LinkedIn, WhatsApp…)
     const shared = await sharePages(archived, DATA);
     console.log(`  ${shared} page(s) de partage à jour dans gp/.`);
+    // Sprints : seuls les points comptent (classement du championnat)
+    const sprints = sessions.filter((s) => s.session_name === "Sprint" && !s.is_cancelled && Date.now() - new Date(s.date_end) > 12 * 3600e3).sort((x, y) => new Date(x.date_start) - new Date(y.date_start));
+    const sprintOut = [];
+    for (const s of sprints) {
+      const file = path.join(DATA, `sprint-${s.session_key}.json`);
+      try {
+        if (FORCE || !fs.existsSync(file)) {
+          const results = await api("session_result", { session_key: s.session_key });
+          if (!results.length) continue;
+          const drivers = await api("drivers", { session_key: s.session_key });
+          fs.writeFileSync(file, JSON.stringify({ session_key: s.session_key, date_start: s.date_start, meeting_key: s.meeting_key, location: s.location, country_name: s.country_name, pts: pointsOf(results, drivers) }));
+          console.log(`  Sprint ${s.country_name} ${s.year} archivé.`);
+        }
+        sprintOut.push(JSON.parse(fs.readFileSync(file, "utf8")));
+      } catch (e) { if (e instanceof Closed) throw e; failed++; console.log(`  Sprint ${s.country_name} : échec (${e.message}).`); }
+    }
+    fs.writeFileSync(path.join(DATA, `sprints-${year}.json`), JSON.stringify(sprintOut));
   }
 } catch (e) {
   if (e instanceof Closed) { console.log(e.message); process.exit(0); }

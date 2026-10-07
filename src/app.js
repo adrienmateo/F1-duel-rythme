@@ -1339,7 +1339,7 @@ function setStatus(msg, kind) {
   el.hidden = false; el.classList.toggle("error", kind === "error");
   el.innerHTML = (kind === "load" ? '<span class="spin" aria-hidden="true"></span>' : "") + `<span>${esc(msg)}</span>`;
 }
-let RACES = [], offline = null, ARCH = new Set();
+let RACES = [], SEASON = [], offline = null, ARCH = new Set();
 // Archive publiée avec le site (dossier data/, mise à jour chaque lundi par GitHub Actions)
 async function fromArchive(file) {
   if (location.protocol === "file:") return null;
@@ -1363,6 +1363,8 @@ async function loadRaces(year) {
     if (arch.length) sessions = sessions.filter((x) => ARCH.has(x.session_key) || store.get(x.session_key));
   }
   const now = new Date();
+  // Toute la saison (y compris les GP à venir) : sert à la barre de progression et au « prochain GP » de l'accueil
+  SEASON = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && !emptyRaces().has(s.session_key)).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   // Courses annoncées mais restées sans données (annulées, remplacées) : on ne les propose pas
   const empty = emptyRaces(), weekAgo = Date.now() - 8 * 864e5;
@@ -1371,6 +1373,7 @@ async function loadRaces(year) {
   RACES.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
   if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
   fillGpSelect(); $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
+  CHAMP = null; champButtons();
   return true;
 }
 function fillGpSelect() { const v = $("#gp").value; $("#gp").innerHTML = `<option value="all">Voir tous les Grands Prix…</option>` + RACES.map((r) => `<option value="${r.session_key}">${esc(gpName(r))} ${r.year}</option>`).join(""); if (RACES.some((r) => String(r.session_key) === v)) $("#gp").value = v; }

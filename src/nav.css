@@ -37,10 +37,11 @@ body.at-home { overflow: hidden; }
 .home-empty { color: var(--muted); padding: 30px 0; text-align: center; }
 @media (min-width: 900px) {
   .home-in { grid-template-columns: 1.1fr 1fr; column-gap: 28px; align-items: start; padding-top: 28px; }
-  .home-top, .home-in > .eyebrow, .home-h { grid-column: 1 / -1; }
+  .home-top, .home-in > .eyebrow, .home-h, .home-season { grid-column: 1 / -1; }
   .home-side { display: grid; gap: 10px; align-content: start; }
   .home-t { margin: 0; }
-  .home-list { grid-template-columns: 1fr; max-height: 62vh; overflow: auto; padding-right: 4px; }
+  .home-list { grid-template-columns: 1fr; }
+  .home-feat { position: sticky; top: 24px; }
 }
 
 /* ---------- Chapitres : sommaire en cartes partout, chapitre en plein écran (mobile) ou en grand panneau (ordinateur) ---------- */
@@ -386,3 +387,60 @@ button.fr-row:hover { background: var(--track); }
 .fr-row .fr-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
 @media (max-width: 640px) { .fr-row { font-size: 14px; padding: 6px 4px; gap: 8px; grid-template-columns: 22px 38px minmax(0, 1fr); } .fr-rows { margin-top: 12px; } }
 .duel .who .sep { color: var(--muted); margin: 0 2px; } .duel .who .strat { margin-left: 6px; vertical-align: 1px; }
+/* Accueil : même fond que la page du GP (halo coloré), saison en cours, liste complète sans boîte qui défile */
+.home { background: var(--page); isolation: isolate; }
+.home-halo { position: fixed; z-index: -1; }
+.home-in { position: relative; }
+.home-season { display: grid; gap: 8px; max-width: 560px; }
+.home-season:empty { display: none; }
+.hs-bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; }
+.hs-bar span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.hs-txt { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
+.hs-txt b { color: var(--ink); }
+.hr { background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .15s, border-color .15s, box-shadow .15s; }
+@media (hover: hover) { .hr:hover { transform: translateY(-1px); box-shadow: var(--sh-md); border-color: var(--accent); } }
+.hr-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+.home-feat .hf { background: color-mix(in srgb, var(--surface) 92%, transparent); }
+/* Accueil sans spoiler : saison en cases, tracé du dernier GP en filigrane, liste sans vainqueurs */
+.hs-dots { display: flex; gap: 5px; }
+.hs-dot { flex: 1; height: 10px; border-radius: 5px; border: 1.5px solid color-mix(in srgb, var(--ink) 22%, transparent); box-sizing: border-box; padding: 0; background: transparent; }
+button.hs-dot { cursor: pointer; border: 0; background: var(--ink); transition: transform .15s; }
+button.hs-dot.last { background: var(--accent); }
+button.hs-dot:hover { transform: scaleY(1.6); }
+.home-season { max-width: none; }
+.home-mark { position: absolute; right: 16px; top: 40px; width: 220px; height: 110px; opacity: .1; pointer-events: none; }
+.home-mark .hm-map { width: 100%; height: 100%; }
+.home-mark .hm-map path { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linejoin: round; }
+@media (max-width: 899px) { .home-mark { display: none; } }
+.hf-sub { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; color: var(--ink-2); }
+.hf-sub small { font-size: 12px; color: var(--muted); }
+@media (min-width: 1100px) { .home-in { max-width: 1120px; } .home-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } .home-list .hr { grid-template-columns: 34px 1fr 46px; } .home-list .hr-map { width: 46px; height: 30px; } }
+/* Championnat */
+.champ { z-index: 72; }
+.champ-in { max-width: 1120px; margin: 0 auto; padding: 18px 16px 48px; display: grid; gap: 14px; position: relative; }
+.champ-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.champ-back { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; color: var(--ink-2); font: 600 15px var(--body); cursor: pointer; padding: 6px 0; }
+.champ-back:hover { color: var(--ink); }
+#champ-hide[hidden], .champ-open[hidden] { display: none !important; }
+.champ-mask { position: relative; border-radius: 20px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); min-height: 360px; }
+.champ-blur { padding: 26px; display: grid; gap: 16px; filter: blur(8px); opacity: .7; }
+.champ-blur i { display: block; height: 13px; border-radius: 7px; }
+.champ-veil { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 24px; background: color-mix(in srgb, var(--page) 50%, transparent); color: var(--ink); }
+.champ-veil b { font: 800 22px var(--display); font-stretch: 112%; }
+.champ-veil p { margin: 0; max-width: 360px; color: var(--ink-2); font-size: 15px; }
+.champ-veil small { color: var(--muted); font-size: 12px; }
+.champ-grid { display: grid; gap: 18px; align-items: start; }
+@media (min-width: 900px) { .champ-grid { grid-template-columns: 1.15fr 1fr; } }
+.champ-side { display: grid; gap: 18px; }
+.champ-card { padding: 16px 18px; display: grid; gap: 2px; }
+.champ-h { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px; } .champ-h b { font-size: 15px; } .champ-h span { font: 500 12px var(--mono); color: var(--muted); }
+.cr { display: grid; grid-template-columns: 34px minmax(110px, 160px) minmax(0, 1fr) 52px; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.cr.more { display: none; } .cr.more.on { display: grid; }
+.cr-p { font: 600 12px var(--mono); color: var(--muted); }
+.cr-n { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cr-n i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.cr-b { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; } .cr-b span { display: block; height: 100%; border-radius: 4px; }
+.cr-v { font: 600 13px var(--mono); text-align: right; }
+.champ-wins { gap: 10px; } .champ-wins small { color: var(--muted); font-size: 12px; }
+.cw-row { display: flex; gap: 4px; } .cw { flex: 1; height: 26px; border-radius: 5px; }
+@media (max-width: 640px) { .cr { grid-template-columns: 30px minmax(0, 1fr) 70px 44px; } }

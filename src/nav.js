@@ -28,7 +28,7 @@ const villeFr = (r) => VILLES[r.location] || r.location || "";
 const paysFr = (r) => LIEU_PAYS[r.location] || (r.country_name === "United States" && r.location && !/austin/i.test(r.location) ? villeFr(r) : PAYS[r.country_name] || r.country_name);
 // Nom affiché d'un GP : pays en français, plus la ville quand le pays a deux courses dans l'année
 function gpName(r) {
-  const p = paysFr(r), twin = RACES.some((x) => x !== r && x.year === r.year && paysFr(x) === p);
+  const p = paysFr(r), twin = RACES.some((x) => x.session_key !== r.session_key && x.year === r.year && paysFr(x) === p);
   return twin && r.location ? `${p} · ${villeFr(r)}` : p;
 }
 const dateFr = (iso) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
@@ -60,17 +60,28 @@ function renderHome() {
   }));
   $("#home-y").textContent = $("#year").value;
   if (!RACES.length) { $("#home-feat").innerHTML = `<p class="home-empty">Aucun Grand Prix disponible pour le moment.</p>`; $("#home-list").innerHTML = ""; return; }
-  const list = [...RACES].reverse(), f = list[0], fw = winnerOf(f);
+  // Aucun résultat sur l'accueil (pas de spoiler) : le vainqueur se découvre sur la page du GP
+  const list = [...RACES].reverse(), f = list[0];
   const round = (r) => "R" + String(RACES.indexOf(r) + 1).padStart(2, "0");
+  // La saison : une case par GP (pleine = couru, rouge = le dernier, vide = à venir) et le prochain GP
+  const season = (SEASON.length ? SEASON : RACES).filter((r) => r.year === f.year);
+  const all = [...new Map([...season, ...RACES].map((r) => [r.session_key, r])).values()].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  const next = all.find((r) => new Date(r.date_start) > new Date() && !RACES.includes(r));
+  const days = next ? Math.ceil((new Date(next.date_start) - Date.now()) / 864e5) : 0;
+  $("#home-season").innerHTML = `<div class="hs-dots">${all.map((r) => { const done = RACES.includes(r), last = r === f, t = `${done ? round(r) + " · " : ""}${gpName(r)} · ${dateFr(r.date_start)}${done ? "" : " · à venir"}`;
+      return done ? `<button class="hs-dot on${last ? " last" : ""}" data-sk="${r.session_key}" title="${esc(t)}" aria-label="${esc(t)}"></button>` : `<span class="hs-dot" title="${esc(t)}"></span>`; }).join("")}</div>
+    <div class="hs-txt"><span><b>${RACES.length}</b> GP courus sur ${all.length}</span>${next ? `<span>Prochain : <b>${esc(gpName(next))}</b> · ${dateFr(next.date_start)}${days <= 14 ? ` · ${days <= 1 ? "demain" : `dans ${days} jours`}` : ""}</span>` : ""}</div>`;
+  const ol = outlineOf(f) || [];
+  $("#home-mark").innerHTML = ol.length >= 10 ? outlineSvg(ol, 260, 130, 8, "hm-map") : "";
   $("#home-feat").innerHTML = `<button class="hf" data-sk="${f.session_key}">
       <span class="hf-top"><span class="eyebrow">Dernier GP · ${round(f)}</span><span class="mono">${dateFr(f.date_start)}</span></span>
-      ${outlineSvg(outlineOf(f), 320, 150, 14, "hf-map")}
+      ${ol.length >= 10 ? outlineSvg(ol, 320, 150, 14, "hf-map") : ""}
       <span class="hf-name">${esc(gpName(f))}</span>
-      ${fw ? `<span class="hf-win"><i style="background:${fw.color}"></i>Vainqueur : <b>${esc(fw.name)}</b></span>` : ""}
+      <span class="hf-sub">${esc(villeFr(f))}<small>Le résultat est sur la page du GP</small></span>
       <span class="hf-cta">Voir le GP <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span>
     </button>`;
-  $("#home-list").innerHTML = list.slice(1).map((r) => { const w = winnerOf(r); return `<button class="hr" data-sk="${r.session_key}">
-      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(gpName(r))}</b><small>${dateFr(r.date_start)}${w ? " · " + esc(w.name) : ""}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`; }).join("");
+  $("#home-list").innerHTML = list.slice(1).map((r) => `<button class="hr" data-sk="${r.session_key}">
+      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(gpName(r))}</b><small>${dateFr(r.date_start)}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`).join("");
   $$("#home [data-sk]").forEach((b) => b.addEventListener("click", () => navGP(b.dataset.sk)));
 }
 function showHome(on) {
@@ -181,6 +192,8 @@ let navLoading = null;
 async function navRoute() {
   const { g, c } = parseHash();
   if (g.startsWith("paddock=")) { pkImport(g.slice(8)); history.replaceState(null, "", location.pathname); closeChapter(); showHome(true); return; } // lien de sauvegarde de la collection
+  if (g === "championnat") { closeChapter(); showChamp(true); return; }
+  showChamp(false);
   if (!g) { closeChapter(); showHome(true); return; }
   let r = RACES.find((x) => slugOf(x) === g);
   if (!r) { // GP d'une autre saison : on charge sa liste
@@ -249,3 +262,63 @@ $("#share-gp")?.addEventListener("click", async () => {
   try { if (navigator.share) { await navigator.share({ title, url }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
   try { await navigator.clipboard.writeText(url); toast("Lien du GP copié"); } catch { prompt("Copie ce lien :", url); }
 });
+
+/* --- Championnat : points pilotes et écuries (courses + sprints archivés), masqué par défaut pour ne rien dévoiler --- */
+let CHAMP = null; // { year, races, sprints }
+async function champData(year) {
+  if (CHAMP && CHAMP.year === year) return CHAMP;
+  const races = (await fromArchive(`races-${year}.json`)) || [], sprints = (await fromArchive(`sprints-${year}.json`)) || [];
+  CHAMP = { year, races: races.filter((r) => r.pts && r.pts.length).sort((a, b) => new Date(a.date_start) - new Date(b.date_start)), sprints };
+  return CHAMP;
+}
+// Le bouton « Championnat » n'apparaît que si l'archive contient des points
+async function champButtons() {
+  const d = await champData(+$("#year").value);
+  $$(".champ-open").forEach((b) => (b.hidden = !d.races.length));
+}
+const champSeen = () => { try { return localStorage.getItem("f1duel:champ") === "1"; } catch { return false; } };
+const champSet = (v) => { try { v ? localStorage.setItem("f1duel:champ", "1") : localStorage.removeItem("f1duel:champ"); } catch {} };
+async function renderChamp() {
+  const d = await champData(+$("#year").value), body = $("#champ-body");
+  const last = d.races.at(-1), nR = d.races.length;
+  $("#champ-eyebrow").textContent = last ? `Championnat ${d.year} · après ${nR} GP${d.sprints.length ? ` et ${d.sprints.length} sprint${d.sprints.length > 1 ? "s" : ""}` : ""} · ${gpName(last)}` : `Championnat ${d.year}`;
+  $("#champ-back-t").textContent = RACE && NAV.fromGP ? `${gpName(RACE)} ${RACE.year}` : "Tous les Grands Prix";
+  const shown = champSeen(); $("#champ-hide").hidden = !shown;
+  if (!shown) {
+    body.innerHTML = `<div class="champ-mask"><div class="champ-blur" aria-hidden="true">${[70, 62, 55, 49, 41, 35, 28].map((w, i) => `<i style="width:${w}%;background:${["#27F4D2", "#3671C6", "#FF8000", "#E8002D", "#229971", "#64C4FF", "#B6BABD"][i]}"></i>`).join("")}</div>
+      <div class="champ-veil"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></svg>
+      <b>Classement masqué</b><p>Il contient les résultats de toutes les courses déjà courues. Pas encore vu le dernier GP ?</p>
+      <button type="button" class="btn" id="champ-show">Révéler le classement</button><small>Ton choix est gardé sur cet appareil</small></div></div>`;
+    $("#champ-show").addEventListener("click", () => { champSet(true); renderChamp(); });
+    return;
+  }
+  // Totaux : courses + sprints ; on garde la dernière écurie et la dernière couleur connues de chaque pilote
+  const D = new Map(), Tm = new Map();
+  const add = (pts) => pts.forEach(([code, name, team, color, p]) => {
+    const e = D.get(code) || { code, name, team, color, pts: 0, wins: 0 }; e.pts += p; e.team = team || e.team; e.color = color || e.color; D.set(code, e);
+    const t = Tm.get(team) || { team, color, pts: 0 }; t.pts += p; t.color = color || t.color; Tm.set(team, t);
+  });
+  d.races.forEach((r) => add(r.pts));
+  d.sprints.forEach((s) => add(s.pts || []));
+  d.races.forEach((r) => { const e = r.winner && D.get(r.winner.code); if (e) e.wins++; }); // départage à égalité de points
+  const drv = [...D.values()].sort((a, b) => b.pts - a.pts || b.wins - a.wins), tms = [...Tm.values()].filter((t) => t.team).sort((a, b) => b.pts - a.pts);
+  const fmt = (x) => String(Math.round(x * 10) / 10).replace(".", ",");
+  const rows = (list, max, kind) => list.map((e, i) => `<div class="cr${i >= 10 && kind === "d" ? " more" : ""}"><span class="cr-p">P${i + 1}</span><span class="cr-n">${kind === "d" ? `<i style="background:${e.color}"></i>${esc(e.name)}` : esc(e.team)}</span><span class="cr-b"><span style="width:${(e.pts / max) * 100}%;background:${e.color}"></span></span><span class="cr-v">${fmt(e.pts)}</span></div>`).join("");
+  const wins = d.races.map((r) => `<span class="cw" style="background:${r.winner?.color || "var(--track)"}" title="${esc(`${gpName(r)} · ${r.winner?.name || ""}`)}"></span>`).join("");
+  body.innerHTML = `<div class="champ-grid">
+    <div class="card champ-card"><div class="champ-h"><b>Pilotes</b><span>points</span></div>${rows(drv, drv[0]?.pts || 1, "d")}${drv.length > 10 ? `<button type="button" class="see-all" id="champ-more">Voir les ${drv.length - 10} autres pilotes</button>` : ""}</div>
+    <div class="champ-side"><div class="card champ-card"><div class="champ-h"><b>Écuries</b><span>points</span></div>${rows(tms, tms[0]?.pts || 1, "t")}</div>
+      <div class="card champ-card champ-wins"><b>Les victoires de la saison</b><div class="cw-row">${wins}</div><small>Une case par GP, à la couleur de l'écurie gagnante. Survole une case pour le GP et son vainqueur.</small></div></div></div>
+    <p class="fine">Points des Grands Prix${d.sprints.length ? " et des sprints" : ""} archivés. Pénalités appliquées après coup par les commissaires : non prises en compte.</p>`;
+  $("#champ-more")?.addEventListener("click", (e) => { body.querySelectorAll(".cr.more").forEach((r) => r.classList.add("on")); e.currentTarget.remove(); });
+}
+function showChamp(on) {
+  const el = $("#champ"); if (!el) return;
+  if (on === !el.hidden && on) { renderChamp(); return; }
+  if (on) { NAV.champ = true; document.body.classList.add("at-home"); renderChamp(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; }
+  else if (NAV.champ) { NAV.champ = false; el.classList.remove("on"); setTimeout(() => { if (!NAV.champ) el.hidden = true; }, 320); if (!NAV.home) document.body.classList.remove("at-home"); }
+}
+document.addEventListener("click", (e) => { if (e.target.closest(".champ-open")) { $("#msheet-menu")?.classList.remove("on"); $("#mscrim")?.classList.remove("on"); navGo("#championnat"); } });
+$("#champ-back")?.addEventListener("click", () => (RACE && NAV.fromGP ? navGP(RACE.session_key) : navGo("")));
+$("#champ-hide")?.addEventListener("click", () => { champSet(false); renderChamp(); });
+addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.champ) $("#champ-back").click(); });

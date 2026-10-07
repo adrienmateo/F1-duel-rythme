@@ -49,10 +49,11 @@ Dépôt : https://github.com/adrienmateo/F1-duel-rythme. L'ancienne adresse Netl
 
 - Liste des GP : `gpName()` (nav.js) = pays en français, ville ajoutée si le pays a deux courses dans l'année, `LIEU_PAYS` corrige les courses mal étiquetées par OpenF1 (ex. « Bahrain » à Kuala Lumpur → Malaisie). Courses vides masquées : absentes de l'archive après 8 jours, ou vides au chargement après 2 jours (mémorisées dans `f1duel:v4:empty`).
 - Newsletter masquée (`#abonnement hidden`) tant que le webhook Make n'est pas branché ; la désinscription passe par le lien du mail (`#desinscription`).
-- Accueil : croix et Échap ramènent au GP déjà ouvert ; menu des GP avec une 1re ligne « Voir tous les Grands Prix… » (valeur `all`).
+- Accueil SANS SPOILER (choix validé : aucun vainqueur ni résultat avant d'ouvrir un GP) : même fond à halo que la page du GP, saison en cases (`.hs-dot` : pleine = couru et cliquable, rouge = dernier, vide = à venir, `SEASON` = toutes les courses de l'année) + prochain GP, tracé du dernier GP en filigrane à droite du titre, liste complète sans boîte qui défile (2 colonnes dès 1100 px, carte du dernier GP collante sur ordinateur) ; croix et Échap ramènent au GP déjà ouvert ; menu des GP avec une 1re ligne « Voir tous les Grands Prix… » (valeur `all`).
 - Typographie : échelle de tailles 11 / 12 / 13 / 15 / 18 / 22 / 26 / 32 px (titres en clamp), jamais sous 11 px ; espace fine insécable automatique avant ? ! : ; » et après « (`frTypo` + MutationObserver dans nav.js).
 - Couleurs proches : 2e pilote d'une écurie en tirets, pilote d'une autre écurie à couleur proche en pointillés (`dashIf`).
 - Explorer : sur ordinateur, seule la ligne « Comment lire » explique (le bloc « Ce que ça montre » du circuit n'est visible que sur mobile) ; légende Régularité sous la carte mobile.
+- Championnat (`#championnat`, overlay `#champ` dans nav.js) : masqué par défaut (flou + « Révéler le classement », choix gardé dans `f1duel:champ`, « Masquer à nouveau »), points pilotes (top 10 + voir les autres) et écuries, « Les victoires de la saison » (une case par GP à la couleur de l'écurie gagnante). Données : `pts` de `data/races-<année>.json` + `data/sprints-<année>.json` (archive.mjs archive aussi les résultats des sprints dans `data/sprint-<sk>.json`). Bouton `.champ-open` (accueil, menu mobile) masqué tant que l'archive n'a pas de points. Pénalités d'après course non prises en compte.
 - Menus : barre d'onglets mobile supprimée ; menu du haut et menu ☰ mobile = Le GP, Les moments, La course, Les duels, Stratégies, Explorer.
 
 ## Pièges connus
