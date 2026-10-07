@@ -24,11 +24,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Outil d'images pour les aperçus de partage
+        run: npm i @resvg/resvg-js@2 --no-save
       - name: Télécharger les courses terminées
+        env:
+          SITE_URL: ${{ vars.DASHBOARD_URL }}
         run: node archive.mjs ${{ inputs.tout_refaire && '--force' || '' }}
       - name: Enregistrer l'archive dans le dépôt
         run: |
-          git add data
+          mkdir -p gp && git add data gp
           if git diff --cached --quiet; then echo "Rien de nouveau."; exit 0; fi
           git config user.name "archive-bot"
           git config user.email "archive-bot@users.noreply.github.com"
