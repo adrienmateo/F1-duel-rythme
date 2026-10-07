@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { sharePages } from "./share.mjs";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DATA = path.join(ROOT, "data");
@@ -101,6 +102,9 @@ try {
     // Liste des courses lue par le site (seulement celles qui sont archivées)
     const keep = ["session_key", "meeting_key", "session_name", "session_type", "date_start", "date_end", "country_name", "location", "circuit_short_name", "year", "is_cancelled"];
     fs.writeFileSync(path.join(DATA, `races-${year}.json`), JSON.stringify(archived.map((s) => ({ ...Object.fromEntries(keep.map((k) => [k, s[k]])), ...summary(s.session_key) }))));
+    // Pages de partage (titre + image par GP, pour LinkedIn, WhatsApp…)
+    const shared = await sharePages(archived, DATA);
+    console.log(`  ${shared} page(s) de partage à jour dans gp/.`);
   }
 } catch (e) {
   if (e instanceof Closed) { console.log(e.message); process.exit(0); }

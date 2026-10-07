@@ -34,7 +34,7 @@ function buildFacts() {
     const toEnd = lap + held > LAPS;
     out.push({ lap, cls: "lead", label: lap === 1 ? "Départ" : "Prise de tête", score: 70 + (L === win && toEnd ? 25 : 0) + Math.min(10, held / 3),
       txt: lap === 1 ? `<b>${esc(L.last)}</b> prend la tête au départ` : `<b>${esc(L.last)}</b> prend la tête`,
-      detail: `${prev ? (inPit ? `Pendant l'arrêt aux stands ${deName(esc(prev.last))}. ` : `Devant ${esc(prev.last)}. `) : ""}${toEnd ? "Il ne la lâchera plus." : `Il la garde ${plural(held, "tour")}.`}`,
+      detail: `${prev ? (inPit ? `Pendant l'arrêt aux stands ${deName(esc(prev.last))}. ` : `Il prend la tête à ${esc(prev.last)}. `) : ""}${toEnd ? "Il ne la lâchera plus." : (() => { const tot = L.pos.filter((p) => p === 1).length; return `Il la garde ${plural(held, "tour")} d'affilée${tot > held ? ` (${tot} tours en tête au total)` : ""}.`; })()}`,
       ds: [L, prev].filter(Boolean), win: [Math.max(1, lap - 3), Math.min(LAPS, lap + 4)], main: L, from: Math.max(1, lap - 1), to: lap, who: L, short: "prend la tête" });
     cur = L;
   }
@@ -112,7 +112,8 @@ function renderMoments() {
   });
 }
 const momRange = (m) => { const ps = []; for (let l = m.win[0]; l <= m.win[1]; l++) m.ds.forEach((d) => { const p = pAt(d, l); if (p) ps.push(p); }); return ps.length ? [Math.max(1, Math.min(...ps) - 1), Math.max(...ps) + 1] : [1, 2]; };
-const momH = (m) => { const [a, b] = momRange(m); return 34 + Math.min(14, b - a + 1) * 24; };
+const MOM_ROW = 28; // même hauteur de ligne par position pour tous les moments
+const momH = (m) => { const [a, b] = momRange(m); return 34 + Math.max(1, b - a) * MOM_ROW; };
 function momDraw(el, m, at) {
   const svg = $(".mom-svg", el), W = Math.max(300, Math.round(svg.getBoundingClientRect().width) || 640), H = momH(m), [p0, p1] = momRange(m), [l0, l1] = m.win;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
@@ -129,11 +130,14 @@ function momDraw(el, m, at) {
     if (pts.length > 1) s += `<polyline points="${pts.join(" ")}" fill="none" stroke="${d.color}" stroke-width="${d === m.main ? 3.2 : 2}" stroke-linejoin="round" opacity="${d === m.main ? 1 : .55}"/>`;
   });
   svg.innerHTML = s;
-  m.ds.forEach((d) => {
-    const p = posF(d, Math.min(at, l1)); if (p == null || (DNF[d.code] && at > DNF[d.code] + 1)) return;
-    const g = hcEl("g", { transform: `translate(${X(Math.min(at, l1)).toFixed(1)},${Y(p).toFixed(1)}) scale(.7)` }, svg);
-    drawTopCar(g, d.color, String(d.dn));
-    hcEl("text", { x: 30, y: 1, class: "mom-code", "dominant-baseline": "middle" }, g).textContent = d.code;
+  // Voitures, puis trigrammes décalés quand deux voitures sont trop proches (jamais l'un sur l'autre)
+  const cars = m.ds.map((d) => { const p = posF(d, Math.min(at, l1)); return p == null || (DNF[d.code] && at > DNF[d.code] + 1) ? null : { d, y: Y(p) }; }).filter(Boolean).sort((a, b) => a.y - b.y);
+  let lastY = -99; cars.forEach((c) => { c.ty = Math.max(c.y, lastY + 15); lastY = c.ty; });
+  const x = X(Math.min(at, l1));
+  cars.forEach((c) => {
+    const g = hcEl("g", { transform: `translate(${x.toFixed(1)},${c.y.toFixed(1)}) scale(.7)` }, svg);
+    drawTopCar(g, c.d.color, String(c.d.dn));
+    hcEl("text", { x: (x + 22).toFixed(1), y: c.ty.toFixed(1), class: "mom-code", "dominant-baseline": "middle" }, svg).textContent = c.d.code;
   });
 }
 function momPlay(el, m) {
@@ -158,12 +162,11 @@ function renderFrise() {
   // Deux pastilles trop proches : la seconde passe au-dessus de la piste
   let lastX = -99, up = false; items.forEach((it) => { up = it.x - lastX < 4.5 ? !up : false; it.up = up; lastX = it.x; });
   const ink = (hex) => { const h = String(hex || "#888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const L = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255); return L > 165 ? "#14161a" : "#fff"; };
-  let zlX = -99, zlHi = false;
-  const zones = neut.map((r) => { zlHi = X(r.start) - zlX < 16 ? !zlHi : false; zlX = X(r.start); return `<span class="fr-zone${r.kind === "Rouge" ? " red" : ""}" style="left:${X(r.start)}%;width:${Math.max(1.2, X(r.end) - X(r.start))}%"></span><span class="fr-zl${zlHi ? " hi" : ""}${X(r.start) > 80 ? " rt" : ""}" style="left:${X(r.start)}%">${NK[r.kind] === "Drapeau rouge" ? "Rouge" : NK[r.kind]} · T${r.start}${r.end > r.start ? "–" + r.end : ""}</span>`; }).join("");
+  const zones = neut.map((r) => `<span class="fr-zone${r.kind === "Rouge" ? " red" : ""}" style="left:${X(r.start)}%;width:${Math.max(1.2, X(r.end) - X(r.start))}%" title="${NKlong[r.kind]} · tours ${r.start} à ${r.end}"></span>`).join("");
   const step = LAPS > 40 ? 10 : 5, ticks = [1]; for (let l = step; l < LAPS - step * 0.8; l += step) ticks.push(l); ticks.push(LAPS);
   const pins = items.map((it) => `<button class="fr-pin${it.up ? " up" : ""}" style="left:${it.x}%;background:${it.color};color:${ink(it.color)}" data-i="${it.n - 1}" aria-label="${esc(it.meta + " : " + it.title)}">${it.n}</button>`).join("");
   const card = (it) => `<button class="fr-card" data-i="${it.n - 1}"><span class="fr-meta"><span class="fr-n" style="background:${it.color};color:${ink(it.color)}">${it.n}</span>${it.meta}</span><b>${esc(it.title)}</b><span class="fr-t">${esc(it.txt)}</span></button>`;
-  const end = w ? `<div class="fr-card end"><span class="fr-meta"><span class="fr-n flag"></span>Tour ${LAPS} · Arrivée</span><b style="color:${w.color}">${esc(w.last)} gagne</b><span class="fr-t">${p2 ? `Devant ${esc(p2.last)}.` : ""}</span></div>` : "";
+  const end = w ? `<div class="fr-card end"><span class="fr-meta"><span class="fr-n flag"></span>Tour ${LAPS} · Arrivée</span><b><i class="fr-dot" style="background:${w.color}"></i>${esc(w.last)} gagne</b><span class="fr-t">${p2 ? `Devant ${esc(p2.last)}.` : ""}</span></div>` : "";
   $("#log").innerHTML = `<div class="fr-head"><span class="eyebrow">La course en un coup d'œil</span><span class="fr-laps">${LAPS} tours</span></div>
     <div class="frise"><div class="fr-road">${zones}<span class="fr-flag" title="Arrivée"></span>${pins}</div>
       <div class="fr-ticks">${ticks.map((l) => `<span style="left:${X(l)}%">T${l}</span>`).join("")}</div></div>

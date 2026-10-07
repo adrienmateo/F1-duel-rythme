@@ -26,7 +26,7 @@
 @media (max-width: 720px) {
   #gp-section .sec-head { grid-template-columns: 1fr; }
   #gp-section .sec-tools { width: 66%; max-width: 250px; margin-top: 4px; }
-  .hc-cap { font-size: 9.5px; }
+  .hc-cap { font-size: 11px; }
   .hc-lights { gap: 6px; padding: 6px 8px; } .hc-lights i { width: 12px; height: 12px; }
 }
 /* Menu des rubriques : la pastille glisse d'une rubrique à l'autre */

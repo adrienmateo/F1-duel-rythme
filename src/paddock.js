@@ -51,7 +51,7 @@ ${right}
 <path d="M28 46 Q27 12 60 10 Q93 12 92 46 Q92 64 84 73 Q73 79 60 79 Q47 79 36 73 Q28 64 28 46 Z" fill="${hel}" ${o} stroke-width="1.8"/><path d="M33 30 Q45 13 60 12 Q75 13 87 30 Q74 22 60 23 Q46 22 33 30 Z" fill="${c}"/><path d="M30 52 Q36 62 44 60 L40 72 Q31 66 30 52 Z M90 52 Q84 62 76 60 L80 72 Q89 66 90 52 Z" fill="${c}"/><path d="M54 9 L66 9 L65 4 Q60 1.5 55 4 Z" fill="${dk}" ${o} stroke-width="1.2"/>
 <path d="M32 38 Q60 29 88 38 L87 53 Q60 60 33 53 Z" fill="url(#${id})" ${o} stroke-width="1.6"/><path d="M38 41 Q50 36 64 36" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".6"/><path d="M70 37.5 Q76 38 80 39.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".4"/><rect x="86" y="42" width="6" height="5" rx="1.5" fill="#e9eaee" stroke="#1b1e24" stroke-width="1"/>
 <path d="M44 64 Q60 70 76 64 L74 72 Q60 76 46 72 Z" fill="${dk}" ${o} stroke-width="1.2"/><path d="M50 67 L54 70 M58 68.5 L58 72 M66 67 L62 70" stroke="#5a5e66" stroke-width="1.1" stroke-linecap="round"/><path d="M40 24 Q44 20 50 18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"/>
-${sparks}${ghost ? `<text x="60" y="52" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" font-family="Archivo, sans-serif">?</text>` : ""}</svg>`;
+${sparks}${ghost ? `<text x="60" y="52" text-anchor="middle" font-size="22" font-weight="800" fill="#fff" font-family="Archivo, sans-serif">?</text>` : ""}</svg>`;
 }
 /* --- Le pilote qui passe la tête : les mains, puis le casque --- */
 function peekSvg({ color, number, gold }) {
@@ -176,7 +176,7 @@ function pkCollection() {
   const golds = Object.values(col.gold);
   const m = document.createElement("div"); m.className = "pk-modal pk-coll-wrap"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-label", "Ta collection");
   m.innerHTML = `<div class="pk-coll">
-    <div class="pk-coll-top"><div><div class="eyebrow">Ton paddock</div><h2>Ta collection</h2><p>Les pilotes passent la tête au bord de l'écran de temps en temps. Attrape-les tous.</p></div>
+    <div class="pk-coll-top"><div><div class="eyebrow">Ton paddock</div><h2>Ta collection</h2><p>Pendant que tu lis un GP, un pilote passe de temps en temps la tête en bas de l'écran (toutes les 2 à 3 minutes environ). Clique ou touche-le avant qu'il reparte : il rejoint ta collection. Les vainqueurs dorés n'apparaissent que sur le GP qu'ils ont gagné.</p></div>
       <button class="icon-btn pk-x" aria-label="Fermer la collection"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="pk-stats"><div><span>Pilotes</span><b>${st.got} <small>/ ${st.tot}</small></b><i><b style="width:${Math.round((st.got / Math.max(1, st.tot)) * 100)}%"></b></i></div>
       <div class="gold"><span>Vainqueurs dorés</span><b>${st.gold} <small>GP</small></b></div><div class="gold"><span>Rares</span><b>${st.rares} <small>/ 3</small></b></div></div>
@@ -205,7 +205,7 @@ function pkFooter() {
   let a = $("#pk-link");
   if (!st.got && !st.gold && !st.rares) { a?.remove(); return; }
   if (!a) { a = document.createElement("button"); a.id = "pk-link"; a.className = "linklike pk-link"; f.appendChild(a); a.addEventListener("click", pkCollection); }
-  a.textContent = `Ta collection de pilotes · ${st.got} / ${st.tot}`;
+  a.textContent = `Ta collection : ${st.got} pilote${st.got > 1 ? "s" : ""} attrapé${st.got > 1 ? "s" : ""} sur ${st.tot}`; a.title = "Des pilotes passent la tête en bas de l'écran pendant ta lecture : attrape-les pour compléter ta collection.";
 }
 addEventListener("keydown", (e) => { if (e.key === "Escape") { const m = document.querySelector(".pk-modal"); if (m) { m.querySelector(".pk-close, .pk-x")?.click(); e.stopPropagation(); } } }, true);
 setTimeout(pkFooter, 1500);

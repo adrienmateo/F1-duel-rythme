@@ -76,7 +76,7 @@ function renderHome() {
 function showHome(on) {
   NAV.home = on; const el = $("#home");
   document.body.classList.toggle("at-home", on);
-  if (on) { renderHome(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; }
+  if (on) { renderHome(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; homeX(); }
   else { el.classList.remove("on"); setTimeout(() => { if (!NAV.home) el.hidden = true; }, 320); NAV.homeWait.splice(0).forEach((r) => r()); }
 }
 
@@ -135,7 +135,7 @@ function renderChapterCards() {
     course: [first("read-course"), sw(finishers.slice(0, 3).map((d) => d.color))],
     rythme: [first("read-rythme"), sw(paced.slice(0, 3).map((d) => d.color))],
     duels: [first("read-duels"), sw(duels.slice(0, 3).map((d) => d.color))],
-    pneus: [(() => { const c = {}; finishers.forEach((d) => (c[d.pits.length] = (c[d.pits.length] || 0) + 1)); const top = Object.entries(c).sort((a, b) => b[1] - a[1])[0]; return top ? `Le plus courant : ${+top[0] === 0 ? "aucun arrêt" : plural(+top[0], "arrêt")} (${top[1]} pilote${top[1] > 1 ? "s" : ""}). Qui a choisi quels pneus, et quand.` : ""; })(), `<span class="mc-sw">${["S", "M", "H"].map((c) => `<i style="background:${COMP[c].c}"></i>`).join("")}</span>`],
+    pneus: [(() => { const c = {}; finishers.forEach((d) => (c[d.pits.length] = (c[d.pits.length] || 0) + 1)); const top = Object.entries(c).sort((a, b) => b[1] - a[1])[0]; return top ? `Le plus courant : ${+top[0] === 0 ? "aucun arrêt" : plural(+top[0], "arrêt")} (${top[1]} pilote${top[1] > 1 ? "s" : ""}). Qui a choisi quels pneus, et quand.` : ""; })(), `<span class="mc-sw mc-tyres">${[...new Set(drivers.flatMap((d) => d.stints.map((st) => st[0])))].filter((c) => COMP[c] && c !== "?").map((c) => `<span><i style="background:${COMP[c].c}"></i>${COMP[c].name}</span>`).join("")}</span>`],
     explorer: ["Choisis jusqu'à 4 pilotes : temps au tour, écart en piste, régularité, et leur meilleur tour sur le circuit.", sw(finishers.slice(0, 2).map((d) => d.color))],
   };
   box.innerHTML = `<div class="mc-title">Comprendre la course</div>` + CHAPTERS.map((c, i) => {
@@ -188,7 +188,7 @@ async function navRoute() {
     if (y && y !== +$("#year").value && [...$("#year").options].some((o) => +o.value === y)) { $("#year").value = y; try { await loadRaces(y); } catch {} r = RACES.find((x) => slugOf(x) === g); }
   }
   if (!r) { navGo("", true); return; }
-  showHome(false);
+  showHome(false); NAV.fromGP = true;
   if ($("#gp").value !== String(r.session_key) || !RACE || RACE.session_key !== r.session_key) {
     $("#gp").value = r.session_key;
     if (!(navLoading && navLoading.sk === r.session_key)) { navLoading = { sk: r.session_key, p: loadGP(r.session_key) }; navLoading.p.finally(() => { if (navLoading?.sk === r.session_key) navLoading = null; }); }
@@ -199,6 +199,10 @@ addEventListener("popstate", navRoute);
 $("#mchap-back").addEventListener("click", chapBack);
 $("#mchap-x").addEventListener("click", chapBack);
 $("#mchap").addEventListener("click", (e) => { if (e.target === e.currentTarget) chapBack(); }); // clic à côté du panneau (ordinateur)
+// Croix et Échap de l'accueil : retour au GP déjà chargé (seulement si on vient d'un GP)
+function homeX() { const x = $("#home-x"); if (x) x.hidden = !(RACE && NAV.fromGP); }
+$("#home-x")?.addEventListener("click", () => RACE && navGP(RACE.session_key));
+addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.home && RACE && NAV.fromGP && !document.querySelector(".pk-modal, .overlay:not([hidden])")) navGP(RACE.session_key); });
 addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.chap && !document.querySelector(".msheet.on, .overlay:not([hidden])")) chapBack(); });
 // Liens internes (menu du haut, raccourcis) : un chapitre s'ouvre, le reste défile jusqu'à la bonne partie
 document.addEventListener("click", (e) => {
@@ -219,3 +223,29 @@ $$(".brand").forEach((b) => { b.style.cursor = "pointer"; b.addEventListener("cl
   ov.addEventListener("touchmove", (e) => { if (sx == null) return; const t = e.touches[0], dx = t.clientX - sx; if (dx > 0 && Math.abs(t.clientY - sy) < 70) ov.style.transform = `translateX(${dx}px)`; }, { passive: true });
   ov.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; ov.style.transform = ""; sx = null; if (dx > 90) $("#mchap-back").click(); });
 })();
+
+/* --- Typographie française : espace fine insécable avant ? ! : ; » et après « (le signe ne se retrouve jamais seul en début de ligne) --- */
+function frTypo(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentElement && !n.parentElement.closest("script, style, textarea, input, code") && /( [?!:;»]|« )/.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
+  const list = []; while (w.nextNode()) list.push(w.currentNode);
+  list.forEach((n) => { n.nodeValue = n.nodeValue.replace(/ ([?!:;»])/g, " $1").replace(/« /g, "« "); });
+}
+(() => {
+  let pend = new Set(), raf = 0;
+  const run = () => { raf = 0; const roots = [...pend]; pend = new Set(); roots.forEach((r) => r.isConnected && frTypo(r)); };
+  new MutationObserver((ms) => { ms.forEach((m) => { const t = m.type === "characterData" ? m.target.parentElement : m.target; if (t) pend.add(t); }); if (!raf) raf = requestAnimationFrame(run); })
+    .observe(document.body, { childList: true, subtree: true, characterData: true });
+  frTypo(document.body);
+})();
+
+/* --- Partager un GP : lien vers sa page de partage (titre + image) quand elle existe, sinon l'adresse du GP --- */
+function shareUrl() {
+  if (!RACE) return location.href;
+  const base = location.href.split("#")[0].replace(/[^/]*$/, ""), slug = slugOf(RACE);
+  return ARCH.has(RACE.session_key) && location.protocol !== "file:" ? `${base}gp/${slug}.html` : `${base}#${slug}`;
+}
+$("#share-gp")?.addEventListener("click", async () => {
+  const url = shareUrl(), title = `${gpName(RACE)} ${RACE.year} · ${$("#headline").textContent}`;
+  try { if (navigator.share) { await navigator.share({ title, url }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+  try { await navigator.clipboard.writeText(url); toast("Lien du GP copié"); } catch { prompt("Copie ce lien :", url); }
+});
