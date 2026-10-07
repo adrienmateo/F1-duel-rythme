@@ -1149,6 +1149,14 @@ button.hs-dot:hover { transform: none; }
 @media (prefers-reduced-motion: reduce) { .hs-peek, .hs-dot { transition: none; } .hs-peek-in.in > * { animation: none; } }
 .hs-peek:not(.on) .hs-peek-in { opacity: 0; border-width: 0; }
 .hs-peek-in { transition: opacity .25s; }
+/* Mobile : la rangée entière est une zone tactile de 44 px qu'on parcourt du doigt */
+@media (hover: none) {
+  .hs-dots { height: 44px; touch-action: pan-y; gap: 3px; cursor: default; }
+  .hs-dots.scrub .hs-dot.hot { height: 22px; }
+  .hs-dot { pointer-events: none; }
+}
+.hs-hint { display: none; color: var(--muted); }
+@media (hover: none) { .hs-hint { display: inline; } }
 
 </style>
 </head>
@@ -3576,7 +3584,7 @@ function renderHome() {
   $("#home-season").innerHTML = `<div class="hs-dots">${all.map((r, i) => { const done = RACES.includes(r), last = r === f, t = `${done ? round(r) + " · " : ""}${gpName(r)} · ${dateFr(r.date_start)}${done ? "" : " · à venir"}`;
       return done ? `<button class="hs-dot on${last ? " last" : ""}" data-i="${i}" data-go="${r.session_key}" aria-label="${esc(t)}"></button>` : `<span class="hs-dot" data-i="${i}"></span>`; }).join("")}</div>
     <div class="hs-peek" id="hs-peek" aria-live="polite"><div class="hs-peek-in" id="hs-peek-in"></div></div>
-    <div class="hs-txt"><span><b>${RACES.length}</b> GP courus sur ${all.length}</span>${next ? `<span>Prochain : <b>${esc(gpName(next))}</b> · ${dateFr(next.date_start)}${days <= 14 ? ` · ${days <= 1 ? "demain" : `dans ${days} jours`}` : ""}</span>` : ""}</div>`;
+    <div class="hs-txt"><span><b>${RACES.length}</b> GP courus sur ${all.length}<span class="hs-hint"> · glisse le doigt sur la saison</span></span>${next ? `<span>Prochain : <b>${esc(gpName(next))}</b> · ${dateFr(next.date_start)}${days <= 14 ? ` · ${days <= 1 ? "demain" : `dans ${days} jours`}` : ""}</span>` : ""}</div>`;
   seasonPeek(all, round);
   const ol = outlineOf(f) || [];
   $("#home-mark").innerHTML = ol.length >= 10 ? outlineSvg(ol, 260, 130, 8, "hm-map") : "";
@@ -3593,7 +3601,7 @@ function renderHome() {
 }
 // Survol d'une case de la saison : le GP apparaît dessous, dans un panneau qui s'ouvre et pousse le texte vers le bas
 function seasonPeek(all, round) {
-  const box = $("#home-season"), peek = $("#hs-peek"), inn = $("#hs-peek-in"), touch = matchMedia("(hover: none)").matches;
+  const box = $("#home-season"), peek = $("#hs-peek"), inn = $("#hs-peek-in");
   let cur = -1, hideT = 0;
   const show = (i) => {
     clearTimeout(hideT); if (i === cur) return; cur = i;
@@ -3609,8 +3617,15 @@ function seasonPeek(all, round) {
   box.querySelectorAll(".hs-dot").forEach((d) => {
     d.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") show(+d.dataset.i); });
     d.addEventListener("focus", () => { if (d.matches(":focus-visible")) show(+d.dataset.i); });
-    d.addEventListener("click", (e) => { const i = +d.dataset.i; if ((touch || e.pointerType !== "mouse") && cur !== i) { show(i); return; } if (d.dataset.go) navGP(d.dataset.go); });
+    d.addEventListener("click", (e) => { if (e.pointerType && e.pointerType !== "mouse") return; if (d.dataset.go) navGP(d.dataset.go); });
   });
+  // Mobile : on pose le doigt sur la rangée et on glisse, le panneau suit GP par GP (comme le curseur d'une vidéo)
+  const row = box.querySelector(".hs-dots"), dots = [...row.querySelectorAll(".hs-dot")];
+  const at = (x) => { let best = 0, bd = 1e9; dots.forEach((d, k) => { const r = d.getBoundingClientRect(), c = r.left + r.width / 2, dd = Math.abs(x - c); if (dd < bd) { bd = dd; best = k; } }); return +dots[best].dataset.i; };
+  const scrub = (e) => { const i = at(e.clientX); if (i !== cur) { show(i); try { navigator.vibrate?.(6); } catch {} } };
+  row.addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse") return; row.setPointerCapture?.(e.pointerId); row.classList.add("scrub"); scrub(e); });
+  row.addEventListener("pointermove", (e) => { if (e.pointerType !== "mouse" && row.classList.contains("scrub")) scrub(e); });
+  ["pointerup", "pointercancel"].forEach((t) => row.addEventListener(t, () => row.classList.remove("scrub")));
   box.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hide(); });
   peek.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) navGP(b.dataset.go); });
 }

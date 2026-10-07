@@ -465,3 +465,11 @@ button.hs-dot:hover { transform: none; }
 @media (prefers-reduced-motion: reduce) { .hs-peek, .hs-dot { transition: none; } .hs-peek-in.in > * { animation: none; } }
 .hs-peek:not(.on) .hs-peek-in { opacity: 0; border-width: 0; }
 .hs-peek-in { transition: opacity .25s; }
+/* Mobile : la rangée entière est une zone tactile de 44 px qu'on parcourt du doigt */
+@media (hover: none) {
+  .hs-dots { height: 44px; touch-action: pan-y; gap: 3px; cursor: default; }
+  .hs-dots.scrub .hs-dot.hot { height: 22px; }
+  .hs-dot { pointer-events: none; }
+}
+.hs-hint { display: none; color: var(--muted); }
+@media (hover: none) { .hs-hint { display: inline; } }
