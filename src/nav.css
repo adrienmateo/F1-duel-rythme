@@ -376,3 +376,13 @@ body.in-chap { overflow: hidden; }
 /* Le menu des GP garde la largeur du nom affiché (la ligne « Voir tous les Grands Prix… » ne l'élargit pas) */
 @media (min-width: 641px) { .gp-pick #gp { width: 12.5em; } }
 @media (max-width: 640px) { .duel .who { white-space: normal; } .duel .who .gap small { display: none; } }
+.fr-rows { display: grid; gap: 2px; margin-top: 16px; }
+.fr-row { display: grid; grid-template-columns: 22px 44px minmax(0, 1fr); align-items: center; gap: 10px; text-align: left; border: 0; border-radius: 10px; background: none; color: var(--ink-2); font: 400 15px/1.35 var(--body); padding: 7px 8px; cursor: pointer; }
+button.fr-row:hover { background: var(--track); }
+.fr-row.sc, .fr-row.end { cursor: default; }
+.fr-row b { color: var(--ink); font-weight: 700; }
+.fr-row .fr-lap { font: 600 12px var(--mono); color: var(--muted); }
+.fr-row .fr-txt { overflow: hidden; text-overflow: ellipsis; }
+.fr-n.hatch { border-radius: 6px; background: repeating-linear-gradient(135deg, #f5c518 0 4px, #e0b000 4px 8px); }
+.fr-row .fr-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+@media (max-width: 640px) { .fr-row { font-size: 14px; padding: 6px 4px; gap: 8px; grid-template-columns: 22px 38px minmax(0, 1fr); } .fr-rows { margin-top: 12px; } }

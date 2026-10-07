@@ -8,7 +8,7 @@
   .mtabs button[aria-selected="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
   .mslides { display: flex; align-items: flex-start; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; transition: height .35s cubic-bezier(.2,.8,.2,1); }
   .mslides::-webkit-scrollbar { display: none; }
-  .mslide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; display: grid; gap: 10px; align-content: start; }
+  .mslide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; display: grid; gap: 10px; align-content: start; }
   .mdots { display: flex; justify-content: center; gap: 6px; }
   .mdots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line); transition: width .25s, background .25s; }
   .mdots i.on { width: 18px; background: var(--accent); }

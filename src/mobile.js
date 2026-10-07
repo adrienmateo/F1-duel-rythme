@@ -29,9 +29,9 @@ function makeSwipe(anchor, slides) {
   const idx = () => Math.round(track.scrollLeft / ((track.firstChild?.offsetWidth || 1) + 12));
   const fit = (i) => { const sl = track.children[i]; if (sl) track.style.height = sl.scrollHeight + "px"; };
   setTimeout(() => fit(0), 50);
-  const ro = new ResizeObserver(() => fit(idx())); [...track.children].forEach((c) => ro.observe(c));
+  let raf = 0, lastI = 0, target = -1, tgo = 0, settle = 0;
+  const ro = new ResizeObserver(() => { clearTimeout(settle); settle = setTimeout(() => fit(idx()), 160); }); [...track.children].forEach((c) => ro.observe(c));
   wrap.append(tabs, track, dots);
-  let raf = 0, lastI = 0, target = -1, tgo = 0;
   // Safari iPhone : un défilement animé + un changement de hauteur + l'aimantation « mandatory » le ramènent
   // sur la 1re carte. On coupe l'aimantation le temps du trajet, on fixe la hauteur d'arrivée tout de suite.
   function goTo(i) {
@@ -42,7 +42,9 @@ function makeSwipe(anchor, slides) {
   }
   const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
     const i = target >= 0 ? target : idx();
-    fit(i);
+    // Pendant le glissement du doigt, la hauteur ne bouge pas (sinon Safari « recale » le carrousel ailleurs) :
+    // on l'ajuste une fois le carrousel immobile
+    if (target >= 0) fit(i); else { clearTimeout(settle); settle = setTimeout(() => fit(idx()), 160); }
     [...tabs.children].forEach((b, k) => b.setAttribute("aria-selected", k === i));
     [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i));
     const t = tabs.children[i]; if (t) tabs.scrollTo({ left: t.offsetLeft - 40, behavior: "smooth" });

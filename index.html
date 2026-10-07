@@ -454,7 +454,7 @@ main.loading .tower, main.loading .log, main.loading .kpis { min-height: 120px; 
   .mtabs button[aria-selected="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
   .mslides { display: flex; align-items: flex-start; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; transition: height .35s cubic-bezier(.2,.8,.2,1); }
   .mslides::-webkit-scrollbar { display: none; }
-  .mslide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; display: grid; gap: 10px; align-content: start; }
+  .mslide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; display: grid; gap: 10px; align-content: start; }
   .mdots { display: flex; justify-content: center; gap: 6px; }
   .mdots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line); transition: width .25s, background .25s; }
   .mdots i.on { width: 18px; background: var(--accent); }
@@ -1060,6 +1060,16 @@ body.in-chap { overflow: hidden; }
 /* Le menu des GP garde la largeur du nom affiché (la ligne « Voir tous les Grands Prix… » ne l'élargit pas) */
 @media (min-width: 641px) { .gp-pick #gp { width: 12.5em; } }
 @media (max-width: 640px) { .duel .who { white-space: normal; } .duel .who .gap small { display: none; } }
+.fr-rows { display: grid; gap: 2px; margin-top: 16px; }
+.fr-row { display: grid; grid-template-columns: 22px 44px minmax(0, 1fr); align-items: center; gap: 10px; text-align: left; border: 0; border-radius: 10px; background: none; color: var(--ink-2); font: 400 15px/1.35 var(--body); padding: 7px 8px; cursor: pointer; }
+button.fr-row:hover { background: var(--track); }
+.fr-row.sc, .fr-row.end { cursor: default; }
+.fr-row b { color: var(--ink); font-weight: 700; }
+.fr-row .fr-lap { font: 600 12px var(--mono); color: var(--muted); }
+.fr-row .fr-txt { overflow: hidden; text-overflow: ellipsis; }
+.fr-n.hatch { border-radius: 6px; background: repeating-linear-gradient(135deg, #f5c518 0 4px, #e0b000 4px 8px); }
+.fr-row .fr-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+@media (max-width: 640px) { .fr-row { font-size: 14px; padding: 6px 4px; gap: 8px; grid-template-columns: 22px 38px minmax(0, 1fr); } .fr-rows { margin-top: 12px; } }
 
 </style>
 </head>
@@ -2986,33 +2996,28 @@ function momPlay(el, m) {
 
 /* --- « La course en un coup d'œil » : une frise du départ à l'arrivée, avec les neutralisations et les faits --- */
 function renderFrise() {
-  // « Bande de course » : la course en piste sombre, neutralisations hachurées, faits numérotés, une carte par fait
+  // « Bande de course » : piste sombre, neutralisations hachurées (sans numéro), faits numérotés, puis une ligne compacte par fait
   const X = (lap) => ((Math.max(1, lap) - 1) / Math.max(1, LAPS - 1)) * 100;
-  const facts = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX);
-  const neut = NEUTRAL.filter((r) => r.kind !== "Ralenti").slice(0, 3);
+  const facts = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX).sort((a, b) => a.lap - b.lap);
+  const neut = NEUTRAL.filter((r) => r.kind !== "Ralenti");
   const w = finishers[0], p2 = finishers[1];
-  const items = [
-    ...facts.map((e) => ({ lap: e.lap, kind: "fact", e, color: e.who.color, meta: `Tour ${e.lap}`, title: e.who.last, txt: e.short })),
-    ...neut.map((r) => ({ lap: r.start, kind: "neut", r, color: r.kind === "Rouge" ? "#e10600" : "#f5c518", meta: r.end > r.start ? `Tours ${r.start} à ${r.end}` : `Tour ${r.start}`, title: NKlong[r.kind], txt: r.end > r.start ? `Course neutralisée pendant ${r.end - r.start + 1} tours.` : "Course neutralisée." })),
-  ].sort((a, b) => a.lap - b.lap);
-  items.forEach((it, i) => { it.n = i + 1; it.x = it.r ? X((it.r.start + it.r.end) / 2) : X(it.lap); });
+  const items = facts.map((e, i) => ({ n: i + 1, e, color: e.who.color, x: X(e.lap) }));
   // Deux pastilles trop proches : la seconde passe au-dessus de la piste
   let lastX = -99, up = false; items.forEach((it) => { up = it.x - lastX < 4.5 ? !up : false; it.up = up; lastX = it.x; });
   const ink = (hex) => { const h = String(hex || "#888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const L = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255); return L > 165 ? "#14161a" : "#fff"; };
+  const nk = (r) => (r.kind === "Rouge" ? "Drapeau rouge" : NK[r.kind]);
+  const span = (r) => (r.end > r.start ? `T${r.start}–${r.end}` : `T${r.start}`);
   const zones = neut.map((r) => `<span class="fr-zone${r.kind === "Rouge" ? " red" : ""}" style="left:${X(r.start)}%;width:${Math.max(1.2, X(r.end) - X(r.start))}%" title="${NKlong[r.kind]} · tours ${r.start} à ${r.end}"></span>`).join("");
   const step = LAPS > 40 ? 10 : 5, ticks = [1]; for (let l = step; l < LAPS - step * 0.8; l += step) ticks.push(l); ticks.push(LAPS);
-  const pins = items.map((it) => `<button class="fr-pin${it.up ? " up" : ""}" style="left:${it.x}%;background:${it.color};color:${ink(it.color)}" data-i="${it.n - 1}" aria-label="${esc(it.meta + " : " + it.title)}">${it.n}</button>`).join("");
-  const card = (it) => `<button class="fr-card" data-i="${it.n - 1}"><span class="fr-meta"><span class="fr-n" style="background:${it.color};color:${ink(it.color)}">${it.n}</span>${it.meta}</span><b>${esc(it.title)}</b><span class="fr-t">${esc(it.txt)}</span></button>`;
-  const end = w ? `<div class="fr-card end"><span class="fr-meta"><span class="fr-n flag"></span>Tour ${LAPS} · Arrivée</span><b><i class="fr-dot" style="background:${w.color}"></i>${esc(w.last)} gagne</b><span class="fr-t">${p2 ? `Devant ${esc(p2.last)}.` : ""}</span></div>` : "";
+  const pins = items.map((it) => `<button class="fr-pin${it.up ? " up" : ""}" style="left:${it.x}%;background:${it.color};color:${ink(it.color)}" data-i="${it.n - 1}" aria-label="${esc(`Tour ${it.e.lap} : ${it.e.who.last} ${it.e.short}`)}">${it.n}</button>`).join("");
+  const row = (it) => `<button class="fr-row" data-i="${it.n - 1}"><span class="fr-n" style="background:${it.color};color:${ink(it.color)}">${it.n}</span><span class="fr-lap">T${it.e.lap}</span><span class="fr-txt"><b>${esc(it.e.who.last)}</b> ${esc(it.e.short)}</span></button>`;
+  const neutRow = neut.length ? `<div class="fr-row sc"><span class="fr-n hatch"></span><span class="fr-lap"></span><span class="fr-txt">${neut.map((r) => `<b>${nk(r)}</b> ${span(r)}`).join(" · ")}</span></div>` : "";
+  const end = w ? `<div class="fr-row end"><span class="fr-n flag"></span><span class="fr-lap">T${LAPS}</span><span class="fr-txt"><i class="fr-dot" style="background:${w.color}"></i><b>${esc(w.last)}</b> gagne${p2 ? ` devant ${esc(p2.last)}` : ""}</span></div>` : "";
   $("#log").innerHTML = `<div class="fr-head"><span class="eyebrow">La course en un coup d'œil</span><span class="fr-laps">${LAPS} tours</span></div>
     <div class="frise"><div class="fr-road">${zones}<span class="fr-flag" title="Arrivée"></span>${pins}</div>
       <div class="fr-ticks">${ticks.map((l) => `<span style="left:${X(l)}%">T${l}</span>`).join("")}</div></div>
-    <div class="fr-cards">${items.map(card).join("")}${end}</div>`;
-  $$("#log [data-i]").forEach((b) => b.addEventListener("click", () => {
-    const it = items[+b.dataset.i];
-    if (it.kind === "fact") openDialog(`Tour ${it.e.lap} · ${it.e.label}`, `<p class="read">${it.e.txt}. ${it.e.detail}</p>`);
-    else openDialog(`${it.meta} · ${it.title}`, `<p class="read">${it.title} ${it.r.end > it.r.start ? `du tour ${it.r.start} au tour ${it.r.end}` : `au tour ${it.r.start}`}. Ces tours ne comptent pas dans le rythme des pilotes.</p>`);
-  }));
+    <div class="fr-rows">${items.map(row).join("")}${neutRow}${end}</div>`;
+  $$("#log [data-i]").forEach((b) => b.addEventListener("click", () => { const e = items[+b.dataset.i].e; openDialog(`Tour ${e.lap} · ${e.label}`, `<p class="read">${e.txt}. ${e.detail}</p>`); }));
 }
 
 /* ======================= Mobile : vertical pour changer de section, horizontal pour changer de vue ======================= */
@@ -3045,9 +3050,9 @@ function makeSwipe(anchor, slides) {
   const idx = () => Math.round(track.scrollLeft / ((track.firstChild?.offsetWidth || 1) + 12));
   const fit = (i) => { const sl = track.children[i]; if (sl) track.style.height = sl.scrollHeight + "px"; };
   setTimeout(() => fit(0), 50);
-  const ro = new ResizeObserver(() => fit(idx())); [...track.children].forEach((c) => ro.observe(c));
+  let raf = 0, lastI = 0, target = -1, tgo = 0, settle = 0;
+  const ro = new ResizeObserver(() => { clearTimeout(settle); settle = setTimeout(() => fit(idx()), 160); }); [...track.children].forEach((c) => ro.observe(c));
   wrap.append(tabs, track, dots);
-  let raf = 0, lastI = 0, target = -1, tgo = 0;
   // Safari iPhone : un défilement animé + un changement de hauteur + l'aimantation « mandatory » le ramènent
   // sur la 1re carte. On coupe l'aimantation le temps du trajet, on fixe la hauteur d'arrivée tout de suite.
   function goTo(i) {
@@ -3058,7 +3063,9 @@ function makeSwipe(anchor, slides) {
   }
   const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
     const i = target >= 0 ? target : idx();
-    fit(i);
+    // Pendant le glissement du doigt, la hauteur ne bouge pas (sinon Safari « recale » le carrousel ailleurs) :
+    // on l'ajuste une fois le carrousel immobile
+    if (target >= 0) fit(i); else { clearTimeout(settle); settle = setTimeout(() => fit(idx()), 160); }
     [...tabs.children].forEach((b, k) => b.setAttribute("aria-selected", k === i));
     [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i));
     const t = tabs.children[i]; if (t) tabs.scrollTo({ left: t.offsetLeft - 40, behavior: "smooth" });
