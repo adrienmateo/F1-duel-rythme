@@ -454,7 +454,7 @@ main.loading .tower, main.loading .log, main.loading .kpis { min-height: 120px; 
   .mtabs button[aria-selected="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
   .mslides { display: flex; align-items: flex-start; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; transition: height .35s cubic-bezier(.2,.8,.2,1); }
   .mslides::-webkit-scrollbar { display: none; }
-  .mslide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; display: grid; gap: 10px; align-content: start; }
+  .mslide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; display: grid; gap: 10px; align-content: start; }
   .mdots { display: flex; justify-content: center; gap: 6px; }
   .mdots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line); transition: width .25s, background .25s; }
   .mdots i.on { width: 18px; background: var(--accent); }
@@ -721,11 +721,10 @@ body.at-home { overflow: hidden; }
 .home-empty { color: var(--muted); padding: 30px 0; text-align: center; }
 @media (min-width: 900px) {
   .home-in { grid-template-columns: 1.1fr 1fr; column-gap: 28px; align-items: start; padding-top: 28px; }
-  .home-top, .home-in > .eyebrow, .home-h, .home-season { grid-column: 1 / -1; }
+  .home-top, .home-in > .eyebrow, .home-h { grid-column: 1 / -1; }
   .home-side { display: grid; gap: 10px; align-content: start; }
   .home-t { margin: 0; }
-  .home-list { grid-template-columns: 1fr; }
-  .home-feat { position: sticky; top: 24px; }
+  .home-list { grid-template-columns: 1fr; max-height: 62vh; overflow: auto; padding-right: 4px; }
 }
 
 /* ---------- Chapitres : sommaire en cartes partout, chapitre en plein écran (mobile) ou en grand panneau (ordinateur) ---------- */
@@ -881,8 +880,9 @@ body.in-chap { overflow: hidden; }
 @media (min-width: 641px) {
   .duel .team { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .duel .team .dot { flex: none; margin: 0; }
-  .duel { grid-template-columns: 150px minmax(0, 1fr) 210px; }
+  .duel { grid-template-columns: 150px minmax(0, 1fr) 300px; }
   .duel .who { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; }
+  .duel .who .strat { grid-column: 1 / -1; justify-self: start; }
   .duel .who .gap { text-align: right; }
 }
 
@@ -1017,7 +1017,7 @@ body.in-chap { overflow: hidden; }
 .hdr-coll:hover { transform: translateY(-1px); box-shadow: var(--sh-md); }
 .helm { flex: none; color: var(--ink); }
 .chip .helm { vertical-align: -3px; margin-right: 6px; }
-.hdr-coll { width: 38px; padding: 0; justify-content: center; } .hdr-coll span { display: none; }
+@media (max-width: 1379px) { .hdr-coll { width: 38px; padding: 0; justify-content: center; } .hdr-coll span { display: none; } }
 @media (max-width: 640px) { .hdr-coll { width: 40px; height: 40px; } }
 .pk-cells.wide .pk-empty { grid-column: 1 / -1; }
 .home-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
@@ -1060,103 +1060,6 @@ body.in-chap { overflow: hidden; }
 /* Le menu des GP garde la largeur du nom affiché (la ligne « Voir tous les Grands Prix… » ne l'élargit pas) */
 @media (min-width: 641px) { .gp-pick #gp { width: 12.5em; } }
 @media (max-width: 640px) { .duel .who { white-space: normal; } .duel .who .gap small { display: none; } }
-.fr-rows { display: grid; gap: 2px; margin-top: 16px; }
-.fr-row { display: grid; grid-template-columns: 22px 44px minmax(0, 1fr); align-items: center; gap: 10px; text-align: left; border: 0; border-radius: 10px; background: none; color: var(--ink-2); font: 400 15px/1.35 var(--body); padding: 7px 8px; cursor: pointer; }
-button.fr-row:hover { background: var(--track); }
-.fr-row.sc, .fr-row.end { cursor: default; }
-.fr-row b { color: var(--ink); font-weight: 700; }
-.fr-row .fr-lap { font: 600 12px var(--mono); color: var(--muted); }
-.fr-row .fr-txt { overflow: hidden; text-overflow: ellipsis; }
-.fr-n.hatch { border-radius: 6px; background: repeating-linear-gradient(135deg, #f5c518 0 4px, #e0b000 4px 8px); }
-.fr-row .fr-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
-@media (max-width: 640px) { .fr-row { font-size: 14px; padding: 6px 4px; gap: 8px; grid-template-columns: 22px 38px minmax(0, 1fr); } .fr-rows { margin-top: 12px; } }
-.duel .who .sep { color: var(--muted); margin: 0 2px; } .duel .who .strat { margin-left: 6px; vertical-align: 1px; }
-/* Accueil : même fond que la page du GP (halo coloré), saison en cours, liste complète sans boîte qui défile */
-.home { background: var(--page); isolation: isolate; }
-.home-halo { position: fixed; z-index: -1; }
-.home-in { position: relative; }
-.home-season { display: grid; gap: 8px; max-width: 560px; }
-.home-season:empty { display: none; }
-.hs-bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; }
-.hs-bar span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
-.hs-txt { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
-.hs-txt b { color: var(--ink); }
-.hr { background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .15s, border-color .15s, box-shadow .15s; }
-@media (hover: hover) { .hr:hover { transform: translateY(-1px); box-shadow: var(--sh-md); border-color: var(--accent); } }
-.hr-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
-.home-feat .hf { background: color-mix(in srgb, var(--surface) 92%, transparent); }
-/* Accueil sans spoiler : saison en cases, tracé du dernier GP en filigrane, liste sans vainqueurs */
-.hs-dots { display: flex; gap: 5px; }
-.hs-dot { flex: 1; height: 10px; border-radius: 5px; border: 1.5px solid color-mix(in srgb, var(--ink) 22%, transparent); box-sizing: border-box; padding: 0; background: transparent; }
-button.hs-dot { cursor: pointer; border: 0; background: var(--ink); transition: transform .15s; }
-button.hs-dot.last { background: var(--accent); }
-button.hs-dot:hover { transform: scaleY(1.6); }
-.home-season { max-width: none; }
-.home-mark { position: absolute; right: 16px; top: 92px; width: 190px; height: 92px; opacity: .1; pointer-events: none; }
-.home-mark .hm-map { width: 100%; height: 100%; }
-.home-mark .hm-map path { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linejoin: round; }
-@media (max-width: 1179px) { .home-mark { display: none; } }
-.hf-sub { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; color: var(--ink-2); }
-.hf-sub small { font-size: 12px; color: var(--muted); }
-@media (min-width: 1100px) { .home-in { max-width: 1120px; } .home-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } .home-list .hr { grid-template-columns: 34px 1fr 46px; } .home-list .hr-map { width: 46px; height: 30px; } }
-/* Championnat */
-.champ { z-index: 72; }
-.champ-in { max-width: 1120px; margin: 0 auto; padding: 18px 16px 48px; display: grid; gap: 14px; position: relative; }
-.champ-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.champ-back { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; color: var(--ink-2); font: 600 15px var(--body); cursor: pointer; padding: 6px 0; }
-.champ-back:hover { color: var(--ink); }
-#champ-hide[hidden], .champ-open[hidden] { display: none !important; }
-.champ-mask { position: relative; border-radius: 20px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); min-height: 360px; }
-.champ-blur { padding: 26px; display: grid; gap: 16px; filter: blur(8px); opacity: .7; }
-.champ-blur i { display: block; height: 13px; border-radius: 7px; }
-.champ-veil { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 24px; background: color-mix(in srgb, var(--page) 50%, transparent); color: var(--ink); }
-.champ-veil b { font: 800 22px var(--display); font-stretch: 112%; }
-.champ-veil p { margin: 0; max-width: 360px; color: var(--ink-2); font-size: 15px; }
-.champ-veil small { color: var(--muted); font-size: 12px; }
-.champ-grid { display: grid; gap: 18px; align-items: start; }
-@media (min-width: 900px) { .champ-grid { grid-template-columns: 1.15fr 1fr; } }
-.champ-side { display: grid; gap: 18px; }
-.champ-card { padding: 16px 18px; display: grid; gap: 2px; }
-.champ-h { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px; } .champ-h b { font-size: 15px; } .champ-h span { font: 500 12px var(--mono); color: var(--muted); }
-.cr { display: grid; grid-template-columns: 34px minmax(110px, 160px) minmax(0, 1fr) 52px; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
-.cr.more { display: none; } .cr.more.on { display: grid; }
-.cr-p { font: 600 12px var(--mono); color: var(--muted); }
-.cr-n { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cr-n i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.cr-b { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; } .cr-b span { display: block; height: 100%; border-radius: 4px; }
-.cr-v { font: 600 13px var(--mono); text-align: right; }
-.champ-wins { gap: 10px; } .champ-wins small { color: var(--muted); font-size: 12px; }
-.cw-row { display: flex; gap: 4px; } .cw { flex: 1; height: 26px; border-radius: 5px; }
-@media (max-width: 640px) { .cr { grid-template-columns: 30px minmax(0, 1fr) 70px 44px; } }
-/* Saison : panneau du GP survolé, qui s'ouvre sous les cases et pousse le texte */
-.hs-dots { align-items: center; height: 18px; }
-.hs-dot { transition: transform .2s cubic-bezier(.2,.8,.2,1), opacity .2s, height .2s; }
-.hs-dots:hover .hs-dot:not(.hot), .hs-dots:has(.hot) .hs-dot:not(.hot) { opacity: .45; }
-.hs-dot.hot { height: 16px; opacity: 1; }
-button.hs-dot:hover { transform: none; }
-.hs-peek { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s cubic-bezier(.2,.8,.2,1), margin .32s; margin: 0; }
-.hs-peek.on { grid-template-rows: 1fr; margin: 4px 0 2px; }
-.hs-peek-in { min-height: 0; overflow: hidden; display: flex; align-items: center; gap: 14px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid transparent; padding: 0 14px; }
-.hs-peek.on .hs-peek-in { border-color: var(--line); padding: 10px 14px; box-shadow: var(--sh-md); }
-.hs-peek-in.in > * { animation: hpIn .35s cubic-bezier(.2,.8,.2,1) both; }
-.hs-peek-in.in > *:nth-child(2) { animation-delay: .04s; } .hs-peek-in.in > *:nth-child(3) { animation-delay: .08s; }
-@keyframes hpIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.hp-map { width: 72px; height: 44px; flex: none; }
-.hp-map path { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
-.hp-t { display: grid; gap: 2px; flex: 1; min-width: 0; } .hp-t small { font: 500 12px var(--mono); color: var(--muted); } .hp-t b { font: 800 22px/1.1 var(--display); font-stretch: 112%; text-transform: uppercase; }
-.hp-go { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: 700 13px var(--body); padding: 9px 16px; cursor: pointer; flex: none; }
-.hp-soon { font-size: 13px; color: var(--ink-2); flex: none; }
-@media (prefers-reduced-motion: reduce) { .hs-peek, .hs-dot { transition: none; } .hs-peek-in.in > * { animation: none; } }
-.hs-peek:not(.on) .hs-peek-in { opacity: 0; border-width: 0; }
-.hs-peek-in { transition: opacity .25s; }
-/* Mobile : la rangée entière est une zone tactile de 44 px qu'on parcourt du doigt */
-@media (hover: none) {
-  .hs-dots { height: 44px; touch-action: pan-y; gap: 3px; cursor: default; }
-  .hs-dots.scrub .hs-dot.hot { height: 22px; }
-  .hs-dot { pointer-events: none; }
-}
-.hs-hint { display: none; color: var(--muted); }
-@media (hover: none) { .hs-hint { display: inline; } }
 
 </style>
 </head>
@@ -1185,24 +1088,11 @@ button.hs-dot:hover { transform: none; }
   <div id="progress" aria-hidden="true"></div>
 </header>
 
-<section class="home champ" id="champ" aria-label="Championnat" hidden>
-  <div class="halo home-halo" aria-hidden="true"><i></i><i></i><i></i></div>
-  <div class="champ-in">
-    <div class="champ-top"><button type="button" class="champ-back" id="champ-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span id="champ-back-t">Retour</span></button>
-      <button type="button" class="home-coll" id="champ-hide" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></svg>Masquer à nouveau</button></div>
-    <div class="eyebrow" id="champ-eyebrow">Championnat</div>
-    <h2 class="home-h">Le classement</h2>
-    <div class="champ-body" id="champ-body"></div>
-  </div>
-</section>
 <section class="home" id="home" aria-label="Choisir un Grand Prix" hidden>
   <div class="home-in">
-    <div class="home-top"><div class="brand home-brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M4 17h7M9 12h10M6 7h12"/></svg></span>Duel de rythme</div><div class="home-tools"><button type="button" class="home-coll champ-open"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Championnat</button><button type="button" class="home-coll pk-open"><svg class="helm" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c-4.9 0-8.4 3.6-8.4 8.5v4.1c0 3.4 2.4 6.2 5.5 6.2h5.8c3.1 0 5.5-2.8 5.5-6.2v-4.1c0-4.9-3.5-8.5-8.4-8.5z" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 9.7h13.2v3.4c0 .8-.6 1.4-1.4 1.4H6.8c-.8 0-1.4-.6-1.4-1.4z" fill="currentColor"/><path d="M12 3v6.7" stroke="#e10600" stroke-width="2.2"/><path d="M10.2 18.3h3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ma collection</button><div class="home-years" id="home-years" role="group" aria-label="Saison"></div></div></div>
-    <div class="halo home-halo" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="home-top"><div class="brand home-brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M4 17h7M9 12h10M6 7h12"/></svg></span>Duel de rythme</div><div class="home-tools"><button type="button" class="home-coll pk-open"><svg class="helm" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c-4.9 0-8.4 3.6-8.4 8.5v4.1c0 3.4 2.4 6.2 5.5 6.2h5.8c3.1 0 5.5-2.8 5.5-6.2v-4.1c0-4.9-3.5-8.5-8.4-8.5z" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 9.7h13.2v3.4c0 .8-.6 1.4-1.4 1.4H6.8c-.8 0-1.4-.6-1.4-1.4z" fill="currentColor"/><path d="M12 3v6.7" stroke="#e10600" stroke-width="2.2"/><path d="M10.2 18.3h3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ma collection</button><div class="home-years" id="home-years" role="group" aria-label="Saison"></div><button type="button" class="home-x" id="home-x" aria-label="Revenir au Grand Prix affiché" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
     <div class="eyebrow">Saison <span id="home-y"></span></div>
     <h2 class="home-h">Choisis ton Grand Prix</h2>
-    <div class="home-mark" id="home-mark" aria-hidden="true"></div>
-    <div class="home-season" id="home-season"></div>
     <div class="home-feat" id="home-feat"><p class="home-empty">Chargement des Grands Prix…</p></div>
     <div class="home-side"><div class="home-t">Les autres Grands Prix</div>
     <div class="home-list" id="home-list"></div></div>
@@ -1398,7 +1288,7 @@ button.hs-dot:hover { transform: none; }
   <h3>Affichage</h3>
   <div class="row"><span>Mode sombre</span><button class="btn ghost" id="m-theme">Activer</button></div>
   <h3>Aller à</h3>
-  <div class="chips"><a class="chip" href="#gp-section">Le GP</a><a class="chip" href="#moments">Les moments</a><a class="chip" href="#course">La course</a><a class="chip" href="#duels">Les duels</a><a class="chip" href="#strategies">Stratégies</a><a class="chip" href="#explorer">Explorer</a><button type="button" class="chip champ-open">Championnat</button><button type="button" class="chip pk-open"><svg class="helm" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c-4.9 0-8.4 3.6-8.4 8.5v4.1c0 3.4 2.4 6.2 5.5 6.2h5.8c3.1 0 5.5-2.8 5.5-6.2v-4.1c0-4.9-3.5-8.5-8.4-8.5z" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 9.7h13.2v3.4c0 .8-.6 1.4-1.4 1.4H6.8c-.8 0-1.4-.6-1.4-1.4z" fill="currentColor"/><path d="M12 3v6.7" stroke="#e10600" stroke-width="2.2"/><path d="M10.2 18.3h3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ma collection de pilotes</button></div>
+  <div class="chips"><a class="chip" href="#gp-section">Le GP</a><a class="chip" href="#moments">Les moments</a><a class="chip" href="#course">La course</a><a class="chip" href="#duels">Les duels</a><a class="chip" href="#strategies">Stratégies</a><a class="chip" href="#explorer">Explorer</a><button type="button" class="chip pk-open"><svg class="helm" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c-4.9 0-8.4 3.6-8.4 8.5v4.1c0 3.4 2.4 6.2 5.5 6.2h5.8c3.1 0 5.5-2.8 5.5-6.2v-4.1c0-4.9-3.5-8.5-8.4-8.5z" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 9.7h13.2v3.4c0 .8-.6 1.4-1.4 1.4H6.8c-.8 0-1.4-.6-1.4-1.4z" fill="currentColor"/><path d="M12 3v6.7" stroke="#e10600" stroke-width="2.2"/><path d="M10.2 18.3h3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ma collection de pilotes</button></div>
 </div>
 <div class="msheet" id="msheet-pilots" role="dialog" aria-label="Choisir les pilotes">
   <span class="grab"></span>
@@ -1880,11 +1770,11 @@ function renderDuels() {
   const tight = valid[valid.length - 1];
   $("#read-duels").innerHTML = `<b>${valid[0].fast.last}</b> a dominé ${valid[0].slow.last} de <b>${gapS(valid[0].gap)}</b> au tour.` + (tight !== valid[0] ? ` Le duel le plus serré est chez ${tight.team} (${gapS(tight.gap)}).` : "") +
     (strat.length ? ` Chez ${strat[0].team}, l'écart venait de la stratégie : à pneus égaux, ${strat[0].slow.last} était plus rapide.` : "");
-  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme par tour · barre entière = ${fr(max, 2)} s</span><span class="fine who-h">Plus rapide › coéquipier</span></div>` +
+  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme par tour · barre entière = ${fr(max, 2)} s</span><span class="fine who-h">Qui était le plus rapide</span></div>` +
     duels.map((d, i) => d.valid ? `<button class="duel lift" data-d="${i}" data-codes="${d.fast.code} ${d.slow.code}">
       <span class="team"><i class="dot" style="background:${d.color}"></i>${esc(d.team)}</span>
       <span class="track"><span class="fill" style="display:block;background:${d.color}" data-w="${Math.max(0.6, (d.gap / max) * 100)}"></span></span>
-      <span class="who"><span class="pair"><b>${d.fast.code}</b> <span class="sep">›</span> <span class="slow">${d.slow.code}</span>${d.same != null && d.same < 0 ? ` <span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide : l'écart vient de la stratégie">STRAT</span>` : ""}</span><span class="gap">${gapS(d.gap)}</span></span>
+      <span class="who"><span class="pair"><b>${d.fast.code}</b> plus rapide que <span class="slow">${d.slow.code}</span></span><span class="gap">${gapS(d.gap)} <small>/ tour</small></span>${d.same != null && d.same < 0 ? `<span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide : l'écart vient de la stratégie">STRAT</span>` : ""}</span>
     </button>` : `<div class="na">${esc(d.team)} non comparable : ${esc(d.out.join(", "))} sans assez de tours représentatifs.</div>`).join("");
   $$("#duel-list .duel[data-d]").forEach((b) => b.addEventListener("click", () => showDuel(duels[+b.dataset.d])));
   const grow = () => $$("#duels .duel .fill").forEach((f, k) => setTimeout(() => (f.style.width = f.dataset.w + "%"), reduce ? 0 : k * 60));
@@ -2212,7 +2102,7 @@ function renderHow() {
   setHow("how-course", courseMode === "pos"
     ? `Chaque ligne est un pilote, à la couleur de son écurie. <b>En haut = en tête</b>. La petite F1 montre où il est au tour affiché. ${sw("var(--sc)")} bande jaune = safety car ou VSC.`
     : `Chaque ligne est un pilote. <b>Tout en haut = le leader</b> ; plus une ligne descend, plus le pilote est loin derrière lui (en secondes). ${sw("var(--sc)")} bande jaune = safety car ou VSC.`);
-  setHow("how-duels", `Une ligne par écurie : <b>VER › HAD</b> veut dire que VER était plus rapide que HAD, de l'écart indiqué par tour. <b>Plus la barre est longue, plus l'écart était grand</b> (en secondes par tour, sur un tour typique). Pastille <b>STRAT</b> : à pneus égaux, c'est l'autre pilote qui était plus rapide, l'écart vient donc de la stratégie. Clique sur une écurie pour revoir le duel.`);
+  setHow("how-duels", `Une ligne par écurie : le pilote cité en premier était le plus rapide des deux. <b>Plus la barre est longue, plus l'écart était grand</b> (en secondes par tour, sur un tour typique). Pastille <b>STRAT</b> : à pneus égaux, c'est l'autre pilote qui était plus rapide, l'écart vient donc de la stratégie. Clique sur une écurie pour revoir le duel.`);
   setHow("how-strat", `Une ligne par pilote, du départ (à gauche) à l'arrivée (à droite). La couleur indique le pneu : ${sw(COMP.S.c)}tendre ${sw(COMP.M.c)}médium ${sw(COMP.H.c)}dur. <b>Chaque changement de couleur = un arrêt aux stands.</b>`);
   const ref = byCode[exSel[0]], rn = ref ? `<b>${esc(ref.last)}</b>` : "le pilote de référence";
   setHow("how-ex", {
@@ -2766,7 +2656,7 @@ function setStatus(msg, kind) {
   el.hidden = false; el.classList.toggle("error", kind === "error");
   el.innerHTML = (kind === "load" ? '<span class="spin" aria-hidden="true"></span>' : "") + `<span>${esc(msg)}</span>`;
 }
-let RACES = [], SEASON = [], offline = null, ARCH = new Set();
+let RACES = [], offline = null, ARCH = new Set();
 // Archive publiée avec le site (dossier data/, mise à jour chaque lundi par GitHub Actions)
 async function fromArchive(file) {
   if (location.protocol === "file:") return null;
@@ -2790,8 +2680,6 @@ async function loadRaces(year) {
     if (arch.length) sessions = sessions.filter((x) => ARCH.has(x.session_key) || store.get(x.session_key));
   }
   const now = new Date();
-  // Toute la saison (y compris les GP à venir) : sert à la barre de progression et au « prochain GP » de l'accueil
-  SEASON = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && !emptyRaces().has(s.session_key)).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   // Courses annoncées mais restées sans données (annulées, remplacées) : on ne les propose pas
   const empty = emptyRaces(), weekAgo = Date.now() - 8 * 864e5;
@@ -2800,7 +2688,6 @@ async function loadRaces(year) {
   RACES.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
   if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
   fillGpSelect(); $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
-  CHAMP = null; champButtons();
   return true;
 }
 function fillGpSelect() { const v = $("#gp").value; $("#gp").innerHTML = `<option value="all">Voir tous les Grands Prix…</option>` + RACES.map((r) => `<option value="${r.session_key}">${esc(gpName(r))} ${r.year}</option>`).join(""); if (RACES.some((r) => String(r.session_key) === v)) $("#gp").value = v; }
@@ -3099,28 +2986,33 @@ function momPlay(el, m) {
 
 /* --- « La course en un coup d'œil » : une frise du départ à l'arrivée, avec les neutralisations et les faits --- */
 function renderFrise() {
-  // « Bande de course » : piste sombre, neutralisations hachurées (sans numéro), faits numérotés, puis une ligne compacte par fait
+  // « Bande de course » : la course en piste sombre, neutralisations hachurées, faits numérotés, une carte par fait
   const X = (lap) => ((Math.max(1, lap) - 1) / Math.max(1, LAPS - 1)) * 100;
-  const facts = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX).sort((a, b) => a.lap - b.lap);
-  const neut = NEUTRAL.filter((r) => r.kind !== "Ralenti");
+  const facts = [...EVENTS.filter((e) => e.lap && e.who && e.label !== "Remontée")].sort((a, b) => b.score - a.score).slice(0, FRISE_MAX);
+  const neut = NEUTRAL.filter((r) => r.kind !== "Ralenti").slice(0, 3);
   const w = finishers[0], p2 = finishers[1];
-  const items = facts.map((e, i) => ({ n: i + 1, e, color: e.who.color, x: X(e.lap) }));
+  const items = [
+    ...facts.map((e) => ({ lap: e.lap, kind: "fact", e, color: e.who.color, meta: `Tour ${e.lap}`, title: e.who.last, txt: e.short })),
+    ...neut.map((r) => ({ lap: r.start, kind: "neut", r, color: r.kind === "Rouge" ? "#e10600" : "#f5c518", meta: r.end > r.start ? `Tours ${r.start} à ${r.end}` : `Tour ${r.start}`, title: NKlong[r.kind], txt: r.end > r.start ? `Course neutralisée pendant ${r.end - r.start + 1} tours.` : "Course neutralisée." })),
+  ].sort((a, b) => a.lap - b.lap);
+  items.forEach((it, i) => { it.n = i + 1; it.x = it.r ? X((it.r.start + it.r.end) / 2) : X(it.lap); });
   // Deux pastilles trop proches : la seconde passe au-dessus de la piste
   let lastX = -99, up = false; items.forEach((it) => { up = it.x - lastX < 4.5 ? !up : false; it.up = up; lastX = it.x; });
   const ink = (hex) => { const h = String(hex || "#888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const L = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255); return L > 165 ? "#14161a" : "#fff"; };
-  const nk = (r) => (r.kind === "Rouge" ? "Drapeau rouge" : NK[r.kind]);
-  const span = (r) => (r.end > r.start ? `T${r.start}–${r.end}` : `T${r.start}`);
   const zones = neut.map((r) => `<span class="fr-zone${r.kind === "Rouge" ? " red" : ""}" style="left:${X(r.start)}%;width:${Math.max(1.2, X(r.end) - X(r.start))}%" title="${NKlong[r.kind]} · tours ${r.start} à ${r.end}"></span>`).join("");
   const step = LAPS > 40 ? 10 : 5, ticks = [1]; for (let l = step; l < LAPS - step * 0.8; l += step) ticks.push(l); ticks.push(LAPS);
-  const pins = items.map((it) => `<button class="fr-pin${it.up ? " up" : ""}" style="left:${it.x}%;background:${it.color};color:${ink(it.color)}" data-i="${it.n - 1}" aria-label="${esc(`Tour ${it.e.lap} : ${it.e.who.last} ${it.e.short}`)}">${it.n}</button>`).join("");
-  const row = (it) => `<button class="fr-row" data-i="${it.n - 1}"><span class="fr-n" style="background:${it.color};color:${ink(it.color)}">${it.n}</span><span class="fr-lap">T${it.e.lap}</span><span class="fr-txt"><b>${esc(it.e.who.last)}</b> ${esc(it.e.short)}</span></button>`;
-  const neutRow = neut.length ? `<div class="fr-row sc"><span class="fr-n hatch"></span><span class="fr-lap"></span><span class="fr-txt">${neut.map((r) => `<b>${nk(r)}</b> ${span(r)}`).join(" · ")}</span></div>` : "";
-  const end = w ? `<div class="fr-row end"><span class="fr-n flag"></span><span class="fr-lap">T${LAPS}</span><span class="fr-txt"><i class="fr-dot" style="background:${w.color}"></i><b>${esc(w.last)}</b> gagne${p2 ? ` devant ${esc(p2.last)}` : ""}</span></div>` : "";
+  const pins = items.map((it) => `<button class="fr-pin${it.up ? " up" : ""}" style="left:${it.x}%;background:${it.color};color:${ink(it.color)}" data-i="${it.n - 1}" aria-label="${esc(it.meta + " : " + it.title)}">${it.n}</button>`).join("");
+  const card = (it) => `<button class="fr-card" data-i="${it.n - 1}"><span class="fr-meta"><span class="fr-n" style="background:${it.color};color:${ink(it.color)}">${it.n}</span>${it.meta}</span><b>${esc(it.title)}</b><span class="fr-t">${esc(it.txt)}</span></button>`;
+  const end = w ? `<div class="fr-card end"><span class="fr-meta"><span class="fr-n flag"></span>Tour ${LAPS} · Arrivée</span><b><i class="fr-dot" style="background:${w.color}"></i>${esc(w.last)} gagne</b><span class="fr-t">${p2 ? `Devant ${esc(p2.last)}.` : ""}</span></div>` : "";
   $("#log").innerHTML = `<div class="fr-head"><span class="eyebrow">La course en un coup d'œil</span><span class="fr-laps">${LAPS} tours</span></div>
     <div class="frise"><div class="fr-road">${zones}<span class="fr-flag" title="Arrivée"></span>${pins}</div>
       <div class="fr-ticks">${ticks.map((l) => `<span style="left:${X(l)}%">T${l}</span>`).join("")}</div></div>
-    <div class="fr-rows">${items.map(row).join("")}${neutRow}${end}</div>`;
-  $$("#log [data-i]").forEach((b) => b.addEventListener("click", () => { const e = items[+b.dataset.i].e; openDialog(`Tour ${e.lap} · ${e.label}`, `<p class="read">${e.txt}. ${e.detail}</p>`); }));
+    <div class="fr-cards">${items.map(card).join("")}${end}</div>`;
+  $$("#log [data-i]").forEach((b) => b.addEventListener("click", () => {
+    const it = items[+b.dataset.i];
+    if (it.kind === "fact") openDialog(`Tour ${it.e.lap} · ${it.e.label}`, `<p class="read">${it.e.txt}. ${it.e.detail}</p>`);
+    else openDialog(`${it.meta} · ${it.title}`, `<p class="read">${it.title} ${it.r.end > it.r.start ? `du tour ${it.r.start} au tour ${it.r.end}` : `au tour ${it.r.start}`}. Ces tours ne comptent pas dans le rythme des pilotes.</p>`);
+  }));
 }
 
 /* ======================= Mobile : vertical pour changer de section, horizontal pour changer de vue ======================= */
@@ -3153,9 +3045,9 @@ function makeSwipe(anchor, slides) {
   const idx = () => Math.round(track.scrollLeft / ((track.firstChild?.offsetWidth || 1) + 12));
   const fit = (i) => { const sl = track.children[i]; if (sl) track.style.height = sl.scrollHeight + "px"; };
   setTimeout(() => fit(0), 50);
-  let raf = 0, lastI = 0, target = -1, tgo = 0, settle = 0;
-  const ro = new ResizeObserver(() => { clearTimeout(settle); settle = setTimeout(() => fit(idx()), 160); }); [...track.children].forEach((c) => ro.observe(c));
+  const ro = new ResizeObserver(() => fit(idx())); [...track.children].forEach((c) => ro.observe(c));
   wrap.append(tabs, track, dots);
+  let raf = 0, lastI = 0, target = -1, tgo = 0;
   // Safari iPhone : un défilement animé + un changement de hauteur + l'aimantation « mandatory » le ramènent
   // sur la 1re carte. On coupe l'aimantation le temps du trajet, on fixe la hauteur d'arrivée tout de suite.
   function goTo(i) {
@@ -3166,9 +3058,7 @@ function makeSwipe(anchor, slides) {
   }
   const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
     const i = target >= 0 ? target : idx();
-    // Pendant le glissement du doigt, la hauteur ne bouge pas (sinon Safari « recale » le carrousel ailleurs) :
-    // on l'ajuste une fois le carrousel immobile
-    if (target >= 0) fit(i); else { clearTimeout(settle); settle = setTimeout(() => fit(idx()), 160); }
+    fit(i);
     [...tabs.children].forEach((b, k) => b.setAttribute("aria-selected", k === i));
     [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i));
     const t = tabs.children[i]; if (t) tabs.scrollTo({ left: t.offsetLeft - 40, behavior: "smooth" });
@@ -3541,7 +3431,7 @@ const villeFr = (r) => VILLES[r.location] || r.location || "";
 const paysFr = (r) => LIEU_PAYS[r.location] || (r.country_name === "United States" && r.location && !/austin/i.test(r.location) ? villeFr(r) : PAYS[r.country_name] || r.country_name);
 // Nom affiché d'un GP : pays en français, plus la ville quand le pays a deux courses dans l'année
 function gpName(r) {
-  const p = paysFr(r), twin = RACES.some((x) => x.session_key !== r.session_key && x.year === r.year && paysFr(x) === p);
+  const p = paysFr(r), twin = RACES.some((x) => x !== r && x.year === r.year && paysFr(x) === p);
   return twin && r.location ? `${p} · ${villeFr(r)}` : p;
 }
 const dateFr = (iso) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
@@ -3573,66 +3463,23 @@ function renderHome() {
   }));
   $("#home-y").textContent = $("#year").value;
   if (!RACES.length) { $("#home-feat").innerHTML = `<p class="home-empty">Aucun Grand Prix disponible pour le moment.</p>`; $("#home-list").innerHTML = ""; return; }
-  // Aucun résultat sur l'accueil (pas de spoiler) : le vainqueur se découvre sur la page du GP
-  const list = [...RACES].reverse(), f = list[0];
+  const list = [...RACES].reverse(), f = list[0], fw = winnerOf(f);
   const round = (r) => "R" + String(RACES.indexOf(r) + 1).padStart(2, "0");
-  // La saison : une case par GP (pleine = couru, rouge = le dernier, vide = à venir) et le prochain GP
-  const season = (SEASON.length ? SEASON : RACES).filter((r) => r.year === f.year);
-  const all = [...new Map([...season, ...RACES].map((r) => [r.session_key, r])).values()].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
-  const next = all.find((r) => new Date(r.date_start) > new Date() && !RACES.includes(r));
-  const days = next ? Math.ceil((new Date(next.date_start) - Date.now()) / 864e5) : 0;
-  $("#home-season").innerHTML = `<div class="hs-dots">${all.map((r, i) => { const done = RACES.includes(r), last = r === f, t = `${done ? round(r) + " · " : ""}${gpName(r)} · ${dateFr(r.date_start)}${done ? "" : " · à venir"}`;
-      return done ? `<button class="hs-dot on${last ? " last" : ""}" data-i="${i}" data-go="${r.session_key}" aria-label="${esc(t)}"></button>` : `<span class="hs-dot" data-i="${i}"></span>`; }).join("")}</div>
-    <div class="hs-peek" id="hs-peek" aria-live="polite"><div class="hs-peek-in" id="hs-peek-in"></div></div>
-    <div class="hs-txt"><span><b>${RACES.length}</b> GP courus sur ${all.length}<span class="hs-hint"> · glisse le doigt sur la saison</span></span>${next ? `<span>Prochain : <b>${esc(gpName(next))}</b> · ${dateFr(next.date_start)}${days <= 14 ? ` · ${days <= 1 ? "demain" : `dans ${days} jours`}` : ""}</span>` : ""}</div>`;
-  seasonPeek(all, round);
-  const ol = outlineOf(f) || [];
-  $("#home-mark").innerHTML = ol.length >= 10 ? outlineSvg(ol, 260, 130, 8, "hm-map") : "";
   $("#home-feat").innerHTML = `<button class="hf" data-sk="${f.session_key}">
       <span class="hf-top"><span class="eyebrow">Dernier GP · ${round(f)}</span><span class="mono">${dateFr(f.date_start)}</span></span>
-      ${ol.length >= 10 ? outlineSvg(ol, 320, 150, 14, "hf-map") : ""}
+      ${outlineSvg(outlineOf(f), 320, 150, 14, "hf-map")}
       <span class="hf-name">${esc(gpName(f))}</span>
-      <span class="hf-sub">${esc(villeFr(f))}<small>Le résultat est sur la page du GP</small></span>
+      ${fw ? `<span class="hf-win"><i style="background:${fw.color}"></i>Vainqueur : <b>${esc(fw.name)}</b></span>` : ""}
       <span class="hf-cta">Voir le GP <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span>
     </button>`;
-  $("#home-list").innerHTML = list.slice(1).map((r) => `<button class="hr" data-sk="${r.session_key}">
-      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(gpName(r))}</b><small>${dateFr(r.date_start)}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`).join("");
+  $("#home-list").innerHTML = list.slice(1).map((r) => { const w = winnerOf(r); return `<button class="hr" data-sk="${r.session_key}">
+      <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(gpName(r))}</b><small>${dateFr(r.date_start)}${w ? " · " + esc(w.name) : ""}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`; }).join("");
   $$("#home [data-sk]").forEach((b) => b.addEventListener("click", () => navGP(b.dataset.sk)));
-}
-// Survol d'une case de la saison : le GP apparaît dessous, dans un panneau qui s'ouvre et pousse le texte vers le bas
-function seasonPeek(all, round) {
-  const box = $("#home-season"), peek = $("#hs-peek"), inn = $("#hs-peek-in");
-  let cur = -1, hideT = 0;
-  const show = (i) => {
-    clearTimeout(hideT); if (i === cur) return; cur = i;
-    const r = all[i], done = RACES.includes(r), ol = outlineOf(r) || [], days = Math.ceil((new Date(r.date_start) - Date.now()) / 864e5);
-    inn.innerHTML = `${ol.length >= 10 ? outlineSvg(ol, 72, 44, 4, "hp-map") : ""}
-      <span class="hp-t"><small>${done ? round(r) + " · " : ""}${dateFr(r.date_start)}${r.location ? " · " + esc(villeFr(r)) : ""}</small><b>${esc(gpName(r))}</b></span>
-      ${done ? `<button type="button" class="hp-go" data-go="${r.session_key}">Voir le GP <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>` : `<span class="hp-soon">À venir${days > 0 && days <= 30 ? ` · dans ${days} jour${days > 1 ? "s" : ""}` : ""}</span>`}`;
-    inn.classList.remove("in"); void inn.offsetWidth; inn.classList.add("in");
-    peek.classList.add("on");
-    box.querySelectorAll(".hs-dot").forEach((d) => d.classList.toggle("hot", +d.dataset.i === i));
-  };
-  const hide = () => { hideT = setTimeout(() => { cur = -1; peek.classList.remove("on"); box.querySelectorAll(".hs-dot").forEach((d) => d.classList.remove("hot")); }, 260); };
-  box.querySelectorAll(".hs-dot").forEach((d) => {
-    d.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") show(+d.dataset.i); });
-    d.addEventListener("focus", () => { if (d.matches(":focus-visible")) show(+d.dataset.i); });
-    d.addEventListener("click", (e) => { if (e.pointerType && e.pointerType !== "mouse") return; if (d.dataset.go) navGP(d.dataset.go); });
-  });
-  // Mobile : on pose le doigt sur la rangée et on glisse, le panneau suit GP par GP (comme le curseur d'une vidéo)
-  const row = box.querySelector(".hs-dots"), dots = [...row.querySelectorAll(".hs-dot")];
-  const at = (x) => { let best = 0, bd = 1e9; dots.forEach((d, k) => { const r = d.getBoundingClientRect(), c = r.left + r.width / 2, dd = Math.abs(x - c); if (dd < bd) { bd = dd; best = k; } }); return +dots[best].dataset.i; };
-  const scrub = (e) => { const i = at(e.clientX); if (i !== cur) { show(i); try { navigator.vibrate?.(6); } catch {} } };
-  row.addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse") return; row.setPointerCapture?.(e.pointerId); row.classList.add("scrub"); scrub(e); });
-  row.addEventListener("pointermove", (e) => { if (e.pointerType !== "mouse" && row.classList.contains("scrub")) scrub(e); });
-  ["pointerup", "pointercancel"].forEach((t) => row.addEventListener(t, () => row.classList.remove("scrub")));
-  box.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hide(); });
-  peek.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) navGP(b.dataset.go); });
 }
 function showHome(on) {
   NAV.home = on; const el = $("#home");
   document.body.classList.toggle("at-home", on);
-  if (on) { renderHome(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; }
+  if (on) { renderHome(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; homeX(); }
   else { el.classList.remove("on"); setTimeout(() => { if (!NAV.home) el.hidden = true; }, 320); NAV.homeWait.splice(0).forEach((r) => r()); }
 }
 
@@ -3737,8 +3584,6 @@ let navLoading = null;
 async function navRoute() {
   const { g, c } = parseHash();
   if (g.startsWith("paddock=")) { pkImport(g.slice(8)); history.replaceState(null, "", location.pathname); closeChapter(); showHome(true); return; } // lien de sauvegarde de la collection
-  if (g === "championnat") { closeChapter(); showChamp(true); return; }
-  showChamp(false);
   if (!g) { closeChapter(); showHome(true); return; }
   let r = RACES.find((x) => slugOf(x) === g);
   if (!r) { // GP d'une autre saison : on charge sa liste
@@ -3757,6 +3602,10 @@ addEventListener("popstate", navRoute);
 $("#mchap-back").addEventListener("click", chapBack);
 $("#mchap-x").addEventListener("click", chapBack);
 $("#mchap").addEventListener("click", (e) => { if (e.target === e.currentTarget) chapBack(); }); // clic à côté du panneau (ordinateur)
+// Croix et Échap de l'accueil : retour au GP déjà chargé (seulement si on vient d'un GP)
+function homeX() { const x = $("#home-x"); if (x) x.hidden = !(RACE && NAV.fromGP); }
+$("#home-x")?.addEventListener("click", () => RACE && navGP(RACE.session_key));
+addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.home && RACE && NAV.fromGP && !document.querySelector(".pk-modal, .overlay:not([hidden])")) navGP(RACE.session_key); });
 addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.chap && !document.querySelector(".msheet.on, .overlay:not([hidden])")) chapBack(); });
 // Liens internes (menu du haut, raccourcis) : un chapitre s'ouvre, le reste défile jusqu'à la bonne partie
 document.addEventListener("click", (e) => {
@@ -3803,66 +3652,6 @@ $("#share-gp")?.addEventListener("click", async () => {
   try { if (navigator.share) { await navigator.share({ title, url }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
   try { await navigator.clipboard.writeText(url); toast("Lien du GP copié"); } catch { prompt("Copie ce lien :", url); }
 });
-
-/* --- Championnat : points pilotes et écuries (courses + sprints archivés), masqué par défaut pour ne rien dévoiler --- */
-let CHAMP = null; // { year, races, sprints }
-async function champData(year) {
-  if (CHAMP && CHAMP.year === year) return CHAMP;
-  const races = (await fromArchive(`races-${year}.json`)) || [], sprints = (await fromArchive(`sprints-${year}.json`)) || [];
-  CHAMP = { year, races: races.filter((r) => r.pts && r.pts.length).sort((a, b) => new Date(a.date_start) - new Date(b.date_start)), sprints };
-  return CHAMP;
-}
-// Le bouton « Championnat » n'apparaît que si l'archive contient des points
-async function champButtons() {
-  const d = await champData(+$("#year").value);
-  $$(".champ-open").forEach((b) => (b.hidden = !d.races.length));
-}
-const champSeen = () => { try { return localStorage.getItem("f1duel:champ") === "1"; } catch { return false; } };
-const champSet = (v) => { try { v ? localStorage.setItem("f1duel:champ", "1") : localStorage.removeItem("f1duel:champ"); } catch {} };
-async function renderChamp() {
-  const d = await champData(+$("#year").value), body = $("#champ-body");
-  const last = d.races.at(-1), nR = d.races.length;
-  $("#champ-eyebrow").textContent = last ? `Championnat ${d.year} · après ${nR} GP${d.sprints.length ? ` et ${d.sprints.length} sprint${d.sprints.length > 1 ? "s" : ""}` : ""} · ${gpName(last)}` : `Championnat ${d.year}`;
-  $("#champ-back-t").textContent = RACE && NAV.fromGP ? `${gpName(RACE)} ${RACE.year}` : "Tous les Grands Prix";
-  const shown = champSeen(); $("#champ-hide").hidden = !shown;
-  if (!shown) {
-    body.innerHTML = `<div class="champ-mask"><div class="champ-blur" aria-hidden="true">${[70, 62, 55, 49, 41, 35, 28].map((w, i) => `<i style="width:${w}%;background:${["#27F4D2", "#3671C6", "#FF8000", "#E8002D", "#229971", "#64C4FF", "#B6BABD"][i]}"></i>`).join("")}</div>
-      <div class="champ-veil"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></svg>
-      <b>Classement masqué</b><p>Il contient les résultats de toutes les courses déjà courues. Pas encore vu le dernier GP ?</p>
-      <button type="button" class="btn" id="champ-show">Révéler le classement</button><small>Ton choix est gardé sur cet appareil</small></div></div>`;
-    $("#champ-show").addEventListener("click", () => { champSet(true); renderChamp(); });
-    return;
-  }
-  // Totaux : courses + sprints ; on garde la dernière écurie et la dernière couleur connues de chaque pilote
-  const D = new Map(), Tm = new Map();
-  const add = (pts) => pts.forEach(([code, name, team, color, p]) => {
-    const e = D.get(code) || { code, name, team, color, pts: 0, wins: 0 }; e.pts += p; e.team = team || e.team; e.color = color || e.color; D.set(code, e);
-    const t = Tm.get(team) || { team, color, pts: 0 }; t.pts += p; t.color = color || t.color; Tm.set(team, t);
-  });
-  d.races.forEach((r) => add(r.pts));
-  d.sprints.forEach((s) => add(s.pts || []));
-  d.races.forEach((r) => { const e = r.winner && D.get(r.winner.code); if (e) e.wins++; }); // départage à égalité de points
-  const drv = [...D.values()].sort((a, b) => b.pts - a.pts || b.wins - a.wins), tms = [...Tm.values()].filter((t) => t.team).sort((a, b) => b.pts - a.pts);
-  const fmt = (x) => String(Math.round(x * 10) / 10).replace(".", ",");
-  const rows = (list, max, kind) => list.map((e, i) => `<div class="cr${i >= 10 && kind === "d" ? " more" : ""}"><span class="cr-p">P${i + 1}</span><span class="cr-n">${kind === "d" ? `<i style="background:${e.color}"></i>${esc(e.name)}` : esc(e.team)}</span><span class="cr-b"><span style="width:${(e.pts / max) * 100}%;background:${e.color}"></span></span><span class="cr-v">${fmt(e.pts)}</span></div>`).join("");
-  const wins = d.races.map((r) => `<span class="cw" style="background:${r.winner?.color || "var(--track)"}" title="${esc(`${gpName(r)} · ${r.winner?.name || ""}`)}"></span>`).join("");
-  body.innerHTML = `<div class="champ-grid">
-    <div class="card champ-card"><div class="champ-h"><b>Pilotes</b><span>points</span></div>${rows(drv, drv[0]?.pts || 1, "d")}${drv.length > 10 ? `<button type="button" class="see-all" id="champ-more">Voir les ${drv.length - 10} autres pilotes</button>` : ""}</div>
-    <div class="champ-side"><div class="card champ-card"><div class="champ-h"><b>Écuries</b><span>points</span></div>${rows(tms, tms[0]?.pts || 1, "t")}</div>
-      <div class="card champ-card champ-wins"><b>Les victoires de la saison</b><div class="cw-row">${wins}</div><small>Une case par GP, à la couleur de l'écurie gagnante. Survole une case pour le GP et son vainqueur.</small></div></div></div>
-    <p class="fine">Points des Grands Prix${d.sprints.length ? " et des sprints" : ""} archivés. Pénalités appliquées après coup par les commissaires : non prises en compte.</p>`;
-  $("#champ-more")?.addEventListener("click", (e) => { body.querySelectorAll(".cr.more").forEach((r) => r.classList.add("on")); e.currentTarget.remove(); });
-}
-function showChamp(on) {
-  const el = $("#champ"); if (!el) return;
-  if (on === !el.hidden && on) { renderChamp(); return; }
-  if (on) { NAV.champ = true; document.body.classList.add("at-home"); renderChamp(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; }
-  else if (NAV.champ) { NAV.champ = false; el.classList.remove("on"); setTimeout(() => { if (!NAV.champ) el.hidden = true; }, 320); if (!NAV.home) document.body.classList.remove("at-home"); }
-}
-document.addEventListener("click", (e) => { if (e.target.closest(".champ-open")) { $("#msheet-menu")?.classList.remove("on"); $("#mscrim")?.classList.remove("on"); navGo("#championnat"); } });
-$("#champ-back")?.addEventListener("click", () => (RACE && NAV.fromGP ? navGP(RACE.session_key) : navGo("")));
-$("#champ-hide")?.addEventListener("click", () => { champSet(false); renderChamp(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.champ) $("#champ-back").click(); });
 
 /* ======================= La F1 qui se balade ======================= */
 // Ordinateur : de temps en temps (au plus une fois par minute et quart, après un défilement), une F1 remonte la marge vide
@@ -4156,9 +3945,7 @@ function pkStats(col = pkLoad()) {
 function pkCollection() {
   const col = pkLoad(), st = pkStats(col);
   const teams = new Map(); drivers.forEach((d) => { if (!teams.has(d.team)) teams.set(d.team, { color: d.color, ds: [] }); teams.get(d.team).ds.push(d); });
-  // Un pilote attrapé mais absent du GP affiché (forfait, remplacé ce week-end-là) reste rangé dans son écurie s'il en fait partie
-  const others = [];
-  Object.entries(col.drivers).filter(([c]) => !drivers.some((d) => d.code === c)).forEach(([c, e]) => { const t = teams.get(e.team); if (t) t.ds.push({ code: c, color: e.color || t.color, dn: e.number, extra: true }); else others.push([c, e]); });
+  const others = Object.entries(col.drivers).filter(([c]) => !drivers.some((d) => d.code === c));
   const cell = (code, e, color, number) => `<div class="pk-cell ${e ? "" : "off"}">${figSvg({ color, number, ghost: !e, label: e ? code : "Pilote pas encore attrapé" })}<b>${e ? esc(code) : "???"}</b><small>${e ? (e.n > 1 ? `attrapé ${e.n} fois` : "attrapé") : "pas encore vu"}</small></div>`;
   const golds = Object.values(col.gold);
   const m = document.createElement("div"); m.className = "pk-modal pk-coll-wrap"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-label", "Ta collection");
@@ -4168,7 +3955,7 @@ function pkCollection() {
     <div class="pk-stats"><div><span>Pilotes</span><b>${st.got} <small>/ ${st.tot}</small></b><i><b style="width:${Math.round((st.got / Math.max(1, st.tot)) * 100)}%"></b></i></div>
       <div class="gold"><span>Vainqueurs dorés</span><b>${st.gold} <small>GP</small></b></div><div class="gold"><span>Rares</span><b>${st.rares} <small>/ 3</small></b></div></div>
     <div class="pk-teams">${[...teams].map(([t, v]) => `<div class="pk-team"><div class="pk-tn"><i style="background:${v.color}"></i>${esc(t)}</div><div class="pk-cells">${v.ds.map((d) => cell(d.code, col.drivers[d.code], d.color, d.dn)).join("")}</div></div>`).join("")}</div>
-    ${others.length ? `<h3>${drivers.length ? "Autres pilotes" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
+    ${others.length ? `<h3>${drivers.length ? "D'autres saisons" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
     <h3>Les vainqueurs dorés <small>un par GP, sur le GP que tu regardes</small></h3>
     <div class="pk-cells wide">${golds.length ? golds.map((g) => `<div class="pk-cell gold">${figSvg({ color: g.color, number: g.number, gold: true, label: g.name + " doré" })}<b>${esc(g.code)}</b><small>${esc(g.gp)}</small></div>`).join("") : `<p class="pk-empty">Aucun pour l'instant : le vainqueur du GP affiché passe parfois, en or.</p>`}</div>
     <h3>Les rares</h3>

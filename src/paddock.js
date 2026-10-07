@@ -171,9 +171,7 @@ function pkStats(col = pkLoad()) {
 function pkCollection() {
   const col = pkLoad(), st = pkStats(col);
   const teams = new Map(); drivers.forEach((d) => { if (!teams.has(d.team)) teams.set(d.team, { color: d.color, ds: [] }); teams.get(d.team).ds.push(d); });
-  // Un pilote attrapé mais absent du GP affiché (forfait, remplacé ce week-end-là) reste rangé dans son écurie s'il en fait partie
-  const others = [];
-  Object.entries(col.drivers).filter(([c]) => !drivers.some((d) => d.code === c)).forEach(([c, e]) => { const t = teams.get(e.team); if (t) t.ds.push({ code: c, color: e.color || t.color, dn: e.number, extra: true }); else others.push([c, e]); });
+  const others = Object.entries(col.drivers).filter(([c]) => !drivers.some((d) => d.code === c));
   const cell = (code, e, color, number) => `<div class="pk-cell ${e ? "" : "off"}">${figSvg({ color, number, ghost: !e, label: e ? code : "Pilote pas encore attrapé" })}<b>${e ? esc(code) : "???"}</b><small>${e ? (e.n > 1 ? `attrapé ${e.n} fois` : "attrapé") : "pas encore vu"}</small></div>`;
   const golds = Object.values(col.gold);
   const m = document.createElement("div"); m.className = "pk-modal pk-coll-wrap"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-label", "Ta collection");
@@ -183,7 +181,7 @@ function pkCollection() {
     <div class="pk-stats"><div><span>Pilotes</span><b>${st.got} <small>/ ${st.tot}</small></b><i><b style="width:${Math.round((st.got / Math.max(1, st.tot)) * 100)}%"></b></i></div>
       <div class="gold"><span>Vainqueurs dorés</span><b>${st.gold} <small>GP</small></b></div><div class="gold"><span>Rares</span><b>${st.rares} <small>/ 3</small></b></div></div>
     <div class="pk-teams">${[...teams].map(([t, v]) => `<div class="pk-team"><div class="pk-tn"><i style="background:${v.color}"></i>${esc(t)}</div><div class="pk-cells">${v.ds.map((d) => cell(d.code, col.drivers[d.code], d.color, d.dn)).join("")}</div></div>`).join("")}</div>
-    ${others.length ? `<h3>${drivers.length ? "Autres pilotes" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
+    ${others.length ? `<h3>${drivers.length ? "D'autres saisons" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
     <h3>Les vainqueurs dorés <small>un par GP, sur le GP que tu regardes</small></h3>
     <div class="pk-cells wide">${golds.length ? golds.map((g) => `<div class="pk-cell gold">${figSvg({ color: g.color, number: g.number, gold: true, label: g.name + " doré" })}<b>${esc(g.code)}</b><small>${esc(g.gp)}</small></div>`).join("") : `<p class="pk-empty">Aucun pour l'instant : le vainqueur du GP affiché passe parfois, en or.</p>`}</div>
     <h3>Les rares</h3>

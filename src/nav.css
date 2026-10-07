@@ -37,11 +37,10 @@ body.at-home { overflow: hidden; }
 .home-empty { color: var(--muted); padding: 30px 0; text-align: center; }
 @media (min-width: 900px) {
   .home-in { grid-template-columns: 1.1fr 1fr; column-gap: 28px; align-items: start; padding-top: 28px; }
-  .home-top, .home-in > .eyebrow, .home-h, .home-season { grid-column: 1 / -1; }
+  .home-top, .home-in > .eyebrow, .home-h { grid-column: 1 / -1; }
   .home-side { display: grid; gap: 10px; align-content: start; }
   .home-t { margin: 0; }
-  .home-list { grid-template-columns: 1fr; }
-  .home-feat { position: sticky; top: 24px; }
+  .home-list { grid-template-columns: 1fr; max-height: 62vh; overflow: auto; padding-right: 4px; }
 }
 
 /* ---------- Chapitres : sommaire en cartes partout, chapitre en plein écran (mobile) ou en grand panneau (ordinateur) ---------- */
@@ -197,8 +196,9 @@ body.in-chap { overflow: hidden; }
 @media (min-width: 641px) {
   .duel .team { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .duel .team .dot { flex: none; margin: 0; }
-  .duel { grid-template-columns: 150px minmax(0, 1fr) 210px; }
+  .duel { grid-template-columns: 150px minmax(0, 1fr) 300px; }
   .duel .who { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; }
+  .duel .who .strat { grid-column: 1 / -1; justify-self: start; }
   .duel .who .gap { text-align: right; }
 }
 
@@ -333,7 +333,7 @@ body.in-chap { overflow: hidden; }
 .hdr-coll:hover { transform: translateY(-1px); box-shadow: var(--sh-md); }
 .helm { flex: none; color: var(--ink); }
 .chip .helm { vertical-align: -3px; margin-right: 6px; }
-.hdr-coll { width: 38px; padding: 0; justify-content: center; } .hdr-coll span { display: none; }
+@media (max-width: 1379px) { .hdr-coll { width: 38px; padding: 0; justify-content: center; } .hdr-coll span { display: none; } }
 @media (max-width: 640px) { .hdr-coll { width: 40px; height: 40px; } }
 .pk-cells.wide .pk-empty { grid-column: 1 / -1; }
 .home-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
@@ -376,100 +376,3 @@ body.in-chap { overflow: hidden; }
 /* Le menu des GP garde la largeur du nom affiché (la ligne « Voir tous les Grands Prix… » ne l'élargit pas) */
 @media (min-width: 641px) { .gp-pick #gp { width: 12.5em; } }
 @media (max-width: 640px) { .duel .who { white-space: normal; } .duel .who .gap small { display: none; } }
-.fr-rows { display: grid; gap: 2px; margin-top: 16px; }
-.fr-row { display: grid; grid-template-columns: 22px 44px minmax(0, 1fr); align-items: center; gap: 10px; text-align: left; border: 0; border-radius: 10px; background: none; color: var(--ink-2); font: 400 15px/1.35 var(--body); padding: 7px 8px; cursor: pointer; }
-button.fr-row:hover { background: var(--track); }
-.fr-row.sc, .fr-row.end { cursor: default; }
-.fr-row b { color: var(--ink); font-weight: 700; }
-.fr-row .fr-lap { font: 600 12px var(--mono); color: var(--muted); }
-.fr-row .fr-txt { overflow: hidden; text-overflow: ellipsis; }
-.fr-n.hatch { border-radius: 6px; background: repeating-linear-gradient(135deg, #f5c518 0 4px, #e0b000 4px 8px); }
-.fr-row .fr-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
-@media (max-width: 640px) { .fr-row { font-size: 14px; padding: 6px 4px; gap: 8px; grid-template-columns: 22px 38px minmax(0, 1fr); } .fr-rows { margin-top: 12px; } }
-.duel .who .sep { color: var(--muted); margin: 0 2px; } .duel .who .strat { margin-left: 6px; vertical-align: 1px; }
-/* Accueil : même fond que la page du GP (halo coloré), saison en cours, liste complète sans boîte qui défile */
-.home { background: var(--page); isolation: isolate; }
-.home-halo { position: fixed; z-index: -1; }
-.home-in { position: relative; }
-.home-season { display: grid; gap: 8px; max-width: 560px; }
-.home-season:empty { display: none; }
-.hs-bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; }
-.hs-bar span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
-.hs-txt { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
-.hs-txt b { color: var(--ink); }
-.hr { background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .15s, border-color .15s, box-shadow .15s; }
-@media (hover: hover) { .hr:hover { transform: translateY(-1px); box-shadow: var(--sh-md); border-color: var(--accent); } }
-.hr-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
-.home-feat .hf { background: color-mix(in srgb, var(--surface) 92%, transparent); }
-/* Accueil sans spoiler : saison en cases, tracé du dernier GP en filigrane, liste sans vainqueurs */
-.hs-dots { display: flex; gap: 5px; }
-.hs-dot { flex: 1; height: 10px; border-radius: 5px; border: 1.5px solid color-mix(in srgb, var(--ink) 22%, transparent); box-sizing: border-box; padding: 0; background: transparent; }
-button.hs-dot { cursor: pointer; border: 0; background: var(--ink); transition: transform .15s; }
-button.hs-dot.last { background: var(--accent); }
-button.hs-dot:hover { transform: scaleY(1.6); }
-.home-season { max-width: none; }
-.home-mark { position: absolute; right: 16px; top: 92px; width: 190px; height: 92px; opacity: .1; pointer-events: none; }
-.home-mark .hm-map { width: 100%; height: 100%; }
-.home-mark .hm-map path { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linejoin: round; }
-@media (max-width: 1179px) { .home-mark { display: none; } }
-.hf-sub { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; color: var(--ink-2); }
-.hf-sub small { font-size: 12px; color: var(--muted); }
-@media (min-width: 1100px) { .home-in { max-width: 1120px; } .home-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } .home-list .hr { grid-template-columns: 34px 1fr 46px; } .home-list .hr-map { width: 46px; height: 30px; } }
-/* Championnat */
-.champ { z-index: 72; }
-.champ-in { max-width: 1120px; margin: 0 auto; padding: 18px 16px 48px; display: grid; gap: 14px; position: relative; }
-.champ-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.champ-back { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; color: var(--ink-2); font: 600 15px var(--body); cursor: pointer; padding: 6px 0; }
-.champ-back:hover { color: var(--ink); }
-#champ-hide[hidden], .champ-open[hidden] { display: none !important; }
-.champ-mask { position: relative; border-radius: 20px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); min-height: 360px; }
-.champ-blur { padding: 26px; display: grid; gap: 16px; filter: blur(8px); opacity: .7; }
-.champ-blur i { display: block; height: 13px; border-radius: 7px; }
-.champ-veil { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 24px; background: color-mix(in srgb, var(--page) 50%, transparent); color: var(--ink); }
-.champ-veil b { font: 800 22px var(--display); font-stretch: 112%; }
-.champ-veil p { margin: 0; max-width: 360px; color: var(--ink-2); font-size: 15px; }
-.champ-veil small { color: var(--muted); font-size: 12px; }
-.champ-grid { display: grid; gap: 18px; align-items: start; }
-@media (min-width: 900px) { .champ-grid { grid-template-columns: 1.15fr 1fr; } }
-.champ-side { display: grid; gap: 18px; }
-.champ-card { padding: 16px 18px; display: grid; gap: 2px; }
-.champ-h { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px; } .champ-h b { font-size: 15px; } .champ-h span { font: 500 12px var(--mono); color: var(--muted); }
-.cr { display: grid; grid-template-columns: 34px minmax(110px, 160px) minmax(0, 1fr) 52px; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
-.cr.more { display: none; } .cr.more.on { display: grid; }
-.cr-p { font: 600 12px var(--mono); color: var(--muted); }
-.cr-n { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cr-n i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.cr-b { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; } .cr-b span { display: block; height: 100%; border-radius: 4px; }
-.cr-v { font: 600 13px var(--mono); text-align: right; }
-.champ-wins { gap: 10px; } .champ-wins small { color: var(--muted); font-size: 12px; }
-.cw-row { display: flex; gap: 4px; } .cw { flex: 1; height: 26px; border-radius: 5px; }
-@media (max-width: 640px) { .cr { grid-template-columns: 30px minmax(0, 1fr) 70px 44px; } }
-/* Saison : panneau du GP survolé, qui s'ouvre sous les cases et pousse le texte */
-.hs-dots { align-items: center; height: 18px; }
-.hs-dot { transition: transform .2s cubic-bezier(.2,.8,.2,1), opacity .2s, height .2s; }
-.hs-dots:hover .hs-dot:not(.hot), .hs-dots:has(.hot) .hs-dot:not(.hot) { opacity: .45; }
-.hs-dot.hot { height: 16px; opacity: 1; }
-button.hs-dot:hover { transform: none; }
-.hs-peek { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s cubic-bezier(.2,.8,.2,1), margin .32s; margin: 0; }
-.hs-peek.on { grid-template-rows: 1fr; margin: 4px 0 2px; }
-.hs-peek-in { min-height: 0; overflow: hidden; display: flex; align-items: center; gap: 14px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid transparent; padding: 0 14px; }
-.hs-peek.on .hs-peek-in { border-color: var(--line); padding: 10px 14px; box-shadow: var(--sh-md); }
-.hs-peek-in.in > * { animation: hpIn .35s cubic-bezier(.2,.8,.2,1) both; }
-.hs-peek-in.in > *:nth-child(2) { animation-delay: .04s; } .hs-peek-in.in > *:nth-child(3) { animation-delay: .08s; }
-@keyframes hpIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.hp-map { width: 72px; height: 44px; flex: none; }
-.hp-map path { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
-.hp-t { display: grid; gap: 2px; flex: 1; min-width: 0; } .hp-t small { font: 500 12px var(--mono); color: var(--muted); } .hp-t b { font: 800 22px/1.1 var(--display); font-stretch: 112%; text-transform: uppercase; }
-.hp-go { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: 700 13px var(--body); padding: 9px 16px; cursor: pointer; flex: none; }
-.hp-soon { font-size: 13px; color: var(--ink-2); flex: none; }
-@media (prefers-reduced-motion: reduce) { .hs-peek, .hs-dot { transition: none; } .hs-peek-in.in > * { animation: none; } }
-.hs-peek:not(.on) .hs-peek-in { opacity: 0; border-width: 0; }
-.hs-peek-in { transition: opacity .25s; }
-/* Mobile : la rangée entière est une zone tactile de 44 px qu'on parcourt du doigt */
-@media (hover: none) {
-  .hs-dots { height: 44px; touch-action: pan-y; gap: 3px; cursor: default; }
-  .hs-dots.scrub .hs-dot.hot { height: 22px; }
-  .hs-dot { pointer-events: none; }
-}
-.hs-hint { display: none; color: var(--muted); }
-@media (hover: none) { .hs-hint { display: inline; } }
