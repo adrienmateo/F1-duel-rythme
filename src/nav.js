@@ -87,7 +87,7 @@ function renderHome() {
 function showHome(on) {
   NAV.home = on; const el = $("#home");
   document.body.classList.toggle("at-home", on);
-  if (on) { renderHome(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; homeX(); }
+  if (on) { renderHome(); el.hidden = false; requestAnimationFrame(() => el.classList.add("on")); el.scrollTop = 0; }
   else { el.classList.remove("on"); setTimeout(() => { if (!NAV.home) el.hidden = true; }, 320); NAV.homeWait.splice(0).forEach((r) => r()); }
 }
 
@@ -212,10 +212,6 @@ addEventListener("popstate", navRoute);
 $("#mchap-back").addEventListener("click", chapBack);
 $("#mchap-x").addEventListener("click", chapBack);
 $("#mchap").addEventListener("click", (e) => { if (e.target === e.currentTarget) chapBack(); }); // clic à côté du panneau (ordinateur)
-// Croix et Échap de l'accueil : retour au GP déjà chargé (seulement si on vient d'un GP)
-function homeX() { const x = $("#home-x"); if (x) x.hidden = !(RACE && NAV.fromGP); }
-$("#home-x")?.addEventListener("click", () => RACE && navGP(RACE.session_key));
-addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.home && RACE && NAV.fromGP && !document.querySelector(".pk-modal, .overlay:not([hidden])")) navGP(RACE.session_key); });
 addEventListener("keydown", (e) => { if (e.key === "Escape" && NAV.chap && !document.querySelector(".msheet.on, .overlay:not([hidden])")) chapBack(); });
 // Liens internes (menu du haut, raccourcis) : un chapitre s'ouvre, le reste défile jusqu'à la bonne partie
 document.addEventListener("click", (e) => {
