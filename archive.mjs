@@ -26,14 +26,19 @@ const { analyse, compactRace, gridFromPositions } = new Function(`${cfg}\n${med}
 /* ---------- OpenF1, avec pauses et nouvelles tentatives ---------- */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 class Closed extends Error {}
+let lastCall = 0;
 async function api(endpoint, params) {
   const url = `${API}/${endpoint}?${typeof params === "string" ? params : new URLSearchParams(params)}`;
-  for (let attempt = 1; attempt <= 4; attempt++) {
-    const res = await fetch(url);
-    if (res.ok) { await sleep(450); return res.json(); }
-    if (res.status === 404) { await sleep(450); return []; }
+  // Accès gratuit OpenF1 : 30 appels par minute au plus. On en fait 25 (un toutes les 2,4 s), et on patiente plus longtemps si OpenF1 freine.
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    const wait = 2400 - (Date.now() - lastCall); if (wait > 0) await sleep(wait);
+    lastCall = Date.now();
+    let res;
+    try { res = await fetch(url); } catch { await sleep(10000 * attempt); continue; }
+    if (res.ok) return res.json();
+    if (res.status === 404) return [];
     if (res.status === 401 || res.status === 403) throw new Closed("OpenF1 est fermé aux visiteurs gratuits en ce moment (séance en direct ?) : on réessaiera plus tard.");
-    if (res.status === 429 || res.status >= 500) { await sleep(5000 * attempt); continue; }
+    if (res.status === 429 || res.status >= 500) { console.log(`  OpenF1 ${res.status} sur ${endpoint}, nouvel essai dans ${15 * attempt} s…`); await sleep(15000 * attempt); continue; }
     throw new Error(`OpenF1 HTTP ${res.status} sur ${endpoint}`);
   }
   throw new Error(`OpenF1 ne répond pas (${endpoint})`);
@@ -84,7 +89,7 @@ function summary(sk) {
 
 /* ---------- Toutes les courses terminées de l'année ---------- */
 fs.mkdirSync(DATA, { recursive: true });
-let added = 0;
+let added = 0, failed = 0;
 try {
   for (const year of YEARS) {
     const sessions = await api("sessions", { year, session_type: "Race" });
@@ -97,7 +102,9 @@ try {
       // Une course terminée depuis moins de 12 h peut encore être complétée par OpenF1 : on la reprendra plus tard
       if (Date.now() - new Date(s.date_end) < 12 * 3600e3) { console.log(`  ${s.country_name} : trop récente, ce sera pour la prochaine fois.`); continue; }
       if (!FORCE && fs.existsSync(file)) { archived.push(s); continue; }
-      if (await archiveRace(s)) { archived.push(s); added++; }
+      // Une course en échec ne bloque pas les autres : elle sera reprise la prochaine fois
+      try { if (await archiveRace(s)) { archived.push(s); added++; } }
+      catch (e) { if (e instanceof Closed) throw e; failed++; console.log(`  ${s.country_name} ${s.year} : échec (${e.message}), on réessaiera la prochaine fois.`); }
     }
     // Liste des courses lue par le site (seulement celles qui sont archivées)
     const keep = ["session_key", "meeting_key", "session_name", "session_type", "date_start", "date_end", "country_name", "location", "circuit_short_name", "year", "is_cancelled"];
@@ -111,3 +118,4 @@ try {
   throw e;
 }
 console.log(added ? `${added} course(s) ajoutée(s) à l'archive.` : "Archive déjà à jour.");
+if (failed) console.log(`${failed} course(s) en échec, reprises au prochain passage.`);
