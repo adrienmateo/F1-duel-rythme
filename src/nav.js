@@ -68,9 +68,11 @@ function renderHome() {
   const all = [...new Map([...season, ...RACES].map((r) => [r.session_key, r])).values()].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   const next = all.find((r) => new Date(r.date_start) > new Date() && !RACES.includes(r));
   const days = next ? Math.ceil((new Date(next.date_start) - Date.now()) / 864e5) : 0;
-  $("#home-season").innerHTML = `<div class="hs-dots">${all.map((r) => { const done = RACES.includes(r), last = r === f, t = `${done ? round(r) + " · " : ""}${gpName(r)} · ${dateFr(r.date_start)}${done ? "" : " · à venir"}`;
-      return done ? `<button class="hs-dot on${last ? " last" : ""}" data-sk="${r.session_key}" title="${esc(t)}" aria-label="${esc(t)}"></button>` : `<span class="hs-dot" title="${esc(t)}"></span>`; }).join("")}</div>
+  $("#home-season").innerHTML = `<div class="hs-dots">${all.map((r, i) => { const done = RACES.includes(r), last = r === f, t = `${done ? round(r) + " · " : ""}${gpName(r)} · ${dateFr(r.date_start)}${done ? "" : " · à venir"}`;
+      return done ? `<button class="hs-dot on${last ? " last" : ""}" data-i="${i}" data-go="${r.session_key}" aria-label="${esc(t)}"></button>` : `<span class="hs-dot" data-i="${i}"></span>`; }).join("")}</div>
+    <div class="hs-peek" id="hs-peek" aria-live="polite"><div class="hs-peek-in" id="hs-peek-in"></div></div>
     <div class="hs-txt"><span><b>${RACES.length}</b> GP courus sur ${all.length}</span>${next ? `<span>Prochain : <b>${esc(gpName(next))}</b> · ${dateFr(next.date_start)}${days <= 14 ? ` · ${days <= 1 ? "demain" : `dans ${days} jours`}` : ""}</span>` : ""}</div>`;
+  seasonPeek(all, round);
   const ol = outlineOf(f) || [];
   $("#home-mark").innerHTML = ol.length >= 10 ? outlineSvg(ol, 260, 130, 8, "hm-map") : "";
   $("#home-feat").innerHTML = `<button class="hf" data-sk="${f.session_key}">
@@ -83,6 +85,29 @@ function renderHome() {
   $("#home-list").innerHTML = list.slice(1).map((r) => `<button class="hr" data-sk="${r.session_key}">
       <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(gpName(r))}</b><small>${dateFr(r.date_start)}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`).join("");
   $$("#home [data-sk]").forEach((b) => b.addEventListener("click", () => navGP(b.dataset.sk)));
+}
+// Survol d'une case de la saison : le GP apparaît dessous, dans un panneau qui s'ouvre et pousse le texte vers le bas
+function seasonPeek(all, round) {
+  const box = $("#home-season"), peek = $("#hs-peek"), inn = $("#hs-peek-in"), touch = matchMedia("(hover: none)").matches;
+  let cur = -1, hideT = 0;
+  const show = (i) => {
+    clearTimeout(hideT); if (i === cur) return; cur = i;
+    const r = all[i], done = RACES.includes(r), ol = outlineOf(r) || [], days = Math.ceil((new Date(r.date_start) - Date.now()) / 864e5);
+    inn.innerHTML = `${ol.length >= 10 ? outlineSvg(ol, 72, 44, 4, "hp-map") : ""}
+      <span class="hp-t"><small>${done ? round(r) + " · " : ""}${dateFr(r.date_start)}${r.location ? " · " + esc(villeFr(r)) : ""}</small><b>${esc(gpName(r))}</b></span>
+      ${done ? `<button type="button" class="hp-go" data-go="${r.session_key}">Voir le GP <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>` : `<span class="hp-soon">À venir${days > 0 && days <= 30 ? ` · dans ${days} jour${days > 1 ? "s" : ""}` : ""}</span>`}`;
+    inn.classList.remove("in"); void inn.offsetWidth; inn.classList.add("in");
+    peek.classList.add("on");
+    box.querySelectorAll(".hs-dot").forEach((d) => d.classList.toggle("hot", +d.dataset.i === i));
+  };
+  const hide = () => { hideT = setTimeout(() => { cur = -1; peek.classList.remove("on"); box.querySelectorAll(".hs-dot").forEach((d) => d.classList.remove("hot")); }, 260); };
+  box.querySelectorAll(".hs-dot").forEach((d) => {
+    d.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") show(+d.dataset.i); });
+    d.addEventListener("focus", () => { if (d.matches(":focus-visible")) show(+d.dataset.i); });
+    d.addEventListener("click", (e) => { const i = +d.dataset.i; if ((touch || e.pointerType !== "mouse") && cur !== i) { show(i); return; } if (d.dataset.go) navGP(d.dataset.go); });
+  });
+  box.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hide(); });
+  peek.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) navGP(b.dataset.go); });
 }
 function showHome(on) {
   NAV.home = on; const el = $("#home");

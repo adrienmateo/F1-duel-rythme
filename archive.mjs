@@ -44,6 +44,21 @@ async function api(endpoint, params) {
   throw new Error(`OpenF1 ne répond pas (${endpoint})`);
 }
 
+/* ---------- Tracé du circuit : positions GPS d'un tour propre du vainqueur ---------- */
+// On essaie ses tours propres du plus rapide au plus lent (jusqu'à 5) : certains tours n'ont pas de positions chez OpenF1
+async function traceOf(sk, pack) {
+  const winner = [...pack.results].filter((r) => r.position === 1 && !r.dnf && !r.dns && !r.dsq)[0];
+  const st = winner && analyse(pack.data).drivers.get(winner.driver_number);
+  const ok = st ? st.laps.filter((l) => !l.reason && l.ds != null && l.t).sort((x, y) => x.t - y.t) : [];
+  const iso = (ms) => new Date(ms).toISOString();
+  for (const lap of ok.slice(0, 5)) {
+    const q = `session_key=${sk}&driver_number=${winner.driver_number}&date>${encodeURIComponent(iso(lap.ds - 300))}&date<${encodeURIComponent(iso(lap.ds + lap.t * 1000 + 300))}`;
+    const pts = (await api("location", q)).filter((p) => p.x != null && p.y != null && !(p.x === 0 && p.y === 0)).sort((p, q2) => Date.parse(p.date) - Date.parse(q2.date));
+    if (pts.length >= 40) return pts.map((p) => [Math.round(p.x), Math.round(p.y)]);
+  }
+  return null;
+}
+
 /* ---------- Une course : mêmes données que le site, plus le tracé du circuit ---------- */
 async function archiveRace(s) {
   const sk = s.session_key, raw = {};
@@ -57,18 +72,7 @@ async function archiveRace(s) {
     results: raw.session_result.map((r) => ({ driver_number: r.driver_number, position: r.position, number_of_laps: r.number_of_laps, dnf: r.dnf, dns: r.dns, dsq: r.dsq, duration: typeof r.duration === "number" ? r.duration : null, gap_to_leader: r.gap_to_leader, points: r.points })),
     grid: raw.starting_grid.map((g) => ({ driver_number: g.driver_number, position: g.position })),
   };
-  // Tracé : positions du meilleur tour propre du vainqueur (même choix que le site)
-  let trace = null;
-  const winner = [...raw.session_result].filter((r) => r.position === 1 && !r.dnf && !r.dns && !r.dsq)[0];
-  const st = winner && analyse(pack.data).drivers.get(winner.driver_number);
-  const ok = st ? st.laps.filter((l) => !l.reason && l.s && l.ds != null && l.t) : [];
-  if (ok.length) {
-    const lap = ok.reduce((x, l) => (l.t < x.t ? l : x));
-    const iso = (ms) => new Date(ms).toISOString();
-    const q = `session_key=${sk}&driver_number=${winner.driver_number}&date>${encodeURIComponent(iso(lap.ds - 300))}&date<${encodeURIComponent(iso(lap.ds + lap.t * 1000 + 300))}`;
-    const pts = (await api("location", q)).filter((p) => p.x != null && p.y != null && !(p.x === 0 && p.y === 0)).sort((p, q2) => Date.parse(p.date) - Date.parse(q2.date));
-    if (pts.length >= 40) trace = pts.map((p) => [Math.round(p.x), Math.round(p.y)]);
-  }
+  const trace = await traceOf(sk, pack);
   fs.writeFileSync(path.join(DATA, `${sk}.json`), JSON.stringify({ v: 1, saved: new Date().toISOString(), pack, trace }));
   console.log(`  ${s.country_name} ${s.year} archivé (${pack.data.laps.length} tours${trace ? ", tracé inclus" : ", sans tracé"}).`);
   return true;
@@ -107,7 +111,14 @@ try {
       const file = path.join(DATA, `${s.session_key}.json`);
       // Une course terminée depuis moins de 12 h peut encore être complétée par OpenF1 : on la reprendra plus tard
       if (Date.now() - new Date(s.date_end) < 12 * 3600e3) { console.log(`  ${s.country_name} : trop récente, ce sera pour la prochaine fois.`); continue; }
-      if (!FORCE && fs.existsSync(file)) { archived.push(s); continue; }
+      if (!FORCE && fs.existsSync(file)) {
+        // Course déjà archivée mais sans tracé : on retente seulement le tracé
+        try {
+          const saved = JSON.parse(fs.readFileSync(file, "utf8"));
+          if (!saved.trace) { const t = await traceOf(s.session_key, saved.pack); if (t) { saved.trace = t; fs.writeFileSync(file, JSON.stringify(saved)); added++; console.log(`  ${s.country_name} ${s.year} : tracé ajouté.`); } }
+        } catch (e) { if (e instanceof Closed) throw e; }
+        archived.push(s); continue;
+      }
       // Une course en échec ne bloque pas les autres : elle sera reprise la prochaine fois
       try { if (await archiveRace(s)) { archived.push(s); added++; } }
       catch (e) { if (e instanceof Closed) throw e; failed++; console.log(`  ${s.country_name} ${s.year} : échec (${e.message}), on réessaiera la prochaine fois.`); }

@@ -1128,6 +1128,27 @@ button.hs-dot:hover { transform: scaleY(1.6); }
 .champ-wins { gap: 10px; } .champ-wins small { color: var(--muted); font-size: 12px; }
 .cw-row { display: flex; gap: 4px; } .cw { flex: 1; height: 26px; border-radius: 5px; }
 @media (max-width: 640px) { .cr { grid-template-columns: 30px minmax(0, 1fr) 70px 44px; } }
+/* Saison : panneau du GP survolé, qui s'ouvre sous les cases et pousse le texte */
+.hs-dots { align-items: center; height: 18px; }
+.hs-dot { transition: transform .2s cubic-bezier(.2,.8,.2,1), opacity .2s, height .2s; }
+.hs-dots:hover .hs-dot:not(.hot), .hs-dots:has(.hot) .hs-dot:not(.hot) { opacity: .45; }
+.hs-dot.hot { height: 16px; opacity: 1; }
+button.hs-dot:hover { transform: none; }
+.hs-peek { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s cubic-bezier(.2,.8,.2,1), margin .32s; margin: 0; }
+.hs-peek.on { grid-template-rows: 1fr; margin: 4px 0 2px; }
+.hs-peek-in { min-height: 0; overflow: hidden; display: flex; align-items: center; gap: 14px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid transparent; padding: 0 14px; }
+.hs-peek.on .hs-peek-in { border-color: var(--line); padding: 10px 14px; box-shadow: var(--sh-md); }
+.hs-peek-in.in > * { animation: hpIn .35s cubic-bezier(.2,.8,.2,1) both; }
+.hs-peek-in.in > *:nth-child(2) { animation-delay: .04s; } .hs-peek-in.in > *:nth-child(3) { animation-delay: .08s; }
+@keyframes hpIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.hp-map { width: 72px; height: 44px; flex: none; }
+.hp-map path { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
+.hp-t { display: grid; gap: 2px; flex: 1; min-width: 0; } .hp-t small { font: 500 12px var(--mono); color: var(--muted); } .hp-t b { font: 800 22px/1.1 var(--display); font-stretch: 112%; text-transform: uppercase; }
+.hp-go { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: 700 13px var(--body); padding: 9px 16px; cursor: pointer; flex: none; }
+.hp-soon { font-size: 13px; color: var(--ink-2); flex: none; }
+@media (prefers-reduced-motion: reduce) { .hs-peek, .hs-dot { transition: none; } .hs-peek-in.in > * { animation: none; } }
+.hs-peek:not(.on) .hs-peek-in { opacity: 0; border-width: 0; }
+.hs-peek-in { transition: opacity .25s; }
 
 </style>
 </head>
@@ -3552,9 +3573,11 @@ function renderHome() {
   const all = [...new Map([...season, ...RACES].map((r) => [r.session_key, r])).values()].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   const next = all.find((r) => new Date(r.date_start) > new Date() && !RACES.includes(r));
   const days = next ? Math.ceil((new Date(next.date_start) - Date.now()) / 864e5) : 0;
-  $("#home-season").innerHTML = `<div class="hs-dots">${all.map((r) => { const done = RACES.includes(r), last = r === f, t = `${done ? round(r) + " · " : ""}${gpName(r)} · ${dateFr(r.date_start)}${done ? "" : " · à venir"}`;
-      return done ? `<button class="hs-dot on${last ? " last" : ""}" data-sk="${r.session_key}" title="${esc(t)}" aria-label="${esc(t)}"></button>` : `<span class="hs-dot" title="${esc(t)}"></span>`; }).join("")}</div>
+  $("#home-season").innerHTML = `<div class="hs-dots">${all.map((r, i) => { const done = RACES.includes(r), last = r === f, t = `${done ? round(r) + " · " : ""}${gpName(r)} · ${dateFr(r.date_start)}${done ? "" : " · à venir"}`;
+      return done ? `<button class="hs-dot on${last ? " last" : ""}" data-i="${i}" data-go="${r.session_key}" aria-label="${esc(t)}"></button>` : `<span class="hs-dot" data-i="${i}"></span>`; }).join("")}</div>
+    <div class="hs-peek" id="hs-peek" aria-live="polite"><div class="hs-peek-in" id="hs-peek-in"></div></div>
     <div class="hs-txt"><span><b>${RACES.length}</b> GP courus sur ${all.length}</span>${next ? `<span>Prochain : <b>${esc(gpName(next))}</b> · ${dateFr(next.date_start)}${days <= 14 ? ` · ${days <= 1 ? "demain" : `dans ${days} jours`}` : ""}</span>` : ""}</div>`;
+  seasonPeek(all, round);
   const ol = outlineOf(f) || [];
   $("#home-mark").innerHTML = ol.length >= 10 ? outlineSvg(ol, 260, 130, 8, "hm-map") : "";
   $("#home-feat").innerHTML = `<button class="hf" data-sk="${f.session_key}">
@@ -3567,6 +3590,29 @@ function renderHome() {
   $("#home-list").innerHTML = list.slice(1).map((r) => `<button class="hr" data-sk="${r.session_key}">
       <span class="hr-r">${round(r)}</span><span class="hr-t"><b>${esc(gpName(r))}</b><small>${dateFr(r.date_start)}</small></span>${outlineSvg(outlineOf(r), 64, 40, 4, "hr-map")}</button>`).join("");
   $$("#home [data-sk]").forEach((b) => b.addEventListener("click", () => navGP(b.dataset.sk)));
+}
+// Survol d'une case de la saison : le GP apparaît dessous, dans un panneau qui s'ouvre et pousse le texte vers le bas
+function seasonPeek(all, round) {
+  const box = $("#home-season"), peek = $("#hs-peek"), inn = $("#hs-peek-in"), touch = matchMedia("(hover: none)").matches;
+  let cur = -1, hideT = 0;
+  const show = (i) => {
+    clearTimeout(hideT); if (i === cur) return; cur = i;
+    const r = all[i], done = RACES.includes(r), ol = outlineOf(r) || [], days = Math.ceil((new Date(r.date_start) - Date.now()) / 864e5);
+    inn.innerHTML = `${ol.length >= 10 ? outlineSvg(ol, 72, 44, 4, "hp-map") : ""}
+      <span class="hp-t"><small>${done ? round(r) + " · " : ""}${dateFr(r.date_start)}${r.location ? " · " + esc(villeFr(r)) : ""}</small><b>${esc(gpName(r))}</b></span>
+      ${done ? `<button type="button" class="hp-go" data-go="${r.session_key}">Voir le GP <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>` : `<span class="hp-soon">À venir${days > 0 && days <= 30 ? ` · dans ${days} jour${days > 1 ? "s" : ""}` : ""}</span>`}`;
+    inn.classList.remove("in"); void inn.offsetWidth; inn.classList.add("in");
+    peek.classList.add("on");
+    box.querySelectorAll(".hs-dot").forEach((d) => d.classList.toggle("hot", +d.dataset.i === i));
+  };
+  const hide = () => { hideT = setTimeout(() => { cur = -1; peek.classList.remove("on"); box.querySelectorAll(".hs-dot").forEach((d) => d.classList.remove("hot")); }, 260); };
+  box.querySelectorAll(".hs-dot").forEach((d) => {
+    d.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") show(+d.dataset.i); });
+    d.addEventListener("focus", () => { if (d.matches(":focus-visible")) show(+d.dataset.i); });
+    d.addEventListener("click", (e) => { const i = +d.dataset.i; if ((touch || e.pointerType !== "mouse") && cur !== i) { show(i); return; } if (d.dataset.go) navGP(d.dataset.go); });
+  });
+  box.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hide(); });
+  peek.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) navGP(b.dataset.go); });
 }
 function showHome(on) {
   NAV.home = on; const el = $("#home");
