@@ -53,7 +53,14 @@ function compactRace(raw) {
     stints: raw.stints.map((s) => [s.driver_number, s.lap_start, s.lap_end, s.compound]),
     pits: raw.pit.map((p) => [p.driver_number, p.lap_number, num(p.lane_duration ?? p.pit_duration), num(p.stop_duration)]),
     rc: raw.race_control.map((m) => [m.date, m.lap_number ?? null, m.flag || "", m.message || "", m.category || ""]),
+    wx: weatherOf(raw.weather),
   };
+}
+// Météo résumée : relevés avec pluie, nombre de relevés, température médiane de la piste et de l'air
+function weatherOf(w) {
+  if (!Array.isArray(w) || !w.length) return null;
+  const med = (k) => { const v = w.map((x) => x[k]).filter((x) => typeof x === "number").sort((a, b) => a - b); return v.length ? v[v.length >> 1] : null; };
+  return { rain: w.filter((x) => x.rainfall > 0).length, n: w.length, track: med("track_temperature"), air: med("air_temperature") };
 }
 
 // Grille de départ : quand OpenF1 n'a pas « starting_grid », on prend la première position connue de chaque pilote
@@ -223,12 +230,13 @@ const NKlong = { SC: "Safety car", VSC: "Virtual safety car", Rouge: "Drapeau ro
 
 /* ---------- État de la course affichée ---------- */
 let RACE = null;                 // session OpenF1
+let PACK = null;                 // données brutes allégées de la course affichée
 let LAPS = 1, NEUTRAL = [];
 let drivers = [], byCode = {}, finishers = [], dnfs = [], paced = [], TEAMS = [], DNF = {}, EVENTS = [];
 
 /* ---------- Modèle : on transforme les données OpenF1 en objets prêts à afficher ---------- */
 function buildModel(session, raw) {
-  const A = analyse(raw.data);
+  const A = analyse(raw.data); PACK = raw;
   RACE = session; LAPS = Math.max(1, A.totalLaps); NEUTRAL = A.neutral.ranges;
   const results = new Map(raw.results.map((r) => [r.driver_number, r]));
   const gridPos = new Map(raw.grid.map((g) => [g.driver_number, g.position]));
@@ -381,20 +389,49 @@ function renderHero() {
   if (prev <= LAPS) segs.push(`<span style="flex:${LAPS - prev + 1}"></span>`);
   renderFrise();
 
-  const movers = finishers.filter((d) => d.grid).sort((a, b) => (b.grid - b.finish) - (a.grid - a.finish));
-  const duels = computeDuels().filter((x) => x.valid);
-  const nLaps = NEUTRAL.filter((r) => r.kind !== "Ralenti").reduce((s, r) => s + r.end - r.start + 1, 0);
-  const kpis = [];
-  // Meilleur tour en course (plutôt que l'écart au 2e, déjà visible dans le classement)
-  let best = null; drivers.forEach((d) => d.laps.forEach((l) => { if (l && l.t && l.lap > 1 && (!best || l.t < best.t)) best = { d, t: l.t, lap: l.lap }; }));
-  if (best) kpis.push({ v: lapT(best.t), nc: true, l: `meilleur tour en course : ${best.d.last} (tour ${best.lap})`, more: "Voir son GP", go: () => showDriver(best.d.code) });
-  if (false) kpis.push(nLaps ? { v: plural(nLaps, "tour"), l: `sous neutralisation (${NEUTRAL.filter((r) => r.kind !== "Ralenti").map((r) => `${NK[r.kind]} T${r.start}${r.end > r.start ? "–" + r.end : ""}`).join(", ")})`, more: "Voir la course", go: () => (location.hash = "course") }
-    : { v: "0 tour", l: "sous safety car : course jamais neutralisée", more: "Voir la course", go: () => (location.hash = "course") });
-  if (movers[0] && movers[0].grid - movers[0].finish > 0) kpis.push({ v: `+${movers[0].grid - movers[0].finish} places`, l: `plus belle remontée : ${movers[0].last} (P${movers[0].grid} → P${movers[0].finish})`, more: "Voir son GP", go: () => showDriver(movers[0].code) });
-  if (false && duels[0]) kpis.push({ v: gapS(duels[0].gap), l: `plus grand écart entre coéquipiers (${duels[0].team})`, more: "Voir le duel", go: () => showDuel(duels[0]) });
-  $("#kpis").innerHTML = kpis.map((k, i) => `<button class="kpi lift" data-k="${i}"><span class="v mono${k.nc ? " nc" : ""}">${k.v}</span><span class="l">${esc(k.l)}</span><span class="more">${k.more} →</span></button>`).join("");
-  $$("#kpis .kpi").forEach((b) => b.addEventListener("click", () => kpis[+b.dataset.k].go()));
+  renderBref();
   $$("#tower .tower-row").forEach((b) => b.addEventListener("click", () => showDriver(b.dataset.driver)));
+}
+
+/* --- La course en bref : le contexte de la course (météo, neutralisations, incidents, abandons), sans récit --- */
+const BREF_ICO = {
+  rain: '<path d="M7 15a4 4 0 1 1 1-7.9A5 5 0 0 1 17.5 9 3.5 3.5 0 0 1 17 16H7z"/><path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  whistle: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>',
+  out: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
+};
+function brefFacts() {
+  const out = []; if (!PACK) return out;
+  const d = PACK.data, wx = d.wx;
+  // Météo : pluie relevée par la station, ou pneus intermédiaires / pluie montés
+  const wet = (d.stints || []).some((s) => s[3] === "INTERMEDIATE" || s[3] === "WET");
+  const rain = wx && wx.rain > 0, temp = wx && typeof wx.track === "number" ? `piste à ${Math.round(wx.track)} °C` : "";
+  if (rain) out.push({ ico: "rain", v: "Pluie", l: wet ? "pneus pluie utilisés" : "pendant la course" });
+  else if (wet) out.push({ ico: "rain", v: "Piste humide", l: "pneus pluie utilisés" });
+  else if (temp) out.push({ ico: "sun", v: "Sec", l: temp });
+  // Neutralisations : un safety car qui relance la course après un drapeau rouge n'est pas compté à part
+  const n = { Rouge: 0, SC: 0, VSC: 0 }; let lastRed = -9;
+  NEUTRAL.forEach((r) => { if (r.kind === "Rouge") { n.Rouge++; lastRed = r.end; } else if (r.kind in n && !(r.kind === "SC" && r.start <= lastRed + 2)) n[r.kind]++; });
+  const parts = [n.Rouge && plural(n.Rouge, "drapeau rouge").replace("drapeau rouges", "drapeaux rouges"), n.SC && `${n.SC} SC`, n.VSC && `${n.VSC} VSC`].filter(Boolean);
+  if (parts.length) out.push({ ico: "flag", v: parts.join(" · "), l: n.Rouge + n.SC + n.VSC > 1 ? "neutralisations" : "neutralisation" });
+  // Incidents notés par la direction de course et pénalités infligées pendant la course
+  const inc = new Set(), pen = new Set();
+  (d.rc || []).forEach((m) => {
+    const t = String(m[3] || "").toUpperCase(), k = t.replace(/\s*\(\d+:\d+:\d+\)/g, "").trim();
+    if (!t.startsWith("FIA") && t.includes("INCIDENT") && t.includes("NOTED")) inc.add(k);
+    if (t.startsWith("FIA STEWARDS") && t.includes("PENALTY FOR CAR") && !t.includes("SERVED") && !t.includes("INVESTIGATION")) pen.add(k);
+  });
+  if (inc.size || pen.size) out.push({ ico: "whistle", v: inc.size ? plural(inc.size, "incident") : plural(pen.size, "pénalité"), l: inc.size ? (inc.size > 1 ? "examinés" : "examiné") + (pen.size ? ` · ${plural(pen.size, "pénalité")}` : "") : "" });
+  // Abandons (hors forfaits et disqualifications)
+  const ab = PACK.results.filter((r) => r.dnf && !r.dns).length;
+  if (ab) out.push({ ico: "out", v: plural(ab, "abandon"), l: "" });
+  return out;
+}
+function renderBref() {
+  const el = $("#kpis"), f = brefFacts();
+  el.hidden = !f.length;
+  el.innerHTML = `<div class="eyebrow">La course en bref</div><ul>` + f.map((x) => `<li><svg viewBox="0 0 24 24" aria-hidden="true">${BREF_ICO[x.ico]}</svg><span><b>${x.v}</b>${x.l ? ` <span>${x.l}</span>` : ""}</span></li>`).join("") + `</ul>`;
 }
 
 // Le classement remplit la hauteur de la carte « direction de course », puis le bouton déplie le reste
@@ -453,11 +490,11 @@ function renderDuels() {
   const tight = valid[valid.length - 1];
   $("#read-duels").innerHTML = `<b>${valid[0].fast.last}</b> a dominé ${valid[0].slow.last} de <b>${gapS(valid[0].gap)}</b> au tour.` + (tight !== valid[0] ? ` Le duel le plus serré est chez ${tight.team} (${gapS(tight.gap)}).` : "") +
     (strat.length ? ` Chez ${strat[0].team}, l'écart venait de la stratégie : à pneus égaux, ${strat[0].slow.last} était plus rapide.` : "");
-  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme par tour · barre entière = ${fr(max, 2)} s</span><span class="fine who-h">Qui était le plus rapide</span></div>` +
+  $("#duel-list").innerHTML = `<div class="duel duel-head x-grid x-only"><span class="fine">Écurie</span><span class="fine">Écart de rythme par tour · barre entière = ${fr(max, 2)} s</span><span class="fine who-h">Plus rapide › coéquipier</span></div>` +
     duels.map((d, i) => d.valid ? `<button class="duel lift" data-d="${i}" data-codes="${d.fast.code} ${d.slow.code}">
       <span class="team"><i class="dot" style="background:${d.color}"></i>${esc(d.team)}</span>
       <span class="track"><span class="fill" style="display:block;background:${d.color}" data-w="${Math.max(0.6, (d.gap / max) * 100)}"></span></span>
-      <span class="who"><span class="pair"><b>${d.fast.code}</b> plus rapide que <span class="slow">${d.slow.code}</span></span><span class="gap">${gapS(d.gap)} <small>/ tour</small></span>${d.same != null && d.same < 0 ? `<span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide : l'écart vient de la stratégie">STRAT</span>` : ""}</span>
+      <span class="who"><span class="pair"><b>${d.fast.code}</b> <span class="sep">›</span> <span class="slow">${d.slow.code}</span>${d.same != null && d.same < 0 ? ` <span class="strat" title="À pneus égaux, ${esc(d.slow.last)} était plus rapide : l'écart vient de la stratégie">STRAT</span>` : ""}</span><span class="gap">${gapS(d.gap)}</span></span>
     </button>` : `<div class="na">${esc(d.team)} non comparable : ${esc(d.out.join(", "))} sans assez de tours représentatifs.</div>`).join("");
   $$("#duel-list .duel[data-d]").forEach((b) => b.addEventListener("click", () => showDuel(duels[+b.dataset.d])));
   const grow = () => $$("#duels .duel .fill").forEach((f, k) => setTimeout(() => (f.style.width = f.dataset.w + "%"), reduce ? 0 : k * 60));
@@ -785,7 +822,7 @@ function renderHow() {
   setHow("how-course", courseMode === "pos"
     ? `Chaque ligne est un pilote, à la couleur de son écurie. <b>En haut = en tête</b>. La petite F1 montre où il est au tour affiché. ${sw("var(--sc)")} bande jaune = safety car ou VSC.`
     : `Chaque ligne est un pilote. <b>Tout en haut = le leader</b> ; plus une ligne descend, plus le pilote est loin derrière lui (en secondes). ${sw("var(--sc)")} bande jaune = safety car ou VSC.`);
-  setHow("how-duels", `Une ligne par écurie : le pilote cité en premier était le plus rapide des deux. <b>Plus la barre est longue, plus l'écart était grand</b> (en secondes par tour, sur un tour typique). Pastille <b>STRAT</b> : à pneus égaux, c'est l'autre pilote qui était plus rapide, l'écart vient donc de la stratégie. Clique sur une écurie pour revoir le duel.`);
+  setHow("how-duels", `Une ligne par écurie : <b>VER › HAD</b> veut dire que VER était plus rapide que HAD, de l'écart indiqué par tour. <b>Plus la barre est longue, plus l'écart était grand</b> (en secondes par tour, sur un tour typique). Pastille <b>STRAT</b> : à pneus égaux, c'est l'autre pilote qui était plus rapide, l'écart vient donc de la stratégie. Clique sur une écurie pour revoir le duel.`);
   setHow("how-strat", `Une ligne par pilote, du départ (à gauche) à l'arrivée (à droite). La couleur indique le pneu : ${sw(COMP.S.c)}tendre ${sw(COMP.M.c)}médium ${sw(COMP.H.c)}dur. <b>Chaque changement de couleur = un arrêt aux stands.</b>`);
   const ref = byCode[exSel[0]], rn = ref ? `<b>${esc(ref.last)}</b>` : "le pilote de référence";
   setHow("how-ex", {
@@ -1271,6 +1308,8 @@ function placeIndicators() {
 
 /* --- Micro-interactions --- */
 document.addEventListener("pointerdown", (e) => {
+  // Au doigt, pas d'onde : modifier la ligne touchée au moment où le geste commence gêne le glissement sur iPhone
+  if (e.pointerType !== "mouse") return;
   const host = e.target.closest(".btn, .lift, .chip, .tabs button, .seg button, .icon-btn, .tower-row, .log-row, .acc-btn, .brow");
   if (!host || reduce) return;
   const r = host.getBoundingClientRect(), size = Math.max(r.width, r.height);
@@ -1339,7 +1378,7 @@ function setStatus(msg, kind) {
   el.hidden = false; el.classList.toggle("error", kind === "error");
   el.innerHTML = (kind === "load" ? '<span class="spin" aria-hidden="true"></span>' : "") + `<span>${esc(msg)}</span>`;
 }
-let RACES = [], offline = null, ARCH = new Set();
+let RACES = [], SEASON = [], offline = null, ARCH = new Set();
 // Archive publiée avec le site (dossier data/, mise à jour chaque lundi par GitHub Actions)
 async function fromArchive(file) {
   if (location.protocol === "file:") return null;
@@ -1363,6 +1402,8 @@ async function loadRaces(year) {
     if (arch.length) sessions = sessions.filter((x) => ARCH.has(x.session_key) || store.get(x.session_key));
   }
   const now = new Date();
+  // Toute la saison (y compris les GP à venir) : sert à la barre de progression et au « prochain GP » de l'accueil
+  SEASON = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && !emptyRaces().has(s.session_key)).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   // Courses annoncées mais restées sans données (annulées, remplacées) : on ne les propose pas
   const empty = emptyRaces(), weekAgo = Date.now() - 8 * 864e5;
@@ -1371,6 +1412,7 @@ async function loadRaces(year) {
   RACES.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
   if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
   fillGpSelect(); $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
+  CHAMP = null; champButtons();
   return true;
 }
 function fillGpSelect() { const v = $("#gp").value; $("#gp").innerHTML = `<option value="all">Voir tous les Grands Prix…</option>` + RACES.map((r) => `<option value="${r.session_key}">${esc(gpName(r))} ${r.year}</option>`).join(""); if (RACES.some((r) => String(r.session_key) === v)) $("#gp").value = v; }
@@ -1387,12 +1429,12 @@ async function fetchRace(sk) {
       return a.pack;
     }
   }
-  const steps = [["drivers", "des pilotes"], ["laps", "des tours"], ["stints", "des relais de pneus"], ["pit", "des arrêts aux stands"], ["race_control", "de la direction de course"], ["session_result", "du classement"], ["starting_grid", "de la grille de départ"]];
+  const steps = [["drivers", "des pilotes"], ["laps", "des tours"], ["stints", "des relais de pneus"], ["pit", "des arrêts aux stands"], ["race_control", "de la direction de course"], ["weather", "de la météo"], ["session_result", "du classement"], ["starting_grid", "de la grille de départ"]];
   const raw = {};
   for (const [i, [ep, label]] of steps.entries()) {
     setStatus(`Chargement ${label} (${i + 1}/${steps.length})…`, "load");
     hcProgress(i / (steps.length + 1));
-    raw[ep] = await api(ep, { session_key: sk });
+    try { raw[ep] = await api(ep, { session_key: sk }); } catch (e) { if (ep !== "weather") throw e; raw[ep] = []; }
   }
   hcProgress(steps.length / (steps.length + 1));
   if (!raw.starting_grid.length) { setStatus("Chargement de la grille de départ…", "load"); raw.starting_grid = gridFromPositions(await api("position", { session_key: sk })); }
@@ -1463,7 +1505,7 @@ function renderAll() {
     charts["ch-strat"].onClick = (p) => toggleFollow(p.value[4]);
     charts["ch-deg"].onClick = (p) => toggleFollow(p.data.d.code);
     charts["ch-drs"].onClick = (p) => toggleFollow(p.name);
-    whenVisible($("#kpis"), countUp);
+    whenVisible($("#tower"), countUp);
     // Le circuit se joue quand il devient visible (accordéon ouvert)
     const io = new IntersectionObserver((es) => { if (es[0].isIntersecting && !$("#circ").childNodes.length && circ.duel) playCircuit(); }, { threshold: 0.3 }); io.observe($("#circ"));
   } else {

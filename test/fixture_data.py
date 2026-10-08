@@ -56,7 +56,11 @@ rc = [{"date":at(1),"lap_number":1,"flag":"GREEN","message":"GREEN LIGHT - PIT E
       {"date":at(41),"lap_number":None,"category":"SafetyCar","message":"VIRTUAL SAFETY CAR ENDING"},
       {"date":"2026-03-15T18:00:00Z","lap_number":None,"flag":"RED","message":"PIT EXIT CLOSED"},
       {"date":at(TOTAL),"lap_number":TOTAL,"flag":"RED","message":"RED FLAG"}]   # faux rouge au dernier tour (cas de Bakou 2026)
-DATA = {"sessions": sessions, "drivers": drivers, "laps": laps, "stints": stints, "pit": pits, "race_control": rc}
+rc += [{"date":at(12),"lap_number":12,"category":"Other","message":"TURN 4 INCIDENT INVOLVING CARS 1 (VER) AND 4 (NOR) NOTED - CAUSING A COLLISION"},
+       {"date":at(15),"lap_number":15,"category":"Other","message":"FIA STEWARDS: 5 SECOND TIME PENALTY FOR CAR 1 (VER) - CAUSING A COLLISION"},
+       {"date":at(20),"lap_number":20,"category":"Other","message":"FIA STEWARDS: PENALTY SERVED - 5 SECOND TIME PENALTY FOR CAR 1 (VER) - CAUSING A COLLISION"}]
+weather = [{"date":at(i),"rainfall":0,"track_temperature":38.4,"air_temperature":24.1} for i in range(1, TOTAL, 5)]
+DATA = {"sessions": sessions, "drivers": drivers, "laps": laps, "stints": stints, "pit": pits, "race_control": rc, "weather": weather}
 
 # Classement final : temps total (abandon en dernier), grille de départ légèrement mélangée
 finish = {}

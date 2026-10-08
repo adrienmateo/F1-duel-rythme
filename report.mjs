@@ -78,7 +78,7 @@ async function pickRace() {
 async function fetchAll(sk) {
   const get = (ep) => api(ep, { session_key: sk });
   const raw = {};
-  for (const ep of ["drivers", "laps", "stints", "pit", "race_control", "session_result", "starting_grid"]) raw[ep] = await get(ep);
+  for (const ep of ["drivers", "laps", "stints", "pit", "race_control", "weather", "session_result", "starting_grid"]) raw[ep] = ep === "weather" ? await get(ep).catch(() => []) : await get(ep);
   // Même format allégé que le site (compactRace, lu dans index.html)
   const data = compactRace(raw);
   // Grille absente d'OpenF1 (fréquent en 2026) : première position connue de chaque pilote

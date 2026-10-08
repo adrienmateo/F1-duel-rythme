@@ -26,36 +26,63 @@ function makeSwipe(anchor, slides) {
     tabs.appendChild(b); const dot = document.createElement("i"); if (xs) dot.className = "xs"; dots.appendChild(dot);
   });
   dots.firstChild?.classList.add("on");
-  const idx = () => Math.round(track.scrollLeft / ((track.firstChild?.offsetWidth || 1) + 12));
-  const fit = (i) => { const sl = track.children[i]; if (sl) track.style.height = sl.scrollHeight + "px"; };
-  setTimeout(() => fit(0), 50);
-  let raf = 0, lastI = 0, target = -1, tgo = 0, settle = 0;
-  const ro = new ResizeObserver(() => { clearTimeout(settle); settle = setTimeout(() => fit(idx()), 160); }); [...track.children].forEach((c) => ro.observe(c));
   wrap.append(tabs, track, dots);
-  // Safari iPhone : un défilement animé + un changement de hauteur + l'aimantation « mandatory » le ramènent
-  // sur la 1re carte. On coupe l'aimantation le temps du trajet, on fixe la hauteur d'arrivée tout de suite.
-  function goTo(i) {
-    const sl = track.children[i]; if (!sl) return;
-    target = i; fit(i); track.style.scrollSnapType = "none";
-    track.scrollTo({ left: sl.offsetLeft - track.firstChild.offsetLeft, behavior: reduce ? "auto" : "smooth" });
-    clearTimeout(tgo); tgo = setTimeout(() => { track.scrollLeft = sl.offsetLeft - track.firstChild.offsetLeft; track.style.scrollSnapType = ""; target = -1; onScroll(); }, reduce ? 30 : 520);
-  }
-  const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
-    const i = target >= 0 ? target : idx();
-    // Pendant le glissement du doigt, la hauteur ne bouge pas (sinon Safari « recale » le carrousel ailleurs) :
-    // on l'ajuste une fois le carrousel immobile
-    if (target >= 0) fit(i); else { clearTimeout(settle); settle = setTimeout(() => fit(idx()), 160); }
+  // Le glissement est géré ici, pas par le navigateur : sur iPhone, l'élan du doigt et l'aimantation native
+  // sautaient la carte du milieu. Une carte au plus par geste ; la hauteur s'ajuste une fois la carte posée.
+  let cur = 0, lastI = -1, settle = 0, drag = null, moved = false;
+  const shown = (k) => track.children[k] && track.children[k].offsetParent !== null;
+  const offOf = (k) => { const sl = track.children[k]; return sl ? sl.offsetLeft - track.firstChild.offsetLeft : 0; };
+  const setX = (x, anim) => { track.classList.toggle("dragging", !anim); track.style.setProperty("--sx", -x + "px"); };
+  const fit = (i) => { const sl = track.children[i]; if (sl) track.style.height = sl.scrollHeight + "px"; };
+  const step = (dir) => { let k = cur + dir; while (k >= 0 && k < track.children.length && !shown(k)) k += dir; return k >= 0 && k < track.children.length ? k : cur; };
+  const ro = new ResizeObserver(() => { clearTimeout(settle); settle = setTimeout(() => { if (!drag) { setX(offOf(cur), false); fit(cur); } }, 120); });
+  [...track.children].forEach((c) => ro.observe(c)); ro.observe(track);
+  function goTo(i, instant) {
+    if (!track.children[i]) return;
+    if (!shown(i)) i = shown(cur) ? cur : step(1);
+    cur = i; setX(offOf(i), !instant && !reduce);
+    clearTimeout(settle); settle = setTimeout(() => fit(cur), instant || reduce ? 0 : 280);
     [...tabs.children].forEach((b, k) => b.setAttribute("aria-selected", k === i));
     [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i));
-    const t = tabs.children[i]; if (t) tabs.scrollTo({ left: t.offsetLeft - 40, behavior: "smooth" });
-    const cur = track.children[i];
-    cur?.querySelectorAll(".chart").forEach((el) => { const c = charts[el.id]; if (c && !c.inst) draw(el.id); else c?.inst?.resize(); });
-    if (i !== lastI && cur?.querySelector("#circ")) playCircuit();
+    const t = tabs.children[i]; if (t && tabs.scrollWidth > tabs.clientWidth) tabs.scrollTo({ left: t.offsetLeft - 40, behavior: "smooth" });
+    const sl = track.children[i];
+    setTimeout(() => sl.querySelectorAll(".chart").forEach((el) => { const c = charts[el.id]; if (c && !c.inst) draw(el.id); else c?.inst?.resize(); }), instant ? 0 : 300);
+    if (i !== lastI && lastI >= 0 && sl.querySelector("#circ")) playCircuit();
     lastI = i;
-  }); };
-  track.addEventListener("scroll", onScroll, { passive: true });
-  wrap._reset = () => { track.scrollTo({ left: 0 }); onScroll(); };
-  wrap._refit = () => fit(idx());
+  }
+  // Un élément qui défile lui-même à l'horizontale, ou un curseur, garde le geste pour lui
+  const ownsX = (el) => { for (; el && el !== track; el = el.parentElement) { if (el.matches("input, select, textarea, [role=slider], [data-noswipe]")) return true; const o = getComputedStyle(el).overflowX; if ((o === "auto" || o === "scroll") && el.scrollWidth > el.clientWidth + 2) return true; } return false; };
+  track.addEventListener("pointerdown", (e) => {
+    if (e.button > 0 || ownsX(e.target)) return;
+    drag = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId, lock: null, dx: 0 }; moved = false;
+  });
+  track.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.lock) {
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) { drag.lock = "x"; moved = true; try { track.setPointerCapture(e.pointerId); } catch {} }
+      else if (Math.abs(dy) > 8) { drag = null; return; }
+      else return;
+    }
+    const edge = (dx > 0 && step(-1) === cur) || (dx < 0 && step(1) === cur);
+    drag.dx = edge ? dx / 3 : dx;
+    setX(offOf(cur) - drag.dx, false);
+  });
+  const end = (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if (d.lock !== "x") return;
+    const v = d.dx / Math.max(1, performance.now() - d.t), w = track.clientWidth;
+    const dir = d.dx < -w * 0.18 || v < -0.35 ? 1 : d.dx > w * 0.18 || v > 0.35 ? -1 : 0;
+    goTo(dir ? step(dir) : cur);
+  };
+  track.addEventListener("pointerup", end); track.addEventListener("pointercancel", end);
+  // Après un glissement, le relâcher ne doit pas compter comme un clic sur la ligne touchée
+  track.addEventListener("click", (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  setTimeout(() => goTo(0, true), 50);
+  wrap._index = () => cur;
+  wrap._reset = () => goTo(0, true);
+  wrap._refit = () => { setX(offOf(cur), false); fit(cur); };
   return wrap;
 }
 // Carte « Sous le capot » : le bloc expert de la section, ouvert, sans accordéon
@@ -155,7 +182,7 @@ function setupMobileOnce() {
   });
   // Les sections en cartes
   const grid = $("#gp-section .hero-grid");
-  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Les faits", [$("#log")]], ["Chiffres clés", [$("#kpis")]]]));
+  swipes.push(makeSwipe(grid, [["Podium", [$("#tower")]], ["Les faits", [$("#log")]], ["En bref", [$("#kpis")]]]));
   grid.remove();
   const cw = $("#course .course-wrap");
   swipes.push(makeSwipe(cw, [["Graphique", [$("#course .chart-box")]], ["Classement au tour", [$("#board")]], ["Les batailles", [expertCard("#course .under")], true]]));
@@ -185,7 +212,7 @@ function setupMobileOnce() {
   $("#ex-chips").addEventListener("click", () => setTimeout(exRefresh, 0));
   update = function (id, nm) { updateBase(id, nm); if (id === "ch-ex") { EXM.forEach(([m]) => updateBase("ch-ex-" + m)); syncExPick(); } };
   // Repasser en Essentiel depuis une carte experte : retour à la première carte
-  new MutationObserver(() => $$(".mswipe").forEach((w) => { const t = w.querySelector(".mslides"); const i = Math.round(t.scrollLeft / ((t.firstChild?.offsetWidth || 1) + 12)); if (t.children[i]?.classList.contains("xs") && document.body.dataset.level !== "expert") w._reset(); else w._refit(); })).observe(document.body, { attributes: true, attributeFilter: ["data-level"] });
+  new MutationObserver(() => $$(".mswipe").forEach((w) => { const t = w.querySelector(".mslides"); const i = w._index(); if (t.children[i]?.classList.contains("xs") && document.body.dataset.level !== "expert") w._reset(); else w._refit(); })).observe(document.body, { attributes: true, attributeFilter: ["data-level"] });
   // Barre d'onglets : section affichée
   const tabs = $$(".mbar a");
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) tabs.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id)); }), { rootMargin: "-40% 0px -55% 0px" });

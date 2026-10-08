@@ -21,7 +21,7 @@ details.method a { color: var(--ink); }
 .circ-stage { position: relative; }
 .circ-msg { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; }
 .empty-note { color: var(--muted); font-size: 15px; padding: 12px 0; }
-main.loading .tower, main.loading .log, main.loading .kpis { min-height: 120px; }
+main.loading .tower, main.loading .log, main.loading .bref { min-height: 120px; }
 
 /* Classement : podium, puis le reste dans une liste dépliante */
 .tower { display: flex; flex-direction: column; gap: calc(2px + var(--tg, 0px)); }

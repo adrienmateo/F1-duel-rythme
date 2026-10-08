@@ -84,7 +84,7 @@ function pkPick() {
   for (let i = 0; i < grid.length; i++) { x -= ws[i]; if (x <= 0) { d = grid[i]; break; } }
   return { kind: "driver", key: d.code, code: d.code, name: d.last, team: d.team, color: d.color, number: String(d.dn) };
 }
-const pkOk = () => (!reduce || PK_TEST) && !NAV.home && document.visibilityState === "visible" && !PK.busy && drivers.length && $("#overlay")?.hidden !== false && !document.querySelector(".pk-modal");
+const pkOk = () => (!reduce || PK_TEST) && !NAV.home && !NAV.champ && document.visibilityState === "visible" && !PK.busy && drivers.length && $("#overlay")?.hidden !== false && !document.querySelector(".pk-modal");
 function pkSchedule(ms) { clearTimeout(PK.timer); PK.timer = setTimeout(() => { if (pkOk()) pkShow(); else pkSchedule(PK_TEST ? 2000 : 20000); }, ms ?? (PK_TEST ? 8000 : 90000 + Math.random() * 90000)); }
 
 /* --- L'apparition --- */
@@ -103,13 +103,15 @@ function pkShow(q) {
   if (PK.busy) return;
   const who = q != null && q !== "" ? pkResolve(q) : pkPick(); if (!who) return q != null ? undefined : pkSchedule();
   // Jamais pendant une saisie, jamais devant un bouton, un lien ou un champ : on cherche une place libre en bas de l'écran
-  const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return q != null ? undefined : pkSchedule(20000);
+  const ae = document.activeElement; if (ae && (ae.tagName === "TEXTAREA" || (ae.tagName === "INPUT" && /^(text|email|search|number|tel|url|password)$/.test(ae.type)))) return q != null ? undefined : pkSchedule(PK_TEST ? 2000 : 20000);
   const w = MOB() ? 112 : 140, h = Math.round(w * 0.6), min = 16, max = innerWidth - w - 16;
-  const busyAt = (x, y) => { const el = document.elementFromPoint(x, y); return !!el?.closest("button, a, input, select, textarea, label, [role=button], .mc, .fr-card, .chart, .pk-modal"); };
+  const busyAt = (x, y) => { const el = document.elementFromPoint(x, y); return !!el?.closest("input, select, textarea, label, .pk-modal, .btn, .hf-cta, .hp-go, .share-btn, .mtabs, nav, header"); };
   const free = (left) => { for (const fx of [0.1, 0.5, 0.9]) for (const fy of [0.15, 0.6, 0.95]) if (busyAt(left + fx * w, innerHeight - h + fy * h)) return false; return true; };
   let left = null;
   for (let t = 0; t < 14 && left == null; t++) { const c = Math.round(min + Math.random() * Math.max(0, max - min)); if (free(c)) left = c; }
-  if (left == null) { if (q == null) pkSchedule(20000); else left = Math.round(min + Math.random() * Math.max(0, max - min)); if (left == null) return; }
+  // Pas de place libre : on retente vite ; au 3e essai (ou en mode test), il apparaît quand même, juste 3 s
+  if (left == null) { PK.miss = (PK.miss || 0) + 1; if (q != null || PK_TEST || PK.miss >= 3) left = Math.round(min + Math.random() * Math.max(0, max - min)); else { pkSchedule(6000); return; } }
+  PK.miss = 0;
   PK.busy = true; PK.cur = who; PK.hold = false;
   const b = document.createElement("button"); b.className = "pk-peek"; b.setAttribute("aria-label", `Attraper ${who.name}`);
   b.style.left = left + "px"; b.style.width = w + "px"; b.style.height = h + "px";
@@ -171,7 +173,9 @@ function pkStats(col = pkLoad()) {
 function pkCollection() {
   const col = pkLoad(), st = pkStats(col);
   const teams = new Map(); drivers.forEach((d) => { if (!teams.has(d.team)) teams.set(d.team, { color: d.color, ds: [] }); teams.get(d.team).ds.push(d); });
-  const others = Object.entries(col.drivers).filter(([c]) => !drivers.some((d) => d.code === c));
+  // Un pilote attrapé mais absent du GP affiché (forfait, remplacé ce week-end-là) reste rangé dans son écurie s'il en fait partie
+  const others = [];
+  Object.entries(col.drivers).filter(([c]) => !drivers.some((d) => d.code === c)).forEach(([c, e]) => { const t = teams.get(e.team); if (t) t.ds.push({ code: c, color: e.color || t.color, dn: e.number, extra: true }); else others.push([c, e]); });
   const cell = (code, e, color, number) => `<div class="pk-cell ${e ? "" : "off"}">${figSvg({ color, number, ghost: !e, label: e ? code : "Pilote pas encore attrapé" })}<b>${e ? esc(code) : "???"}</b><small>${e ? (e.n > 1 ? `attrapé ${e.n} fois` : "attrapé") : "pas encore vu"}</small></div>`;
   const golds = Object.values(col.gold);
   const m = document.createElement("div"); m.className = "pk-modal pk-coll-wrap"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-label", "Ta collection");
@@ -181,7 +185,7 @@ function pkCollection() {
     <div class="pk-stats"><div><span>Pilotes</span><b>${st.got} <small>/ ${st.tot}</small></b><i><b style="width:${Math.round((st.got / Math.max(1, st.tot)) * 100)}%"></b></i></div>
       <div class="gold"><span>Vainqueurs dorés</span><b>${st.gold} <small>GP</small></b></div><div class="gold"><span>Rares</span><b>${st.rares} <small>/ 3</small></b></div></div>
     <div class="pk-teams">${[...teams].map(([t, v]) => `<div class="pk-team"><div class="pk-tn"><i style="background:${v.color}"></i>${esc(t)}</div><div class="pk-cells">${v.ds.map((d) => cell(d.code, col.drivers[d.code], d.color, d.dn)).join("")}</div></div>`).join("")}</div>
-    ${others.length ? `<h3>${drivers.length ? "D'autres saisons" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
+    ${others.length ? `<h3>${drivers.length ? "Autres pilotes" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
     <h3>Les vainqueurs dorés <small>un par GP, sur le GP que tu regardes</small></h3>
     <div class="pk-cells wide">${golds.length ? golds.map((g) => `<div class="pk-cell gold">${figSvg({ color: g.color, number: g.number, gold: true, label: g.name + " doré" })}<b>${esc(g.code)}</b><small>${esc(g.gp)}</small></div>`).join("") : `<p class="pk-empty">Aucun pour l'instant : le vainqueur du GP affiché passe parfois, en or.</p>`}</div>
     <h3>Les rares</h3>
