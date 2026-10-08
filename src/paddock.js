@@ -4,7 +4,9 @@
 // regarde à gauche puis à droite et redescend (3 s). Attrapé (clic ou toucher) : il grossit au centre
 // avec « Bravo ! » et rejoint la collection, gardée dans ce navigateur. Sur 20 apparitions : 16 pilotes
 // de la grille (ceux qu'on n'a pas encore sortent plus souvent), 2 vainqueurs dorés du GP affiché,
-// 1 pilote de la safety car (seulement sur un GP avec safety car), 1 commissaire ou mécanicien.
+// 1 pilote de la safety car (seulement sur un GP avec safety car), 1 commissaire ou mécanicien,
+// 1 légende (seulement sur un GP de la saison en cours ; à défaut, un pilote de la grille).
+// Rangs affichés : Commun (grille), Rare (dorés), Très rare (safety car, commissaire, mécanicien), Légendaire.
 // Mode test : ouvrir le site avec ?pilote à la fin de l'adresse fait passer un pilote toutes les 8 s environ
 const PK_TEST = new URLSearchParams(location.search).has("pilote");
 const PK = { key: "f1duel:paddock", timer: 0, busy: false, uid: 0, cur: null, steps: 0, hold: false };
@@ -13,6 +15,21 @@ const PK_RARES = {
   marshal: { code: "CDP", name: "Le commissaire de piste", color: "#F28C28", number: "", how: "Drapeau à la main, au bord de la piste." },
   mech: { code: "MEC", name: "Le mécanicien", color: "#3a3f48", number: "", how: "Toujours prêt pour l'arrêt aux stands." },
 };
+// Les légendes : champions d'hier aux couleurs (d'époque) de l'écurie où ils ont marqué l'histoire.
+// Jamais leur vrai casque ni de sponsor ; Fangio et Clark en casque ouvert avec lunettes.
+const PK_LEGENDS = {
+  FAN: { full: "Juan Manuel Fangio", name: "Fangio", nick: "El Maestro", team: "Mercedes", era: "1954–55", titles: 5, color: "#BFC4CB", color2: "#ffffff", vintage: true },
+  CLA: { full: "Jim Clark", name: "Clark", nick: "Jimmy", team: "Lotus", era: "1960–68", titles: 2, color: "#0B5D3B", color2: "#F2C200", vintage: true },
+  STE: { full: "Jackie Stewart", name: "Stewart", nick: "The Flying Scot", team: "Tyrrell", era: "1970–73", titles: 3, color: "#1F4E9E", color2: "#ffffff" },
+  LAU: { full: "Niki Lauda", name: "Lauda", nick: "Der Computer", team: "Ferrari", era: "1974–77", titles: 3, color: "#D40000", color2: "#ffffff" },
+  PRO: { full: "Alain Prost", name: "Prost", nick: "The Professor", team: "McLaren", era: "1984–89", titles: 4, color: "#f4f4f4", color2: "#D7262E" },
+  SEN: { full: "Ayrton Senna", name: "Senna", nick: "Magic", team: "McLaren", era: "1988–93", titles: 3, color: "#D7262E", color2: "#ffffff" },
+  MAN: { full: "Nigel Mansell", name: "Mansell", nick: "Il Leone", team: "Williams", era: "1991–92", titles: 1, color: "#0A2F6B", color2: "#F5C400" },
+  HAK: { full: "Mika Häkkinen", name: "Häkkinen", nick: "The Flying Finn", team: "McLaren", era: "1993–2001", titles: 2, color: "#A9AFB7", color2: "#1b1e24" },
+  MSC: { full: "Michael Schumacher", name: "Schumacher", nick: "The Red Baron", team: "Ferrari", era: "1996–2006", titles: 7, color: "#DC0000", color2: "#ffffff" },
+  VET: { full: "Sebastian Vettel", name: "Vettel", nick: "Baby Schumi", team: "Red Bull", era: "2009–14", titles: 4, color: "#1E2A55", color2: "#E10600" },
+};
+const pkLegend = (code) => ({ kind: "legend", key: code, code, number: code, legend: true, ...PK_LEGENDS[code] });
 function pkLoad() {
   try {
     const v = JSON.parse(localStorage.getItem(PK.key));
@@ -21,37 +38,43 @@ function pkLoad() {
       const drivers = Object.fromEntries(Object.entries(v.drivers).filter(([k, e]) => k && k !== "undefined" && e && e.name));
       const rares = Object.fromEntries(Object.entries(v.rares || {}).filter(([k]) => PK_RARES[k]));
       const gold = Object.fromEntries(Object.entries(v.gold || {}).filter(([k, e]) => k && k !== "undefined" && e && e.name));
-      return { drivers, gold, rares };
+      const legends = Object.fromEntries(Object.entries(v.legends || {}).filter(([k]) => PK_LEGENDS[k]));
+      return { drivers, gold, rares, legends };
     }
   } catch {}
-  return { drivers: {}, gold: {}, rares: {} };
+  return { drivers: {}, gold: {}, rares: {}, legends: {} };
 }
 function pkSave(c) { try { localStorage.setItem(PK.key, JSON.stringify(c)); } catch {} }
 const pkShade = (hex, k) => { const h = String(hex || "#888888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const f = (v) => Math.max(0, Math.min(255, Math.round(v * k))); return "#" + [f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, "0")).join(""); };
 
 /* --- La figurine (même dessin que la maquette) --- */
-function figSvg({ color = "#888", number = "", pose = "stand", gold = false, ghost = false, label = "" } = {}) {
+function figSvg({ color = "#888", number = "", pose = "stand", gold = false, ghost = false, label = "", legend = false, color2 = "#fff", vintage = false } = {}) {
   const id = "pkv" + ++PK.uid;
+  const lg = legend && !ghost, s2 = lg ? color2 : "#fff", vin = lg && vintage;
   const c = ghost ? "#cfd3d9" : color, dk = ghost ? "#b8bdc4" : pkShade(color, 0.45), hel = ghost ? "#dfe2e6" : gold ? "#E3B341" : "#f6f7f9";
   const num = ghost ? "" : esc(String(number)), ink = "#14161a", o = 'stroke="#1b1e24" stroke-linejoin="round"';
   const wave = pose === "wave" && !ghost;
   const right = wave
-    ? `<path d="M83 88 Q93 84 98 72 L102 60 L95 57 L90 70 Q87 78 82 82 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M92 66 L95 67 L91 77 L88 76 Z" fill="#fff"/><path d="M94 56 L103 59 L102 63 L93 60 Z" fill="${c}" ${o} stroke-width="1.4"/><path d="M95 56 L94 46 Q94 43 96.5 43.5 Q98 44 98 47 L98.5 52 L100 44 Q100.5 41 103 42 Q105 43 104 46 L102.5 55 Q103 59 99 59 Z" fill="#2a2d33" ${o} stroke-width="1.3"/>`
-    : `<path d="M83 88 Q91 92 92 104 L93 118 L85 119 L83 104 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M87 96 L90 96 L92 116 L89 116 Z" fill="#fff"/><path d="M84 118 L94 117 L94 121 L84 122 Z" fill="${c}" ${o} stroke-width="1.4"/><path d="M84 122 Q84 131 90 131 Q96 130 94 121 Z" fill="#2a2d33" ${o} stroke-width="1.4"/>`;
-  const sparks = gold && !ghost ? `<path d="M12 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="#E3B341"/><path d="M104 18 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" fill="#E3B341"/><path d="M108 92 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6 z" fill="#E3B341"/>` : "";
+    ? `<path d="M83 88 Q93 84 98 72 L102 60 L95 57 L90 70 Q87 78 82 82 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M92 66 L95 67 L91 77 L88 76 Z" fill="${s2}"/><path d="M94 56 L103 59 L102 63 L93 60 Z" fill="${c}" ${o} stroke-width="1.4"/><path d="M95 56 L94 46 Q94 43 96.5 43.5 Q98 44 98 47 L98.5 52 L100 44 Q100.5 41 103 42 Q105 43 104 46 L102.5 55 Q103 59 99 59 Z" fill="#2a2d33" ${o} stroke-width="1.3"/>`
+    : `<path d="M83 88 Q91 92 92 104 L93 118 L85 119 L83 104 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M87 96 L90 96 L92 116 L89 116 Z" fill="${s2}"/><path d="M84 118 L94 117 L94 121 L84 122 Z" fill="${c}" ${o} stroke-width="1.4"/><path d="M84 122 Q84 131 90 131 Q96 130 94 121 Z" fill="#2a2d33" ${o} stroke-width="1.4"/>`;
+  const sparks = (gold || lg) && !ghost ? `<path d="M12 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="#E3B341"/><path d="M104 18 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" fill="#E3B341"/><path d="M108 92 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6 z" fill="#E3B341"/>` : "";
   return `<svg class="pk-fig" viewBox="0 0 120 172" role="img" aria-label="${esc(label || "Figurine de pilote")}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a5d86"/><stop offset=".5" stop-color="#0f1218"/><stop offset="1" stop-color="#5a3870"/></linearGradient></defs>
 <ellipse cx="60" cy="166" rx="30" ry="4.5" fill="#000" opacity=".16"/>
-<path d="M41 150 L58 150 L59 160 Q49 163 39 160 Q38 154 41 150 Z" fill="#fff" ${o} stroke-width="1.6"/><path d="M62 150 L79 150 Q82 154 81 160 Q71 163 61 160 Z" fill="#fff" ${o} stroke-width="1.6"/><path d="M39.5 158 Q49 161 58.8 158 M61.2 158 Q71 161 80.5 158" fill="none" stroke="${c}" stroke-width="2"/>
-<path d="M42 116 L59 116 L58 151 L42 151 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M61 116 L78 116 L78 151 L62 151 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M44 117 L47 117 L47 150 L44 150 Z M73 117 L76 117 L76 150 L73 150 Z" fill="#fff"/><path d="M50 132 L57 132 L57 136 L50 136 Z M63 132 L70 132 L70 136 L63 136 Z" fill="#fff" opacity=".9"/><path d="M42 141 L58 141 M62 141 L78 141" stroke="${dk}" stroke-width="1.2"/>
-<path d="M37 88 Q29 92 28 104 L27 118 L35 119 L37 104 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M30 96 L33 96 L31 116 L28 116 Z" fill="#fff"/><path d="M26 117 L36 118 L36 122 L26 121 Z" fill="${c}" ${o} stroke-width="1.4"/><path d="M26 121 Q24 130 30 131 Q36 131 36 122 Z" fill="#2a2d33" ${o} stroke-width="1.4"/>
+${lg ? `<circle cx="60" cy="84" r="58" fill="none" stroke="#E3B341" stroke-width="1.2" stroke-dasharray="2 5" opacity=".7"/>` : ""}
+<path d="M41 150 L58 150 L59 160 Q49 163 39 160 Q38 154 41 150 Z" fill="${vin ? "#6b5440" : "#fff"}" ${o} stroke-width="1.6"/><path d="M62 150 L79 150 Q82 154 81 160 Q71 163 61 160 Z" fill="${vin ? "#6b5440" : "#fff"}" ${o} stroke-width="1.6"/><path d="M39.5 158 Q49 161 58.8 158 M61.2 158 Q71 161 80.5 158" fill="none" stroke="${c}" stroke-width="2"/>
+<path d="M42 116 L59 116 L58 151 L42 151 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M61 116 L78 116 L78 151 L62 151 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M44 117 L47 117 L47 150 L44 150 Z M73 117 L76 117 L76 150 L73 150 Z" fill="${s2}"/><path d="M50 132 L57 132 L57 136 L50 136 Z M63 132 L70 132 L70 136 L63 136 Z" fill="#fff" opacity=".9"/><path d="M42 141 L58 141 M62 141 L78 141" stroke="${dk}" stroke-width="1.2"/>
+<path d="M37 88 Q29 92 28 104 L27 118 L35 119 L37 104 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M30 96 L33 96 L31 116 L28 116 Z" fill="${s2}"/><path d="M26 117 L36 118 L36 122 L26 121 Z" fill="${c}" ${o} stroke-width="1.4"/><path d="M26 121 Q24 130 30 131 Q36 131 36 122 Z" fill="#2a2d33" ${o} stroke-width="1.4"/>
 ${right}
-<path d="M38 86 Q48 80 60 80 Q72 80 82 86 Q86 89 85 96 L82 118 L38 118 L35 96 Q34 89 38 86 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M37 92 L42 90 L42 117 L38 117 Z M83 92 L78 90 L78 117 L82 117 Z" fill="#fff"/><path d="M38 112 L82 112 L82 118 L38 118 Z" fill="${dk}"/><rect x="56" y="113.2" width="8" height="3.6" rx="1" fill="#c9ccd2"/><path d="M60 86 L60 112" stroke="${dk}" stroke-width="1" opacity=".8"/>
-<rect x="40" y="105" width="9" height="3.4" rx="1" fill="#fff" opacity=".85"/><rect x="71" y="105" width="9" height="3.4" rx="1" fill="#fff" opacity=".85"/><rect x="47" y="88" width="26" height="16" rx="3.5" fill="#fff" stroke="#1b1e24" stroke-width="1.2"/><text x="60" y="100.6" text-anchor="middle" font-size="${String(num).length > 2 ? 10 : 13}" font-weight="800" fill="${ink}" font-family="Archivo, Arial Narrow, sans-serif">${num}</text>
-<path d="M46 80 Q60 76 74 80 L73 86 Q60 83 47 86 Z" fill="${dk}" stroke="#1b1e24" stroke-width="1.2"/><path d="M40 82 Q60 72 80 82 L77 88 Q73 85 70 85 L68 92 L64 92 L65 84 L55 84 L56 92 L52 92 L50 85 Q47 85 43 88 Z" fill="#2b2e35" ${o} stroke-width="1.2"/>
+<path d="M38 86 Q48 80 60 80 Q72 80 82 86 Q86 89 85 96 L82 118 L38 118 L35 96 Q34 89 38 86 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M37 92 L42 90 L42 117 L38 117 Z M83 92 L78 90 L78 117 L82 117 Z" fill="${s2}"/><path d="M38 112 L82 112 L82 118 L38 118 Z" fill="${dk}"/><rect x="56" y="113.2" width="8" height="3.6" rx="1" fill="${lg ? "#E3B341" : "#c9ccd2"}"/><path d="M60 86 L60 112" stroke="${dk}" stroke-width="1" opacity=".8"/>
+<rect x="40" y="105" width="9" height="3.4" rx="1" fill="#fff" opacity=".85"/><rect x="71" y="105" width="9" height="3.4" rx="1" fill="#fff" opacity=".85"/><rect x="${lg ? 45 : 47}" y="88" width="${lg ? 30 : 26}" height="16" rx="3.5" fill="#fff" stroke="#1b1e24" stroke-width="1.2"/><text x="60" y="100.6" text-anchor="middle" font-size="${lg ? 11 : String(num).length > 2 ? 10 : 13}" font-weight="800" fill="${ink}" font-family="Archivo, Arial Narrow, sans-serif">${num}</text>
+${vin ? `<path d="M42 84 Q60 76 78 84 L76 90 Q60 84 44 90 Z" fill="#e9e3d6" ${o} stroke-width="1.2"/><path d="M34 50 Q35 74 60 79 Q85 74 86 50 Q60 44 34 50 Z" fill="#3a3e46" ${o} stroke-width="1.6"/><path d="M40 64 Q60 70 80 64" fill="none" stroke="#2a2d33" stroke-width="1.2"/>
+<path d="M30 48 Q29 14 60 12 Q91 14 90 48 Q75 40 60 40 Q45 40 30 48 Z" fill="#f2eee4" ${o} stroke-width="1.8"/><path d="M34 34 Q46 18 60 17 Q74 18 86 34 Q74 28 60 28 Q46 28 34 34 Z" fill="${c}"/><path d="M54 12 Q60 9 66 12 L65 16 Q60 14 55 16 Z" fill="${dk}"/>
+<path d="M30 50 L90 50" stroke="#5a4a3a" stroke-width="3" stroke-linecap="round"/><circle cx="49" cy="51" r="8.5" fill="#56677c" stroke="#8a6a3a" stroke-width="2.4"/><circle cx="71" cy="51" r="8.5" fill="#56677c" stroke="#8a6a3a" stroke-width="2.4"/><path d="M57.5 51 L62.5 51" stroke="#8a6a3a" stroke-width="2.4"/><path d="M44 47 Q47 44 51 44 M66 47 Q69 44 73 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
+` : `<path d="M46 80 Q60 76 74 80 L73 86 Q60 83 47 86 Z" fill="${dk}" stroke="#1b1e24" stroke-width="1.2"/><path d="M40 82 Q60 72 80 82 L77 88 Q73 85 70 85 L68 92 L64 92 L65 84 L55 84 L56 92 L52 92 L50 85 Q47 85 43 88 Z" fill="#2b2e35" ${o} stroke-width="1.2"/>
 <path d="M28 46 Q27 12 60 10 Q93 12 92 46 Q92 64 84 73 Q73 79 60 79 Q47 79 36 73 Q28 64 28 46 Z" fill="${hel}" ${o} stroke-width="1.8"/><path d="M33 30 Q45 13 60 12 Q75 13 87 30 Q74 22 60 23 Q46 22 33 30 Z" fill="${c}"/><path d="M30 52 Q36 62 44 60 L40 72 Q31 66 30 52 Z M90 52 Q84 62 76 60 L80 72 Q89 66 90 52 Z" fill="${c}"/><path d="M54 9 L66 9 L65 4 Q60 1.5 55 4 Z" fill="${dk}" ${o} stroke-width="1.2"/>
 <path d="M32 38 Q60 29 88 38 L87 53 Q60 60 33 53 Z" fill="url(#${id})" ${o} stroke-width="1.6"/><path d="M38 41 Q50 36 64 36" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".6"/><path d="M70 37.5 Q76 38 80 39.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".4"/><rect x="86" y="42" width="6" height="5" rx="1.5" fill="#e9eaee" stroke="#1b1e24" stroke-width="1"/>
 <path d="M44 64 Q60 70 76 64 L74 72 Q60 76 46 72 Z" fill="${dk}" ${o} stroke-width="1.2"/><path d="M50 67 L54 70 M58 68.5 L58 72 M66 67 L62 70" stroke="#5a5e66" stroke-width="1.1" stroke-linecap="round"/><path d="M40 24 Q44 20 50 18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"/>
-${sparks}${ghost ? `<text x="60" y="52" text-anchor="middle" font-size="22" font-weight="800" fill="#fff" font-family="Archivo, sans-serif">?</text>` : ""}</svg>`;
+`}${sparks}${ghost ? `<text x="60" y="52" text-anchor="middle" font-size="22" font-weight="800" fill="#fff" font-family="Archivo, sans-serif">?</text>` : ""}</svg>`;
 }
 /* --- Le pilote qui passe la tête : les mains, puis le casque --- */
 function peekSvg({ color, number, gold }) {
@@ -78,6 +101,12 @@ function pkPick() {
   if (r < 2 && w && RACE) return { kind: "gold", key: String(RACE.session_key), code: w.code, name: w.last, team: w.team, color: w.color, number: String(w.dn), gold: true, gp: `${gpName(RACE)} ${RACE.year}` };
   if (r < 3 && hasSc) return { kind: "rare", key: "sc", ...PK_RARES.sc };
   if (r < 4) { const k = Math.random() < 0.5 ? "marshal" : "mech"; return { kind: "rare", key: k, ...PK_RARES[k] }; }
+  // Une légende : seulement sur les GP de la saison en cours ; celles qu'on n'a pas encore sortent trois fois plus
+  if (r < 5 && RACE && RACE.year === new Date().getFullYear()) {
+    const ks = Object.keys(PK_LEGENDS), lw = ks.map((k) => (col.legends[k] ? 1 : 3)); let y = Math.random() * lw.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < ks.length; i++) { y -= lw[i]; if (y <= 0) return pkLegend(ks[i]); }
+    return pkLegend(ks[0]);
+  }
   // Pilote de la grille : ceux qu'on n'a pas encore ont trois fois plus de chances
   const ws = grid.map((d) => (col.drivers[d.code] ? 1 : 3)), tot = ws.reduce((a, b) => a + b, 0);
   let x = Math.random() * tot, d = grid[0];
@@ -88,15 +117,18 @@ const pkOk = () => (!reduce || PK_TEST) && !NAV.home && !NAV.champ && document.v
 function pkSchedule(ms) { clearTimeout(PK.timer); PK.timer = setTimeout(() => { if (pkOk()) pkShow(); else pkSchedule(PK_TEST ? 2000 : 20000); }, ms ?? (PK_TEST ? 8000 : 90000 + Math.random() * 90000)); }
 
 /* --- L'apparition --- */
-// Test en console : pkShow() = au hasard ; pkShow("VER") = ce pilote du GP affiché ; pkShow("or" | "sc" | "commissaire" | "mecano")
+// Test en console : pkShow() = au hasard ; pkShow("VER") = ce pilote du GP affiché ; pkShow("or" | "sc" | "commissaire" | "mecano" | "legende" | "SEN")
 function pkResolve(q) {
   const k = String(q).trim().toLowerCase(), w = finishers[0];
   if (["or", "gold", "dore", "doré"].includes(k) && w && RACE) return { kind: "gold", key: String(RACE.session_key), code: w.code, name: w.last, team: w.team, color: w.color, number: String(w.dn), gold: true, gp: `${gpName(RACE)} ${RACE.year}` };
   const rare = { sc: "sc", "safety car": "sc", commissaire: "marshal", marshal: "marshal", mecano: "mech", "mécano": "mech", mecanicien: "mech", "mécanicien": "mech", mech: "mech" }[k];
   if (rare) return { kind: "rare", key: rare, ...PK_RARES[rare] };
+  if (["legende", "légende", "legend"].includes(k)) { const ks = Object.keys(PK_LEGENDS); return pkLegend(ks[Math.floor(Math.random() * ks.length)]); }
+  const lk = Object.keys(PK_LEGENDS).find((c) => c.toLowerCase() === k || PK_LEGENDS[c].name.toLowerCase() === k);
+  if (lk) return pkLegend(lk);
   const d = drivers.find((x) => String(x.code).toLowerCase() === k || String(x.last).toLowerCase() === k || String(x.dn) === k);
   if (d) return { kind: "driver", key: d.code, code: d.code, name: d.last, team: d.team, color: d.color, number: String(d.dn) };
-  console.info(`pkShow : « ${q} » inconnu. Codes possibles : ${drivers.map((x) => x.code).join(", ")}, or, sc, commissaire, mecano.`);
+  console.info(`pkShow : « ${q} » inconnu. Codes possibles : ${drivers.map((x) => x.code).join(", ")}, or, sc, commissaire, mecano, legende, ${Object.keys(PK_LEGENDS).join(", ")}.`);
   return null;
 }
 function pkShow(q) {
@@ -141,17 +173,21 @@ function pkCatch(who, from) {
   const col = pkLoad(); let isNew = false, times = 1;
   if (who.kind === "driver") { const e = col.drivers[who.code]; isNew = !e; times = (e?.n || 0) + 1; col.drivers[who.code] = { n: times, name: who.name, team: who.team, color: who.color, number: who.number }; }
   else if (who.kind === "gold") { isNew = !col.gold[who.key]; col.gold[who.key] = { code: who.code, name: who.name, color: who.color, number: who.number, gp: who.gp }; }
+  else if (who.kind === "legend") { const n = (col.legends[who.key] || 0) + 1; isNew = n === 1; times = n; col.legends[who.key] = n; }
   else { const n = (col.rares[who.key] || 0) + 1; isNew = n === 1; times = n; col.rares[who.key] = n; }
   pkSave(col);
-  const st = pkStats(col);
-  const kicker = who.kind === "driver" ? "Bravo !" : "Rare !";
-  const title = who.kind === "gold" ? `${esc(who.name)} doré` : who.kind === "driver" ? `Tu as attrapé ${esc(who.name)}` : esc(who.name);
-  const sub = who.kind === "gold" ? `Le vainqueur de ${esc(who.gp)}, version dorée.` : who.kind === "driver" ? `${esc(who.code)} · ${esc(who.team)} · ${isNew ? "nouveau dans ta collection" : `déjà dans ta collection (${times} fois)`}` : esc(who.how);
-  const prog = who.kind === "driver" ? [`Ta collection`, `${st.got} pilote${st.got > 1 ? "s" : ""} sur ${st.tot}`, st.got / Math.max(1, st.tot), "var(--accent)"] : who.kind === "gold" ? ["Tes vainqueurs dorés", `${st.gold} GP`, Math.min(1, st.gold / Math.max(1, RACES.length)), "#E3B341"] : ["Les rares", `${st.rares} sur 3`, st.rares / 3, "#E3B341"];
+  const st = pkStats(col), rk = PK_RANK[pkRankOf(who.kind)], nL = Object.keys(PK_LEGENDS).length;
+  const kicker = who.kind === "driver" ? "Bravo !" : who.kind === "legend" ? "Bravo !" : `${rk.label} !`;
+  const title = who.kind === "gold" ? `${esc(who.name)} doré` : who.kind === "driver" ? `Tu as attrapé ${esc(who.name)}` : who.kind === "legend" ? esc(who.full) : esc(who.name);
+  const sub = who.kind === "gold" ? `Le vainqueur de ${esc(who.gp)}, version dorée.` : who.kind === "driver" ? `${esc(who.code)} · ${esc(who.team)} · ${isNew ? "nouveau dans ta collection" : `déjà dans ta collection (${times} fois)`}`
+    : who.kind === "legend" ? `<span class="pk-nick">« ${esc(who.nick)} »</span>${esc(who.team)} · ${who.era}<br><span class="pk-titles">Champion du monde ×${who.titles}</span>` : esc(who.how);
+  const prog = who.kind === "driver" ? [`Ta collection`, `${st.got} pilote${st.got > 1 ? "s" : ""} sur ${st.tot}`, st.got / Math.max(1, st.tot), "var(--accent)"] : who.kind === "gold" ? ["Tes vainqueurs dorés", `${st.gold} GP`, Math.min(1, st.gold / Math.max(1, RACES.length)), PK_RANK.rare.c]
+    : who.kind === "legend" ? ["Les légendes", `${st.legends} sur ${nL}`, st.legends / nL, "#E3B341"] : ["Les très rares", `${st.rares} sur 3`, st.rares / 3, PK_RANK.tres.c];
   const m = document.createElement("div"); m.className = "pk-modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-label", kicker);
   const cx = innerWidth / 2, cy = innerHeight / 2;
-  m.innerHTML = `<div class="pk-card ${who.kind !== "driver" ? "rare" : ""}" style="--fx:${Math.round(from.left + from.width / 2 - cx)}px;--fy:${Math.round(from.top + from.height / 2 - cy)}px;--glow:${who.gold ? "#E3B341" : who.color}">
-      <div class="pk-stage"><i class="pk-glow"></i>${figSvg({ color: who.color, number: who.number, pose: "wave", gold: who.gold, label: who.name })}</div>
+  m.innerHTML = `<div class="pk-card ${who.kind !== "driver" ? "rare" : ""} ${who.kind === "legend" ? "legend" : ""}" style="--fx:${Math.round(from.left + from.width / 2 - cx)}px;--fy:${Math.round(from.top + from.height / 2 - cy)}px;--glow:${who.gold || who.legend ? "#E3B341" : who.color}">
+      ${who.kind !== "driver" ? pkChip(pkRankOf(who.kind)) : ""}
+      <div class="pk-stage"><i class="pk-glow"></i>${figSvg({ color: who.color, number: who.number, pose: "wave", gold: who.gold, label: who.full || who.name, legend: who.legend, color2: who.color2, vintage: who.vintage })}</div>
       <div class="pk-k">${kicker}</div><div class="pk-t">${title}</div><div class="pk-s">${sub}</div>
       <div class="pk-prog"><div><span>${prog[0]}</span><b>${prog[1]}</b></div><i><b style="width:${Math.round(prog[2] * 100)}%;background:${prog[3]}"></b></i></div>
       <div class="pk-btns"><button class="pk-go">Voir ma collection</button><button class="pk-close">Continuer</button></div></div>`;
@@ -166,12 +202,16 @@ function pkCatch(who, from) {
 function pkStats(col = pkLoad()) {
   const grid = new Set(drivers.map((d) => d.code));
   Object.keys(col.drivers).forEach((c) => grid.add(c));
-  return { got: Object.keys(col.drivers).length, tot: Math.max(grid.size, Object.keys(col.drivers).length), gold: Object.keys(col.gold).length, rares: Object.keys(col.rares).length };
+  return { got: Object.keys(col.drivers).length, tot: Math.max(grid.size, Object.keys(col.drivers).length), gold: Object.keys(col.gold).length, rares: Object.keys(col.rares).length, legends: Object.keys(col.legends || {}).length };
 }
+// Rangs : visibles sur la figurine attrapée et dans la collection
+const PK_RANK = { commun: { label: "Commun", c: "#8a9099" }, rare: { label: "Rare", c: "#1f63c4" }, tres: { label: "Très rare", c: "#6a2bd1" }, legend: { label: "Légendaire", c: "#E3B341" } };
+const pkRankOf = (kind) => ({ driver: "commun", gold: "rare", rare: "tres", legend: "legend" })[kind] || "commun";
+const pkChip = (r) => `<span class="pk-rank r-${r}">${PK_RANK[r].label}</span>`;
 
 /* --- La collection --- */
 function pkCollection() {
-  const col = pkLoad(), st = pkStats(col);
+  const col = pkLoad(), st = pkStats(col), nL = Object.keys(PK_LEGENDS).length;
   const teams = new Map(); drivers.forEach((d) => { if (!teams.has(d.team)) teams.set(d.team, { color: d.color, ds: [] }); teams.get(d.team).ds.push(d); });
   // Un pilote attrapé mais absent du GP affiché (forfait, remplacé ce week-end-là) reste rangé dans son écurie s'il en fait partie
   const others = [];
@@ -180,16 +220,22 @@ function pkCollection() {
   const golds = Object.values(col.gold);
   const m = document.createElement("div"); m.className = "pk-modal pk-coll-wrap"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-label", "Ta collection");
   m.innerHTML = `<div class="pk-coll">
-    <div class="pk-coll-top"><div><div class="eyebrow">Ton paddock</div><h2>Ta collection</h2><p>Pendant que tu lis un GP, un pilote passe de temps en temps la tête en bas de l'écran (toutes les 2 à 3 minutes environ). Clique ou touche-le avant qu'il reparte : il rejoint ta collection. Les vainqueurs dorés n'apparaissent que sur le GP qu'ils ont gagné.</p></div>
+    <div class="pk-coll-top"><div><div class="eyebrow">Ton paddock</div><h2>Ta collection</h2><p>Pendant que tu lis un GP, un pilote passe de temps en temps la tête en bas de l'écran (toutes les 2 à 3 minutes environ). Clique ou touche-le avant qu'il reparte : il rejoint ta collection. Du plus courant au plus rare : les pilotes de la grille, les vainqueurs dorés (sur le GP qu'ils ont gagné), le paddock, et les légendes.</p></div>
       <button class="icon-btn pk-x" aria-label="Fermer la collection"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-    <div class="pk-stats"><div><span>Pilotes</span><b>${st.got} <small>/ ${st.tot}</small></b><i><b style="width:${Math.round((st.got / Math.max(1, st.tot)) * 100)}%"></b></i></div>
-      <div class="gold"><span>Vainqueurs dorés</span><b>${st.gold} <small>GP</small></b></div><div class="gold"><span>Rares</span><b>${st.rares} <small>/ 3</small></b></div></div>
-    <div class="pk-teams">${[...teams].map(([t, v]) => `<div class="pk-team"><div class="pk-tn"><i style="background:${v.color}"></i>${esc(t)}</div><div class="pk-cells">${v.ds.map((d) => cell(d.code, col.drivers[d.code], d.color, d.dn)).join("")}</div></div>`).join("")}</div>
-    ${others.length ? `<h3>${drivers.length ? "Autres pilotes" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}
-    <h3>Les vainqueurs dorés <small>un par GP, sur le GP que tu regardes</small></h3>
-    <div class="pk-cells wide">${golds.length ? golds.map((g) => `<div class="pk-cell gold">${figSvg({ color: g.color, number: g.number, gold: true, label: g.name + " doré" })}<b>${esc(g.code)}</b><small>${esc(g.gp)}</small></div>`).join("") : `<p class="pk-empty">Aucun pour l'instant : le vainqueur du GP affiché passe parfois, en or.</p>`}</div>
-    <h3>Les rares</h3>
-    <div class="pk-cells wide">${Object.entries(PK_RARES).map(([k, r]) => { const n = col.rares[k]; return `<div class="pk-cell ${n ? "gold" : "off"}">${figSvg({ color: r.color, number: r.number, ghost: !n, label: n ? r.name : "Rare pas encore attrapé" })}<b>${n ? esc(r.name) : "???"}</b><small>${esc(r.how)}</small></div>`; }).join("")}</div>
+    <div class="pk-stats">
+      <div class="r-commun">${pkChip("commun")}<b>${st.got} <small>/ ${st.tot}</small></b><i><b style="width:${Math.round((st.got / Math.max(1, st.tot)) * 100)}%"></b></i><span>Les pilotes de la grille</span></div>
+      <div class="r-rare">${pkChip("rare")}<b>${st.gold} <small>GP</small></b><span>Le vainqueur doré du GP</span></div>
+      <div class="r-tres">${pkChip("tres")}<b>${st.rares} <small>/ 3</small></b><i><b style="width:${Math.round((st.rares / 3) * 100)}%"></b></i><span>Safety car, commissaire, mécanicien</span></div>
+      <div class="r-legend">${pkChip("legend")}<b>${st.legends} <small>/ ${nL}</small></b><i><b style="width:${Math.round((st.legends / nL) * 100)}%"></b></i><span>Les champions d'hier</span></div></div>
+    <section class="pk-sec pk-legends"><h3>${pkChip("legend")} Les légendes <small>sur les GP de la saison en cours seulement</small></h3>
+      <div class="pk-cells wide">${Object.entries(PK_LEGENDS).map(([k, l]) => { const n = col.legends[k]; return `<div class="pk-cell ${n ? "leg" : "off"}">${figSvg({ color: l.color, color2: l.color2, number: k, legend: true, vintage: l.vintage, ghost: !n, label: n ? l.full : "Légende pas encore attrapée" })}<b>${n ? esc(l.name) : "???"}</b>${n ? `<small class="pk-nick">« ${esc(l.nick)} »</small><small>${esc(l.team)} · ×${l.titles}</small>` : `<small>pas encore vue</small>`}</div>`; }).join("")}</div></section>
+    <section class="pk-sec"><h3>${pkChip("tres")} Le paddock</h3>
+      <div class="pk-cells wide">${Object.entries(PK_RARES).map(([k, r]) => { const n = col.rares[k]; return `<div class="pk-cell ${n ? "tres" : "off"}">${figSvg({ color: r.color, number: r.number, ghost: !n, label: n ? r.name : "Très rare pas encore attrapé" })}<b>${n ? esc(r.name) : "???"}</b><small>${esc(r.how)}</small></div>`; }).join("")}</div></section>
+    <section class="pk-sec"><h3>${pkChip("rare")} Les vainqueurs dorés <small>un par GP, sur le GP que tu regardes</small></h3>
+      <div class="pk-cells wide">${golds.length ? golds.map((g) => `<div class="pk-cell gold">${figSvg({ color: g.color, number: g.number, gold: true, label: g.name + " doré" })}<b>${esc(g.code)}</b><small>${esc(g.gp)}</small></div>`).join("") : `<p class="pk-empty">Aucun pour l'instant : le vainqueur du GP affiché passe parfois, en or.</p>`}</div></section>
+    <section class="pk-sec"><h3>${pkChip("commun")} Les pilotes de la grille</h3>
+      <div class="pk-teams">${[...teams].map(([t, v]) => `<div class="pk-team"><div class="pk-tn"><i style="background:${v.color}"></i>${esc(t)}</div><div class="pk-cells">${v.ds.map((d) => cell(d.code, col.drivers[d.code], d.color, d.dn)).join("")}</div></div>`).join("")}</div>
+      ${others.length ? `<h3>${drivers.length ? "Autres pilotes" : "Tes pilotes"}</h3><div class="pk-cells wide">${others.map(([c, e]) => cell(c, e, e.color, e.number)).join("")}</div>` : ""}</section>
     <div class="pk-save"><div><b>Garder ta collection sur un autre navigateur ou téléphone</b><span>La collection est enregistrée dans ce navigateur. Copie ton lien de sauvegarde et ouvre-le ailleurs : elle s'y ajoute.</span></div>
       <button class="btn pk-copy">Copier mon lien de sauvegarde</button><input class="pk-linkbox" readonly hidden aria-label="Lien de sauvegarde"></div>
   </div>`;
@@ -207,7 +253,7 @@ function pkCollection() {
 function pkFooter() {
   const st = pkStats(), f = document.querySelector("footer"); if (!f) return;
   let a = $("#pk-link");
-  if (!st.got && !st.gold && !st.rares) { a?.remove(); return; }
+  if (!st.got && !st.gold && !st.rares && !st.legends) { a?.remove(); return; }
   if (!a) { a = document.createElement("button"); a.id = "pk-link"; a.className = "linklike pk-link"; f.appendChild(a); a.addEventListener("click", pkCollection); }
   a.textContent = `Ta collection : ${st.got} pilote${st.got > 1 ? "s" : ""} attrapé${st.got > 1 ? "s" : ""} sur ${st.tot}`; a.title = "Des pilotes passent la tête en bas de l'écran pendant ta lecture : attrape-les pour compléter ta collection.";
 }
@@ -218,7 +264,7 @@ if (PK_TEST) setTimeout(() => toast("Mode test : un pilote passe toutes les 8 s 
 
 /* --- Sauvegarde : un lien qui contient la collection, à ouvrir sur un autre navigateur --- */
 function pkLink() {
-  const c = pkLoad(), z = { d: c.drivers, g: c.gold, r: c.rares };
+  const c = pkLoad(), z = { d: c.drivers, g: c.gold, r: c.rares, l: c.legends };
   const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(z)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return location.origin + location.pathname + "#paddock=" + b64;
 }
@@ -229,6 +275,7 @@ function pkImport(code) {
     Object.entries(z.d || {}).forEach(([k, v]) => { if (!v || typeof v !== "object") return; const cur = c.drivers[k]; if (!cur) added++; c.drivers[k] = { ...v, n: Math.max(+v.n || 1, cur?.n || 0) }; });
     Object.entries(z.g || {}).forEach(([k, v]) => { if (v && typeof v === "object" && !c.gold[k]) { c.gold[k] = v; added++; } });
     Object.entries(z.r || {}).forEach(([k, v]) => { if (PK_RARES[k]) { if (!c.rares[k]) added++; c.rares[k] = Math.max(+v || 0, c.rares[k] || 0); } });
+    Object.entries(z.l || {}).forEach(([k, v]) => { if (PK_LEGENDS[k]) { if (!c.legends[k]) added++; c.legends[k] = Math.max(+v || 0, c.legends[k] || 0); } });
     pkSave(c); pkFooter();
     setTimeout(() => toast(added ? `Collection récupérée : ${added} nouveau${added > 1 ? "x" : ""} personnage${added > 1 ? "s" : ""} ajouté${added > 1 ? "s" : ""}.` : "Collection déjà à jour."), 600);
   } catch { setTimeout(() => toast("Ce lien de sauvegarde n'est pas valide."), 600); }

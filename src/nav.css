@@ -288,7 +288,7 @@ body.in-chap { overflow: hidden; }
 .pk-stage .pk-fig { position: relative; width: 150px; height: 220px; animation: pkHop 1.6s ease-in-out .6s infinite; }
 @keyframes pkHop { 50% { transform: translateY(-8px); } }
 .pk-k { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
-.pk-card.rare .pk-k { color: #a07400; }
+.pk-card.rare .pk-k { color: var(--ink-2); }
 .pk-t { font: 800 26px/1.1 var(--display); font-stretch: 112%; }
 .pk-s { font-size: 15px; color: var(--ink-2); }
 .pk-prog { width: 100%; margin-top: 8px; display: grid; gap: 6px; }
@@ -325,6 +325,36 @@ body.in-chap { overflow: hidden; }
 .pk-cell.gold { background: color-mix(in srgb, #E3B341 12%, var(--surface)); border: 1px solid color-mix(in srgb, #E3B341 45%, var(--line)); }
 .pk-empty { color: var(--muted); font-size: 15px; }
 .pk-link { margin-left: 10px; }
+/* Rangs : Commun, Rare, Très rare, Légendaire */
+.pk-rank { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font: 800 11px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: #fff; vertical-align: middle; white-space: nowrap; }
+.pk-rank.r-commun, .pk-stats .pk-rank.r-commun { background: var(--track); color: var(--ink-2); } .pk-rank.r-rare, .pk-stats .pk-rank.r-rare { background: #1f63c4; color: #fff; } .pk-rank.r-tres, .pk-stats .pk-rank.r-tres { background: #6a2bd1; color: #fff; } .pk-rank.r-legend, .pk-stats .pk-rank.r-legend { background: #E3B341; color: #14161a; }
+.pk-stats .pk-rank { font-size: 11px; }
+.pk-card > .pk-rank { margin-bottom: -4px; }
+.pk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 40%), 1fr)); }
+.pk-stats > div { min-width: 0; justify-items: start; }
+.pk-stats > div > span { font-size: 12px; line-height: 1.3; }
+@media (max-width: 640px) { .pk-stats > div { padding: 10px 12px; } .pk-stats > div > b { font-size: 22px; } }
+.pk-stats > .r-rare { border-color: color-mix(in srgb, #1f63c4 35%, var(--line)); } .pk-stats > .r-rare i b { background: #1f63c4; }
+.pk-stats > .r-tres { border-color: color-mix(in srgb, #6a2bd1 35%, var(--line)); } .pk-stats > .r-tres i b { background: #6a2bd1; }
+.pk-stats > .r-legend { background: #14161a; border-color: #3a3326; color: #fff; } .pk-stats > .r-legend span { color: #a3a8b0; } .pk-stats > .r-legend small { color: #8a9099; } .pk-stats > .r-legend i { background: #2a2d33; } .pk-stats > .r-legend i b { background: #E3B341; }
+.pk-stats > div > i { width: 100%; }
+.pk-sec { display: grid; gap: 10px; }
+.pk-sec > h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 6px 0 0; }
+.pk-sec > h3 small { margin-left: 0; }
+.pk-legends { background: linear-gradient(180deg, #1b1e24, #14161a); color: #fff; border-radius: 22px; padding: 16px 18px 18px; }
+.pk-legends > h3 small { color: #a3a8b0; }
+.pk-legends .pk-cell { background: rgba(255,255,255,.05); }
+.pk-legends .pk-cell.off b, .pk-legends .pk-cell small { color: #8a9099; }
+.pk-cell.leg { background: rgba(227,179,65,.12); border: 1px solid rgba(227,179,65,.35); }
+.pk-cell.leg b { color: #fff; font-family: var(--display); font-weight: 800; font-size: 14px; }
+.pk-legends .pk-cell .pk-nick, .pk-card .pk-nick { color: #E3B341; font-style: italic; }
+.pk-cell.tres { background: color-mix(in srgb, #6a2bd1 8%, var(--surface)); border: 1px solid color-mix(in srgb, #6a2bd1 35%, var(--line)); }
+.pk-card.legend { background: radial-gradient(360px 300px at 50% 30%, rgba(227,179,65,.22), transparent 70%), #111318; color: #fff; }
+.pk-card.legend .pk-k { color: #E3B341; } .pk-card.legend .pk-s { color: #c9ccd2; line-height: 1.5; }
+.pk-card .pk-nick { display: block; font-size: 15px; margin-bottom: 2px; }
+.pk-titles { color: #E3B341; font-weight: 600; }
+.pk-card.legend .pk-prog > div, .pk-card.legend .pk-prog b { color: #fff; } .pk-card.legend .pk-prog i { background: #2a2d33; }
+.pk-card.legend .pk-close { background: transparent; color: #fff; border-color: #3a3e46; } .pk-card.legend .pk-go { background: #fff; color: #14161a; }
 @media (max-width: 640px) { .pk-coll { padding: 18px 14px 22px; border-radius: 20px; } .pk-coll h2 { font-size: 32px; } .pk-t { font-size: 22px; } .pk-btns { flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .pk-card, .pk-stage .pk-fig { animation: none; } }
 
