@@ -1,0 +1,2 @@
+park.exr : panorama HDR de Poly Haven (polyhaven.com), domaine public (CC0), réduit par le paquet @pmndrs/assets.
+Sert aux reflets de la voiture dans le jeu caché (mode graphique Ultra).
