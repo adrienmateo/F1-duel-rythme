@@ -348,6 +348,8 @@ body.in-chap { overflow: hidden; }
 .pk-cell.leg { background: rgba(227,179,65,.12); border: 1px solid rgba(227,179,65,.35); }
 .pk-cell.leg b { color: #fff; font-family: var(--display); font-weight: 800; font-size: 14px; }
 .pk-legends .pk-cell .pk-nick, .pk-card .pk-nick { color: #E3B341; font-style: italic; }
+.pk-rank.r-secret { background: linear-gradient(90deg, #e10600, #f2c200, #2a78d6); color: #fff; }
+.pk-cell.secret { background: color-mix(in srgb, #f2c200 10%, var(--surface)); border: 1px solid color-mix(in srgb, #e10600 40%, var(--line)); }
 .pk-cell.tres { background: color-mix(in srgb, #6a2bd1 8%, var(--surface)); border: 1px solid color-mix(in srgb, #6a2bd1 35%, var(--line)); }
 .pk-card.legend { background: radial-gradient(360px 300px at 50% 30%, rgba(227,179,65,.22), transparent 70%), #111318; color: #fff; }
 .pk-card.legend .pk-k { color: #E3B341; } .pk-card.legend .pk-s { color: #c9ccd2; line-height: 1.5; }

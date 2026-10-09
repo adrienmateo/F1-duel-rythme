@@ -3,6 +3,6 @@ import os
 D = os.path.dirname(os.path.abspath(__file__))
 r = lambda p: open(os.path.join(D, p), encoding="utf-8").read()
 head = r("src/head.html")
-html = head.replace("</style>", r("src/extra.css") + "\n" + r("src/mobile.css") + "\n" + r("src/pace.css") + "\n" + r("src/nav.css") + "\n</style>") + "\n</head>\n<body>\n" + r("src/body.html") + "\n<script>\n" + r("src/app.js") + r("src/moments.js") + r("src/mobile.js") + r("src/pace.js") + r("src/nav.js") + r("src/wander.js") + r("src/paddock.js") + "</script>\n</body>\n</html>\n"
+html = head.replace("</style>", r("src/extra.css") + "\n" + r("src/mobile.css") + "\n" + r("src/pace.css") + "\n" + r("src/nav.css") + "\n" + r("src/arcade.css") + "\n</style>") + "\n</head>\n<body>\n" + r("src/body.html") + "\n<script>\n" + r("src/app.js") + r("src/moments.js") + r("src/mobile.js") + r("src/pace.js") + r("src/nav.js") + r("src/wander.js") + r("src/paddock.js") + r("src/arcade.js") + "</script>\n</body>\n</html>\n"
 open(os.path.join(D, "index.html"), "w", encoding="utf-8").write(html)
 print("index.html :", len(html), "caractères")

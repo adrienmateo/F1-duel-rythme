@@ -39,17 +39,18 @@ function pkLoad() {
       const rares = Object.fromEntries(Object.entries(v.rares || {}).filter(([k]) => PK_RARES[k]));
       const gold = Object.fromEntries(Object.entries(v.gold || {}).filter(([k, e]) => k && k !== "undefined" && e && e.name));
       const legends = Object.fromEntries(Object.entries(v.legends || {}).filter(([k]) => PK_LEGENDS[k]));
-      return { drivers, gold, rares, legends };
+      const secret = Object.fromEntries(Object.entries(v.secret || {}).filter(([k]) => k === "arcade"));
+      return { drivers, gold, rares, legends, secret };
     }
   } catch {}
-  return { drivers: {}, gold: {}, rares: {}, legends: {} };
+  return { drivers: {}, gold: {}, rares: {}, legends: {}, secret: {} };
 }
 function pkSave(c) { try { localStorage.setItem(PK.key, JSON.stringify(c)); } catch {} }
 const pkShade = (hex, k) => { const h = String(hex || "#888888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const f = (v) => Math.max(0, Math.min(255, Math.round(v * k))); return "#" + [f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, "0")).join(""); };
 
 /* --- La figurine (même dessin que la maquette) --- */
-function figSvg({ color = "#888", number = "", pose = "stand", gold = false, ghost = false, label = "", legend = false, color2 = "#fff", vintage = false } = {}) {
-  const id = "pkv" + ++PK.uid;
+function figSvg({ color = "#888", number = "", pose = "stand", gold = false, ghost = false, label = "", legend = false, color2 = "#fff", vintage = false, arcade = false } = {}) {
+  const id = "pkv" + ++PK.uid, arc = arcade && !ghost;
   const lg = legend && !ghost, s2 = lg ? color2 : "#fff", vin = lg && vintage;
   const c = ghost ? "#cfd3d9" : color, dk = ghost ? "#b8bdc4" : pkShade(color, 0.45), hel = ghost ? "#dfe2e6" : gold ? "#E3B341" : "#f6f7f9";
   const num = ghost ? "" : esc(String(number)), ink = "#14161a", o = 'stroke="#1b1e24" stroke-linejoin="round"';
@@ -58,7 +59,7 @@ function figSvg({ color = "#888", number = "", pose = "stand", gold = false, gho
     ? `<path d="M83 88 Q93 84 98 72 L102 60 L95 57 L90 70 Q87 78 82 82 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M92 66 L95 67 L91 77 L88 76 Z" fill="${s2}"/><path d="M94 56 L103 59 L102 63 L93 60 Z" fill="${c}" ${o} stroke-width="1.4"/><path d="M95 56 L94 46 Q94 43 96.5 43.5 Q98 44 98 47 L98.5 52 L100 44 Q100.5 41 103 42 Q105 43 104 46 L102.5 55 Q103 59 99 59 Z" fill="#2a2d33" ${o} stroke-width="1.3"/>`
     : `<path d="M83 88 Q91 92 92 104 L93 118 L85 119 L83 104 Z" fill="${c}" ${o} stroke-width="1.6"/><path d="M87 96 L90 96 L92 116 L89 116 Z" fill="${s2}"/><path d="M84 118 L94 117 L94 121 L84 122 Z" fill="${c}" ${o} stroke-width="1.4"/><path d="M84 122 Q84 131 90 131 Q96 130 94 121 Z" fill="#2a2d33" ${o} stroke-width="1.4"/>`;
   const sparks = (gold || lg) && !ghost ? `<path d="M12 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="#E3B341"/><path d="M104 18 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" fill="#E3B341"/><path d="M108 92 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6 z" fill="#E3B341"/>` : "";
-  return `<svg class="pk-fig" viewBox="0 0 120 172" role="img" aria-label="${esc(label || "Figurine de pilote")}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a5d86"/><stop offset=".5" stop-color="#0f1218"/><stop offset="1" stop-color="#5a3870"/></linearGradient></defs>
+  return `<svg class="pk-fig" viewBox="0 0 120 172" role="img" aria-label="${esc(label || "Figurine de pilote")}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a5d86"/><stop offset=".5" stop-color="#0f1218"/><stop offset="1" stop-color="#5a3870"/></linearGradient>${arc ? `<pattern id="${id}c" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#f4f4f4"/><rect width="4" height="4" fill="#14161a"/><rect x="4" y="4" width="4" height="4" fill="#14161a"/></pattern><linearGradient id="${id}n" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2c200"/><stop offset="1" stop-color="#e10600"/></linearGradient>` : ""}</defs>
 <ellipse cx="60" cy="166" rx="30" ry="4.5" fill="#000" opacity=".16"/>
 ${lg ? `<circle cx="60" cy="84" r="58" fill="none" stroke="#E3B341" stroke-width="1.2" stroke-dasharray="2 5" opacity=".7"/>` : ""}
 <path d="M41 150 L58 150 L59 160 Q49 163 39 160 Q38 154 41 150 Z" fill="${vin ? "#6b5440" : "#fff"}" ${o} stroke-width="1.6"/><path d="M62 150 L79 150 Q82 154 81 160 Q71 163 61 160 Z" fill="${vin ? "#6b5440" : "#fff"}" ${o} stroke-width="1.6"/><path d="M39.5 158 Q49 161 58.8 158 M61.2 158 Q71 161 80.5 158" fill="none" stroke="${c}" stroke-width="2"/>
@@ -71,8 +72,8 @@ ${vin ? `<path d="M42 84 Q60 76 78 84 L76 90 Q60 84 44 90 Z" fill="#e9e3d6" ${o}
 <path d="M30 48 Q29 14 60 12 Q91 14 90 48 Q75 40 60 40 Q45 40 30 48 Z" fill="#f2eee4" ${o} stroke-width="1.8"/><path d="M34 34 Q46 18 60 17 Q74 18 86 34 Q74 28 60 28 Q46 28 34 34 Z" fill="${c}"/><path d="M54 12 Q60 9 66 12 L65 16 Q60 14 55 16 Z" fill="${dk}"/>
 <path d="M30 50 L90 50" stroke="#5a4a3a" stroke-width="3" stroke-linecap="round"/><circle cx="49" cy="51" r="8.5" fill="#56677c" stroke="#8a6a3a" stroke-width="2.4"/><circle cx="71" cy="51" r="8.5" fill="#56677c" stroke="#8a6a3a" stroke-width="2.4"/><path d="M57.5 51 L62.5 51" stroke="#8a6a3a" stroke-width="2.4"/><path d="M44 47 Q47 44 51 44 M66 47 Q69 44 73 44" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
 ` : `<path d="M46 80 Q60 76 74 80 L73 86 Q60 83 47 86 Z" fill="${dk}" stroke="#1b1e24" stroke-width="1.2"/><path d="M40 82 Q60 72 80 82 L77 88 Q73 85 70 85 L68 92 L64 92 L65 84 L55 84 L56 92 L52 92 L50 85 Q47 85 43 88 Z" fill="#2b2e35" ${o} stroke-width="1.2"/>
-<path d="M28 46 Q27 12 60 10 Q93 12 92 46 Q92 64 84 73 Q73 79 60 79 Q47 79 36 73 Q28 64 28 46 Z" fill="${hel}" ${o} stroke-width="1.8"/><path d="M33 30 Q45 13 60 12 Q75 13 87 30 Q74 22 60 23 Q46 22 33 30 Z" fill="${c}"/><path d="M30 52 Q36 62 44 60 L40 72 Q31 66 30 52 Z M90 52 Q84 62 76 60 L80 72 Q89 66 90 52 Z" fill="${c}"/><path d="M54 9 L66 9 L65 4 Q60 1.5 55 4 Z" fill="${dk}" ${o} stroke-width="1.2"/>
-<path d="M32 38 Q60 29 88 38 L87 53 Q60 60 33 53 Z" fill="url(#${id})" ${o} stroke-width="1.6"/><path d="M38 41 Q50 36 64 36" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".6"/><path d="M70 37.5 Q76 38 80 39.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".4"/><rect x="86" y="42" width="6" height="5" rx="1.5" fill="#e9eaee" stroke="#1b1e24" stroke-width="1"/>
+<path d="M28 46 Q27 12 60 10 Q93 12 92 46 Q92 64 84 73 Q73 79 60 79 Q47 79 36 73 Q28 64 28 46 Z" fill="${arc ? `url(#${id}c)` : hel}" ${o} stroke-width="1.8"/>${arc ? "" : `<path d="M33 30 Q45 13 60 12 Q75 13 87 30 Q74 22 60 23 Q46 22 33 30 Z" fill="${c}"/><path d="M30 52 Q36 62 44 60 L40 72 Q31 66 30 52 Z M90 52 Q84 62 76 60 L80 72 Q89 66 90 52 Z" fill="${c}"/>`}<path d="M54 9 L66 9 L65 4 Q60 1.5 55 4 Z" fill="${dk}" ${o} stroke-width="1.2"/>
+<path d="M32 38 Q60 29 88 38 L87 53 Q60 60 33 53 Z" fill="url(#${id}${arc ? "n" : ""})" ${o} stroke-width="1.6"/><path d="M38 41 Q50 36 64 36" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".6"/><path d="M70 37.5 Q76 38 80 39.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".4"/><rect x="86" y="42" width="6" height="5" rx="1.5" fill="#e9eaee" stroke="#1b1e24" stroke-width="1"/>
 <path d="M44 64 Q60 70 76 64 L74 72 Q60 76 46 72 Z" fill="${dk}" ${o} stroke-width="1.2"/><path d="M50 67 L54 70 M58 68.5 L58 72 M66 67 L62 70" stroke="#5a5e66" stroke-width="1.1" stroke-linecap="round"/><path d="M40 24 Q44 20 50 18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"/>
 `}${sparks}${ghost ? `<text x="60" y="52" text-anchor="middle" font-size="22" font-weight="800" fill="#fff" font-family="Archivo, sans-serif">?</text>` : ""}</svg>`;
 }
@@ -113,7 +114,7 @@ function pkPick() {
   for (let i = 0; i < grid.length; i++) { x -= ws[i]; if (x <= 0) { d = grid[i]; break; } }
   return { kind: "driver", key: d.code, code: d.code, name: d.last, team: d.team, color: d.color, number: String(d.dn) };
 }
-const pkOk = () => (!reduce || PK_TEST) && !NAV.home && !NAV.champ && document.visibilityState === "visible" && !PK.busy && drivers.length && $("#overlay")?.hidden !== false && !document.querySelector(".pk-modal");
+const pkOk = () => (!reduce || PK_TEST) && !window.ARC_ON && !NAV.home && !NAV.champ && document.visibilityState === "visible" && !PK.busy && drivers.length && $("#overlay")?.hidden !== false && !document.querySelector(".pk-modal");
 function pkSchedule(ms) { clearTimeout(PK.timer); PK.timer = setTimeout(() => { if (pkOk()) pkShow(); else pkSchedule(PK_TEST ? 2000 : 20000); }, ms ?? (PK_TEST ? 8000 : 90000 + Math.random() * 90000)); }
 
 /* --- L'apparition --- */
@@ -202,10 +203,16 @@ function pkCatch(who, from) {
 function pkStats(col = pkLoad()) {
   const grid = new Set(drivers.map((d) => d.code));
   Object.keys(col.drivers).forEach((c) => grid.add(c));
-  return { got: Object.keys(col.drivers).length, tot: Math.max(grid.size, Object.keys(col.drivers).length), gold: Object.keys(col.gold).length, rares: Object.keys(col.rares).length, legends: Object.keys(col.legends || {}).length };
+  return { got: Object.keys(col.drivers).length, tot: Math.max(grid.size, Object.keys(col.drivers).length), gold: Object.keys(col.gold).length, rares: Object.keys(col.rares).length, legends: Object.keys(col.legends || {}).length, secret: Object.keys(col.secret || {}).length };
+}
+// Figurine secrète gagnée au jeu « Bats le vainqueur » (arcade.js) : renvoie le bloc affiché à l'arrivée
+const PK_ARCADE = { name: "Pilote Arcade", color: "#14161a", number: "1UP" };
+function pkArcadeWin(gp) {
+  const col = pkLoad(), isNew = !col.secret.arcade; col.secret.arcade = { n: (col.secret.arcade?.n || 0) + 1, gp: col.secret.arcade?.gp || gp }; pkSave(col); pkFooter();
+  return `${figSvg({ color: PK_ARCADE.color, number: PK_ARCADE.number, arcade: true, pose: "wave", label: PK_ARCADE.name })}<div><b>${isNew ? "FIGURINE SECRÈTE DÉBLOQUÉE" : "FIGURINE SECRÈTE"}</b><span>${isNew ? "Le Pilote Arcade rejoint ta collection." : "Déjà dans ta collection : bravo encore !"}</span></div>`;
 }
 // Rangs : visibles sur la figurine attrapée et dans la collection
-const PK_RANK = { commun: { label: "Commun", c: "#8a9099" }, rare: { label: "Rare", c: "#1f63c4" }, tres: { label: "Très rare", c: "#6a2bd1" }, legend: { label: "Légendaire", c: "#E3B341" } };
+const PK_RANK = { secret: { label: "Secrète", c: "#e10600" }, commun: { label: "Commun", c: "#8a9099" }, rare: { label: "Rare", c: "#1f63c4" }, tres: { label: "Très rare", c: "#6a2bd1" }, legend: { label: "Légendaire", c: "#E3B341" } };
 const pkRankOf = (kind) => ({ driver: "commun", gold: "rare", rare: "tres", legend: "legend" })[kind] || "commun";
 const pkChip = (r) => `<span class="pk-rank r-${r}">${PK_RANK[r].label}</span>`;
 
@@ -227,6 +234,7 @@ function pkCollection() {
       <div class="r-rare">${pkChip("rare")}<b>${st.gold} <small>GP</small></b><span>Le vainqueur doré du GP</span></div>
       <div class="r-tres">${pkChip("tres")}<b>${st.rares} <small>/ 3</small></b><i><b style="width:${Math.round((st.rares / 3) * 100)}%"></b></i><span>Safety car, commissaire, mécanicien</span></div>
       <div class="r-legend">${pkChip("legend")}<b>${st.legends} <small>/ ${nL}</small></b><i><b style="width:${Math.round((st.legends / nL) * 100)}%"></b></i><span>Les champions d'hier</span></div></div>
+    ${col.secret.arcade ? `<section class="pk-sec"><h3>${pkChip("secret")} Secrète <small>gagnée en battant un vainqueur</small></h3><div class="pk-cells wide"><div class="pk-cell secret">${figSvg({ color: PK_ARCADE.color, number: PK_ARCADE.number, arcade: true, label: PK_ARCADE.name })}<b>${PK_ARCADE.name}</b><small>${esc(col.secret.arcade.gp || "")}</small></div></div></section>` : ""}
     <section class="pk-sec pk-legends"><h3>${pkChip("legend")} Les légendes <small>sur les GP de la saison en cours seulement</small></h3>
       <div class="pk-cells wide">${Object.entries(PK_LEGENDS).map(([k, l]) => { const n = col.legends[k]; return `<div class="pk-cell ${n ? "leg" : "off"}">${figSvg({ color: l.color, color2: l.color2, number: k, legend: true, vintage: l.vintage, ghost: !n, label: n ? l.full : "Légende pas encore attrapée" })}<b>${n ? esc(l.name) : "???"}</b>${n ? `<small class="pk-nick">« ${esc(l.nick)} »</small><small>${esc(l.team)} · ×${l.titles}</small>` : `<small>pas encore vue</small>`}</div>`; }).join("")}</div></section>
     <section class="pk-sec"><h3>${pkChip("tres")} Le paddock</h3>
@@ -253,7 +261,7 @@ function pkCollection() {
 function pkFooter() {
   const st = pkStats(), f = document.querySelector("footer"); if (!f) return;
   let a = $("#pk-link");
-  if (!st.got && !st.gold && !st.rares && !st.legends) { a?.remove(); return; }
+  if (!st.got && !st.gold && !st.rares && !st.legends && !st.secret) { a?.remove(); return; }
   if (!a) { a = document.createElement("button"); a.id = "pk-link"; a.className = "linklike pk-link"; f.appendChild(a); a.addEventListener("click", pkCollection); }
   a.textContent = `Ta collection : ${st.got} pilote${st.got > 1 ? "s" : ""} attrapé${st.got > 1 ? "s" : ""} sur ${st.tot}`; a.title = "Des pilotes passent la tête en bas de l'écran pendant ta lecture : attrape-les pour compléter ta collection.";
 }
@@ -264,7 +272,7 @@ if (PK_TEST) setTimeout(() => toast("Mode test : un pilote passe toutes les 8 s 
 
 /* --- Sauvegarde : un lien qui contient la collection, à ouvrir sur un autre navigateur --- */
 function pkLink() {
-  const c = pkLoad(), z = { d: c.drivers, g: c.gold, r: c.rares, l: c.legends };
+  const c = pkLoad(), z = { d: c.drivers, g: c.gold, r: c.rares, l: c.legends, s: c.secret };
   const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(z)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return location.origin + location.pathname + "#paddock=" + b64;
 }
@@ -276,6 +284,7 @@ function pkImport(code) {
     Object.entries(z.g || {}).forEach(([k, v]) => { if (v && typeof v === "object" && !c.gold[k]) { c.gold[k] = v; added++; } });
     Object.entries(z.r || {}).forEach(([k, v]) => { if (PK_RARES[k]) { if (!c.rares[k]) added++; c.rares[k] = Math.max(+v || 0, c.rares[k] || 0); } });
     Object.entries(z.l || {}).forEach(([k, v]) => { if (PK_LEGENDS[k]) { if (!c.legends[k]) added++; c.legends[k] = Math.max(+v || 0, c.legends[k] || 0); } });
+    if (z.s && z.s.arcade && !c.secret.arcade) { c.secret.arcade = z.s.arcade; added++; }
     pkSave(c); pkFooter();
     setTimeout(() => toast(added ? `Collection récupérée : ${added} nouveau${added > 1 ? "x" : ""} personnage${added > 1 ? "s" : ""} ajouté${added > 1 ? "s" : ""}.` : "Collection déjà à jour."), 600);
   } catch { setTimeout(() => toast("Ce lien de sauvegarde n'est pas valide."), 600); }
