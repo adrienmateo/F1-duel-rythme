@@ -9,7 +9,7 @@ const ARC_ACTIONS = [["up", "Accélérer"], ["down", "Freiner"], ["left", "Tourn
 const ARC_DEFAULT_KEYS = { up: ["ArrowUp", "z", "w"], down: ["ArrowDown", "s"], left: ["ArrowLeft", "q", "a"], right: ["ArrowRight", "d"], view: ["c"] };
 const arcKeyName = (k) => ({ ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→", " ": "Espace" })[k] || (k.length === 1 ? k.toUpperCase() : k);
 function arcLoadKeys() { try { const v = JSON.parse(localStorage.getItem(ARC.keysKey)); if (v && ARC_ACTIONS.every(([a]) => Array.isArray(v[a]))) return v; } catch {} return JSON.parse(JSON.stringify(ARC_DEFAULT_KEYS)); }
-function arcLoadSet() { try { const v = JSON.parse(localStorage.getItem(ARC.setKey)); if (v) return { sens: +v.sens || 1 }; } catch {} return { sens: 1 }; }
+function arcLoadSet() { const d = { sens: 1, mode: "boutons", inv: false }; try { const v = JSON.parse(localStorage.getItem(ARC.setKey)); if (v) return { sens: +v.sens || 1, mode: v.mode === "inclinaison" ? "inclinaison" : "boutons", inv: !!v.inv }; } catch {} return d; }
 function arcThree() {
   if (window.THREE) return Promise.resolve(window.THREE);
   if (ARC.three) return ARC.three;
@@ -114,7 +114,7 @@ async function arcOpen(cfg) {
   const esc2 = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   let best = null; try { best = +localStorage.getItem(cfg.recKey) || null; } catch {}
   root.innerHTML = `<canvas class="arc-gl" aria-label="Circuit en 3D"></canvas>
-  <div class="a-touch l"></div><div class="a-touch r"></div>
+  <div class="a-pads" data-k="pads"></div>
   <div class="a-hud a-time"><small>TOUR</small><b data-k="lap">0:00,000</b></div>
   <div class="a-hud a-delta" hidden><small>ÉCART AU FANTÔME</small><b data-k="delta">+0,00 s</b></div>
   <div class="a-hud a-speed"><div><small>KM/H</small><b class="spd" data-k="spd">0</b></div><div><small>RAPPORT</small><b data-k="gear">N</b></div></div>
@@ -134,7 +134,13 @@ async function arcOpen(cfg) {
     <h3>COMMANDES</h3>
     <div data-k="acts"></div>
     <div class="a-sens"><label for="arc-sens">Direction</label><input id="arc-sens" type="range" min="0.6" max="1.5" step="0.05"><span data-k="sensv"></span></div>
-    <p class="a-note">Clique sur « + » puis appuie sur la touche voulue. Clique sur une touche pour la retirer. Sur téléphone : touche le côté gauche ou droit de l'écran, deux doigts pour freiner.</p>
+    <div class="a-mode" data-k="modes">
+      <h3>SUR TÉLÉPHONE</h3>
+      <label class="a-opt"><input type="radio" name="arc-mode" value="boutons" id="arc-m-b"><span><b>Boutons</b> Flèches à gauche pour tourner, gaz et frein à droite.</span></label>
+      <label class="a-opt"><input type="radio" name="arc-mode" value="inclinaison" id="arc-m-i"><span><b>Inclinaison</b> Tourne le téléphone comme un volant. Frein à gauche, gaz à droite.</span></label>
+      <label class="a-opt small"><input type="checkbox" id="arc-inv"><span>Inverser le sens de l'inclinaison</span></label>
+    </div>
+    <p class="a-note">Clavier : clique sur « + » puis appuie sur la touche voulue. Clique sur une touche pour la retirer.</p>
     <div class="a-row"><button class="a-btn" data-a="setok">OK</button><button class="a-btn ghost" data-a="setreset">Touches par défaut</button></div>
   </div></div>
   <div class="a-screen" data-s="pause" hidden><div class="a-card"><h2 class="a-logo">PAUSE</h2><div class="a-row"><button class="a-btn" data-a="resume">REPRENDRE</button><button class="a-btn ghost" data-a="restart">Recommencer</button><button class="a-btn ghost" data-a="set">Commandes</button><button class="a-btn ghost" data-a="quit">Retour au GP</button></div></div></div>
@@ -151,13 +157,15 @@ async function arcOpen(cfg) {
   const show = (s) => root.querySelectorAll(".a-screen").forEach((e) => (e.hidden = e.dataset.s !== s));
   let keys = arcLoadKeys(), set = arcLoadSet();
   const keyHelp = () => { q("keys").innerHTML = `<span>${keys.up.map(arcKeyName).join(" ")} ACCÉLÉRER · ${keys.down.map(arcKeyName).join(" ")} FREINER</span><span>${keys.left.map(arcKeyName).join(" ")} / ${keys.right.map(arcKeyName).join(" ")} TOURNER · ${keys.view.map(arcKeyName).join(" ")} VUE</span>`;
-    q("help").textContent = touch ? "TOUCHE À GAUCHE OU À DROITE POUR TOURNER · DEUX DOIGTS POUR FREINER" : `${keys.up.map(arcKeyName).join(" ")} ACCÉLÉRER · ${keys.down.map(arcKeyName).join(" ")} FREINER · ${keys.left.map(arcKeyName).join(" ")} ${keys.right.map(arcKeyName).join(" ")} TOURNER · ${keys.view.map(arcKeyName).join(" ")} VUE`; };
+    q("help").textContent = touch ? (set.mode === "inclinaison" ? "TOURNE LE TÉLÉPHONE POUR TOURNER · FREIN À GAUCHE, GAZ À DROITE" : "FLÈCHES À GAUCHE POUR TOURNER · GAZ ET FREIN À DROITE") : `${keys.up.map(arcKeyName).join(" ")} ACCÉLÉRER · ${keys.down.map(arcKeyName).join(" ")} FREINER · ${keys.left.map(arcKeyName).join(" ")} ${keys.right.map(arcKeyName).join(" ")} TOURNER · ${keys.view.map(arcKeyName).join(" ")} VUE`; };
   keyHelp();
 
   /* Piste : spline fermée rééchantillonnée tous les 3 m */
   const W = 12.5, raw = cfg.trace.map(([x, y]) => [x / 10, -y / 10]);
   const cx = raw.reduce((s, p) => s + p[0], 0) / raw.length, cz = raw.reduce((s, p) => s + p[1], 0) / raw.length;
   const curve = new THREE.CatmullRomCurve3(raw.map(([x, z]) => new THREE.Vector3(x - cx, 0, z - cz)), true, "centripetal");
+  // Abscisse curviligne fine : sinon la conversion distance → point est grossière et le fantôme avance par à-coups
+  curve.arcLengthDivisions = 8000; curve.updateArcLengths();
   const LEN = curve.getLength(), N = Math.round(LEN / 3);
   const P = curve.getSpacedPoints(N).slice(0, N);
   const T = P.map((p, i) => P[(i + 1) % N].clone().sub(P[(i - 1 + N) % N]).normalize());
@@ -288,28 +296,59 @@ async function arcOpen(cfg) {
   };
   const onKeyUp = (e) => { actOf(e.key).forEach((a) => down.delete(a)); };
   addEventListener("keydown", onKey, true); addEventListener("keyup", onKeyUp, true);
-  const touches = new Map();
-  const onT = (e) => { if (e.target.closest("button, input, .a-screen")) return; touches.clear(); for (const t of e.touches) touches.set(t.identifier, t.clientX < innerWidth / 2 ? -1 : 1); if (e.cancelable) e.preventDefault(); };
-  ["touchstart", "touchmove", "touchend", "touchcancel"].forEach((ev) => root.addEventListener(ev, onT, { passive: false }));
+  // Commandes tactiles : boutons (flèches à gauche, gaz et frein à droite) ou inclinaison (frein à gauche, gaz à droite)
+  const pressed = new Map(); // pointerId → action
+  const ICO = { left: '<path d="M15 5l-7 7 7 7"/>', right: '<path d="M9 5l7 7-7 7"/>' };
+  const pb = (a, cls, label, inner) => `<button class="a-pb ${cls}" data-p="${a}" aria-label="${label}">${inner}</button>`;
+  function renderPads() {
+    const brk = pb("down", "brk", "Freiner", "<span>FREIN</span>"), gas = pb("up", "gas", "Accélérer", "<span>GAZ</span>");
+    const arrow = (a, l) => pb(a, "dir", l, `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ICO[a]}</svg>`);
+    q("pads").innerHTML = set.mode === "inclinaison" ? `<div class="a-side l">${brk}</div><div class="a-side r">${gas}</div>` : `<div class="a-side l">${arrow("left", "Tourner à gauche")}${arrow("right", "Tourner à droite")}</div><div class="a-side r">${brk}${gas}</div>`;
+    q("pads").querySelectorAll(".a-pb").forEach((b) => {
+      const on = (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch {} pressed.set(e.pointerId, b.dataset.p); b.classList.add("on"); };
+      const off = (e) => { pressed.delete(e.pointerId); if (![...pressed.values()].includes(b.dataset.p)) b.classList.remove("on"); };
+      b.addEventListener("pointerdown", on); ["pointerup", "pointercancel", "lostpointercapture"].forEach((ev) => b.addEventListener(ev, off));
+      b.addEventListener("contextmenu", (e) => e.preventDefault());
+    });
+  }
+  renderPads();
+  let tilt = 0, tiltZero = null;
+  const onTilt = (e) => {
+    const ang = (screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0;
+    const raw = ang === 90 ? e.beta : ang === 270 || ang === -90 ? -e.beta : e.gamma;
+    if (raw == null) return; if (tiltZero == null) tiltZero = raw;
+    tilt = Math.max(-1.5, Math.min(1.5, -(raw - tiltZero) / 18)) * (set.inv ? -1 : 1);
+  };
+  async function tiltOn() {
+    if (!touch || set.mode !== "inclinaison") return;
+    try { if (typeof DeviceOrientationEvent !== "undefined" && DeviceOrientationEvent.requestPermission) { const r = await DeviceOrientationEvent.requestPermission(); if (r !== "granted") throw 0; } }
+    catch { set.mode = "boutons"; saveSet(); renderPads(); keyHelp(); (window.toast || console.warn)("Inclinaison refusée : les boutons sont activés."); return; }
+    tiltZero = null; addEventListener("deviceorientation", onTilt);
+  }
+  function saveSet() { try { localStorage.setItem(ARC.setKey, JSON.stringify(set)); } catch {} }
   const input = () => {
     let steer = 0, thr = 0, brk = 0;
     if (down.has("left")) steer += 1; if (down.has("right")) steer -= 1; if (down.has("up")) thr = 1; if (down.has("down")) brk = 1;
-    if (touch) { thr = 1; if (touches.size >= 2) { brk = 1; thr = 0; } else touches.forEach((s) => (steer -= s)); }
+    if (touch) { const acts = new Set(pressed.values()); if (acts.has("up")) thr = 1; if (acts.has("down")) brk = 1; if (acts.has("left")) steer += 1; if (acts.has("right")) steer -= 1; if (set.mode === "inclinaison") steer += tilt; }
     return { steer: steer * set.sens, thr, brk };
   };
   function saveKeys() { try { localStorage.setItem(ARC.keysKey, JSON.stringify(keys)); } catch {} keyHelp(); }
   function renderSet() {
     q("acts").innerHTML = ARC_ACTIONS.map(([a, label]) => `<div class="a-act"><span>${label}</span><div class="a-chips">${keys[a].map((k, i) => `<button class="a-chip" data-rm="${a}:${i}" aria-label="Retirer ${esc2(arcKeyName(k))}">${esc2(arcKeyName(k))} <i>×</i></button>`).join("")}<button class="a-chip add ${capture === a ? "wait" : ""}" data-add="${a}">${capture === a ? "Appuie sur une touche…" : "+"}</button></div></div>`).join("");
     const r = root.querySelector("#arc-sens"); r.value = set.sens; q("sensv").textContent = `×${(+set.sens).toFixed(2).replace(".", ",")}`;
+    root.querySelector(set.mode === "inclinaison" ? "#arc-m-i" : "#arc-m-b").checked = true; root.querySelector("#arc-inv").checked = set.inv;
   }
   let setFrom = "start";
   const openSet = () => { setFrom = state === "pause" ? "pause" : "start"; renderSet(); show("set"); };
   const closeSet = () => { capture = null; show(setFrom); };
-  root.querySelector("#arc-sens").addEventListener("input", (e) => { set.sens = +e.target.value; q("sensv").textContent = `×${set.sens.toFixed(2).replace(".", ",")}`; try { localStorage.setItem(ARC.setKey, JSON.stringify(set)); } catch {} });
+  root.querySelector("#arc-sens").addEventListener("input", (e) => { set.sens = +e.target.value; q("sensv").textContent = `×${set.sens.toFixed(2).replace(".", ",")}`; saveSet(); });
+  root.querySelectorAll('input[name="arc-mode"]').forEach((r) => r.addEventListener("change", () => { set.mode = r.value; saveSet(); renderPads(); keyHelp(); }));
+  root.querySelector("#arc-inv").addEventListener("change", (e) => { set.inv = e.target.checked; saveSet(); });
   root.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.add) { capture = b.dataset.add; renderSet(); return; }
     if (b.dataset.rm) { const [a, i] = b.dataset.rm.split(":"); if (keys[a].length > 1) { keys[a].splice(+i, 1); saveKeys(); } renderSet(); return; }
+    if (b.dataset.a === "go" || b.dataset.a === "restart") tiltOn();
     ({ go: start, restart: start, set: openSet, setok: closeSet, setreset: () => { keys = JSON.parse(JSON.stringify(ARC_DEFAULT_KEYS)); saveKeys(); renderSet(); }, pause, resume, quit })[b.dataset.a]?.();
   });
 
@@ -323,7 +362,7 @@ async function arcOpen(cfg) {
     timers.forEach(clearTimeout); timers = []; reset(); state = "lights"; show(null); lights.hidden = false; dEl.hidden = true; q("lap").textContent = fmt(0);
     const ls = [...lights.children]; ls.forEach((l) => l.classList.remove("on"));
     ls.forEach((l, k) => timers.push(setTimeout(() => l.classList.add("on"), 700 * (k + 1))));
-    timers.push(setTimeout(() => { ls.forEach((l) => l.classList.remove("on")); lights.hidden = true; state = "race"; t0 = performance.now(); dEl.hidden = false; }, 700 * 5 + 500 + Math.random() * 900));
+    timers.push(setTimeout(() => { ls.forEach((l) => l.classList.remove("on")); lights.hidden = true; state = "race"; t0 = performance.now(); dEl.hidden = false; tiltZero = null; }, 700 * 5 + 500 + Math.random() * 900));
   }
   function pause() { if (state === "lights") { timers.forEach(clearTimeout); lights.hidden = true; state = "menu"; show("start"); return; } if (state !== "race") return; state = "pause"; pausedAt = performance.now(); show("pause"); }
   function resume() { if (state !== "pause") return; t0 += performance.now() - pausedAt; state = "race"; show(null); }
@@ -339,7 +378,7 @@ async function arcOpen(cfg) {
   }
   function quit() {
     cancelAnimationFrame(raf); timers.forEach(clearTimeout);
-    removeEventListener("keydown", onKey, true); removeEventListener("keyup", onKeyUp, true); removeEventListener("resize", resize);
+    removeEventListener("deviceorientation", onTilt); removeEventListener("keydown", onKey, true); removeEventListener("keyup", onKeyUp, true); removeEventListener("resize", resize);
     renderer.dispose(); scene.traverse((o) => { o.geometry?.dispose(); [].concat(o.material || []).forEach((m) => { m.map?.dispose(); m.dispose(); }); });
     root.remove(); ARC.open = false; window.ARC_ON = false; cfg.onClose?.();
   }
