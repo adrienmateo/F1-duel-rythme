@@ -57,9 +57,10 @@ function arcCar(THREE, main, accent, ghost, number) {
     put(new THREE.BoxGeometry(.02, .07, 1.3), M.acc, s * .715, .36, -.35);
   });
   // Fond plat et diffuseur
-  { const s = new THREE.Shape([[-.55, 1.15], [.55, 1.15], [.78, .6], [.8, -1.6], [.55, -2.35], [-.55, -2.35], [-.8, -1.6], [-.78, .6]].map(([x, z]) => new THREE.Vector2(x, z)));
-    const g = new THREE.ExtrudeGeometry(s, { depth: .035, bevelEnabled: false }); g.rotateX(Math.PI / 2); put(g, M.carbon, 0, .085, 0); }
-  put(plate([[-2.2, .06], [-2.7, .26], [-2.7, .3], [-2.2, .1]], 1.0), M.carbon);
+  // (pas d'ombre portée : vu de derrière, sa grande ombre rectangulaire donnait l'impression de rouler sur un carré)
+  { const s = new THREE.Shape([[-.3, 1.1], [.3, 1.1], [.52, .7], [.7, .2], [.72, -1.3], [.6, -1.9], [.45, -2.3], [-.45, -2.3], [-.6, -1.9], [-.72, -1.3], [-.7, .2], [-.52, .7]].map(([x, z]) => new THREE.Vector2(x, z)));
+    const g = new THREE.ExtrudeGeometry(s, { depth: .02, bevelEnabled: false }); g.rotateX(Math.PI / 2); put(g, M.carbon, 0, .08, 0).castShadow = false; }
+  put(plate([[-2.2, .06], [-2.7, .26], [-2.7, .3], [-2.2, .1]], .9), M.carbon).castShadow = false;
   // Cockpit, pilote et halo
   put(loft([[.35, .44, .08, .6], [-.5, .5, .08, .6]], 16, 4), M.dark);
   put(new THREE.SphereGeometry(.15, 18, 14), M.helm, 0, .77, -.28);
@@ -482,8 +483,8 @@ async function arcOpen(cfg) {
     [-1, 1].forEach((s) => { const b = new THREE.Mesh(new THREE.PlaneGeometry(1.25, .13), band); b.position.set(s * .728, .33, -.35); b.rotation.y = s * Math.PI / 2; player.add(b);
       const t = new THREE.Mesh(new THREE.PlaneGeometry(1.2, .15), name); t.position.set(s * .732, .33, -.35); t.rotation.y = s * Math.PI / 2; player.add(t);
       const n = new THREE.Mesh(new THREE.PlaneGeometry(.3, .3), num); n.position.set(s * .015, .68, -1.72); n.rotation.y = s * Math.PI / 2; player.add(n); });
-    const sh = canvasTex(64, 128, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); g.addColorStop(0, "rgba(0,0,0,.7)"); g.addColorStop(.6, "rgba(0,0,0,.3)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.save(); c.scale(1, h / w); c.fillStyle = g; c.fillRect(0, 0, w, w); c.restore(); }); sh.wrapS = sh.wrapT = THREE.ClampToEdgeWrapping;
-    const cs = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 5.8), new THREE.MeshBasicMaterial({ map: sh, transparent: true, depthWrite: false })); cs.rotation.x = -Math.PI / 2; cs.position.set(0, .04, -.1); cs.renderOrder = 2; player.add(cs); }
+    const sh = canvasTex(64, 128, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); g.addColorStop(0, "rgba(0,0,0,.62)"); g.addColorStop(.5, "rgba(0,0,0,.4)"); g.addColorStop(.8, "rgba(0,0,0,.12)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.save(); c.translate(0, 0); c.scale(1, h / w); c.fillStyle = g; c.fillRect(0, 0, w, w); c.restore(); }); sh.wrapS = sh.wrapT = THREE.ClampToEdgeWrapping;
+    const cs = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 5.4), new THREE.MeshBasicMaterial({ map: sh, transparent: true, depthWrite: false })); cs.rotation.x = -Math.PI / 2; cs.position.set(0, .04, -.1); cs.renderOrder = 2; player.add(cs); }
   // Ciel calculé (atmosphère) : il sert aussi de reflet à toutes les matières ; couvert et gris s'il a plu pendant le GP
   const SUN = new THREE.Vector3(-60, 120, 40).normalize();
   sun.intensity = WET ? .7 : 1.9; sun.color.copy(lin(WET ? 0xdfe5ec : 0xffe2b8)); hemi.intensity = WET ? .9 : .45; hemi.color.copy(lin(WET ? 0xb8c0ca : 0xbcd2ff));
