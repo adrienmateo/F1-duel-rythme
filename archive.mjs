@@ -14,7 +14,9 @@ const args = process.argv.slice(2);
 const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null; };
 const FORCE = args.includes("--force");
 const now = new Date();
-const YEARS = opt("--year") ? [+opt("--year")] : [now.getFullYear(), ...(now.getMonth() < 2 ? [now.getFullYear() - 1] : [])];
+// Saison en cours puis les précédentes (OpenF1 commence en 2023) : les GP passés restent visibles quand OpenF1 est fermé.
+// Les courses déjà archivées sont sautées, seul le premier passage sur une ancienne saison est long.
+const YEARS = opt("--year") ? [+opt("--year")] : Array.from({ length: now.getFullYear() - 2023 + 1 }, (_, i) => now.getFullYear() - i);
 
 /* ---------- Calcul partagé avec le site (lu dans index.html, comme report.mjs) ---------- */
 const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
@@ -106,6 +108,9 @@ try {
     const done = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now)
       .sort((x, y) => new Date(x.date_start) - new Date(y.date_start));
     console.log(`${year} : ${done.length} course(s) terminée(s).`);
+    // Calendrier complet (GP à venir compris) : barre de la saison sur l'accueil quand OpenF1 est fermé
+    const calKeep = ["session_key", "meeting_key", "session_name", "date_start", "date_end", "country_name", "location", "circuit_short_name", "year", "is_cancelled"];
+    fs.writeFileSync(path.join(DATA, `calendar-${year}.json`), JSON.stringify(sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled).map((s) => Object.fromEntries(calKeep.map((k) => [k, s[k]])))));
     const archived = [];
     for (const s of done) {
       const file = path.join(DATA, `${s.session_key}.json`);

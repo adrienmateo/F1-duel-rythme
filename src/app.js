@@ -1385,9 +1385,10 @@ async function fromArchive(file) {
   try { const r = await fetch(`data/${file}`, { cache: "no-cache" }); return r.ok ? await r.json() : null; } catch { return null; }
 }
 async function loadRaces(year) {
-  $("#gp").disabled = true; $("#gp").innerHTML = "<option>Chargement…</option>";
+  // Rien n'est modifié tant que la saison n'est pas chargée : un échec (OpenF1 fermé, saison non archivée)
+  // laisse la saison affichée intacte
   const arch = (await fromArchive(`races-${year}.json`)) || [];
-  ARCH = new Set(arch.map((s) => s.session_key));
+  const archSet = new Set(arch.map((s) => s.session_key));
   // La liste des courses est gardée dans le navigateur : pendant une séance en direct, OpenF1 coupe l'accès gratuit,
   // et les GP déjà consultés restent ainsi disponibles
   const listKey = `f1duel:v4:races:${year}`;
@@ -1399,18 +1400,22 @@ async function loadRaces(year) {
     const byKey = new Map([...saved, ...arch].map((x) => [x.session_key, x]));
     if (!byKey.size) throw e;
     sessions = [...byKey.values()]; offline = arch.length ? null : e.message;
-    if (arch.length) sessions = sessions.filter((x) => ARCH.has(x.session_key) || store.get(x.session_key));
+    if (arch.length) sessions = sessions.filter((x) => archSet.has(x.session_key) || store.get(x.session_key));
+    // Calendrier complet archivé (GP à venir compris) pour la barre de la saison
+    const cal = (await fromArchive(`calendar-${year}.json`)) || [];
+    cal.forEach((c) => { if (!sessions.some((x) => x.session_key === c.session_key)) sessions.push({ ...c, _future: true }); });
   }
   const now = new Date();
   // Toute la saison (y compris les GP à venir) : sert à la barre de progression et au « prochain GP » de l'accueil
-  SEASON = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && !emptyRaces().has(s.session_key)).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
-  RACES = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  const seasonAll = sessions.filter((s) => s.session_name === "Race" && !s.is_cancelled && !emptyRaces().has(s.session_key)).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  let races = sessions.filter((s) => !s._future && s.session_name === "Race" && !s.is_cancelled && new Date(s.date_end) < now && (!offline || store.get(s.session_key))).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   // Courses annoncées mais restées sans données (annulées, remplacées) : on ne les propose pas
   const empty = emptyRaces(), weekAgo = Date.now() - 8 * 864e5;
-  RACES = RACES.filter((r) => !empty.has(r.session_key) && !(arch.length && !ARCH.has(r.session_key) && new Date(r.date_end) < weekAgo));
+  races = races.filter((r) => !empty.has(r.session_key) && !(arch.length && !archSet.has(r.session_key) && new Date(r.date_end) < weekAgo));
   const am = new Map(arch.map((x) => [x.session_key, x]));
-  RACES.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
-  if (!RACES.length) { if (offline) throw new Error(offline); $("#gp").innerHTML = "<option>Aucune course terminée</option>"; return false; }
+  races.forEach((r) => { const a = am.get(r.session_key); if (a) { if (a.winner) r.winner = a.winner; if (a.outline) r.outline = a.outline; } });
+  if (!races.length) { if (offline) throw new Error(offline); return false; }
+  ARCH = archSet; SEASON = seasonAll; RACES = races;
   fillGpSelect(); $("#gp").value = RACES.at(-1).session_key; $("#gp").disabled = false;
   CHAMP = null; champButtons();
   return true;
@@ -1538,8 +1543,10 @@ $("#dsect-go").addEventListener("click", () => {
 });
 $("#gp").addEventListener("change", () => { const v = $("#gp").value; if (v === "all") { if (RACE) $("#gp").value = RACE.session_key; navGo(""); return; } navGP(v); });
 $("#year").addEventListener("change", async () => {
-  try { $("main").classList.add("loading"); if (await loadRaces(+$("#year").value)) navGP(RACES.at(-1).session_key); else setStatus(`Aucune course terminée pour ${$("#year").value}.`, "error"); }
-  catch (e) { setStatus(e.message, "error"); } finally { $("main").classList.remove("loading"); }
+  const y = $("#year").value, back = RACES[0] ? String(RACES[0].year) : y; let ok = false;
+  try { ok = await loadRaces(+y); } catch { ok = false; }
+  if (ok) navGP(RACES.at(-1).session_key);
+  else { $("#year").value = back; toast(`Les Grands Prix ${y} ne sont pas disponibles pour le moment. Réessaie plus tard.`); }
 });
 if (!reduce && "IntersectionObserver" in window) {
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });

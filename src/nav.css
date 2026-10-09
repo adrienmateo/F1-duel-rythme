@@ -8,6 +8,8 @@ body.at-home { overflow: hidden; }
 .home-years { display: flex; gap: 6px; }
 .home-years button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font: 600 13px var(--body); color: var(--ink-2); cursor: pointer; }
 .home-years button[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
+.home-years button:focus-visible { border-radius: 999px; outline-offset: -3px; } /* la rangée défile : un contour extérieur serait coupé */
+.home-years button.wait { opacity: .55; cursor: progress; }
 .home-h { margin: 0 0 6px; font: 800 clamp(30px, 5vw, 50px)/1 var(--display); font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; text-wrap: balance; }
 .subscribe[hidden] { display: none !important; }
 .mc { transition: transform .15s, border-color .15s, box-shadow .15s; }

@@ -53,9 +53,14 @@ function renderHome() {
   const el = $("#home"); if (!el) return;
   $("#home-years").innerHTML = [...$("#year").options].map((o) => `<button data-y="${o.value}" aria-pressed="${o.value === $("#year").value}">${o.value}</button>`).join("");
   $$("#home-years button").forEach((b) => b.addEventListener("click", async () => {
-    if (b.dataset.y === $("#year").value) return;
-    $("#year").value = b.dataset.y; $("#home-feat").innerHTML = `<p class="home-empty">Chargement des Grands Prix…</p>`; $("#home-list").innerHTML = "";
-    try { await loadRaces(+b.dataset.y); } catch (e) { $("#home-feat").innerHTML = `<p class="home-empty">${esc(e.message)}</p>`; return; }
+    if (b.dataset.y === $("#year").value || b.classList.contains("wait")) return;
+    // La saison affichée reste en place pendant le chargement ; en cas d'échec on y reste, avec un message
+    const prev = $("#year").value; b.classList.add("wait"); b.setAttribute("aria-busy", "true");
+    let ok = false;
+    try { ok = await loadRaces(+b.dataset.y); } catch { ok = false; }
+    b.classList.remove("wait"); b.removeAttribute("aria-busy");
+    if (!ok) { $("#year").value = prev; toast(`Les Grands Prix ${b.dataset.y} ne sont pas disponibles pour le moment. Réessaie plus tard.`); renderHome(); return; }
+    $("#year").value = b.dataset.y;
     renderHome();
   }));
   $("#home-y").textContent = $("#year").value;
