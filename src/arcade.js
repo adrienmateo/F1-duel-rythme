@@ -60,7 +60,7 @@ function arcCar(THREE, main, accent, ghost, number) {
   // (pas d'ombre portée : vu de derrière, sa grande ombre rectangulaire donnait l'impression de rouler sur un carré)
   { const s = new THREE.Shape([[-.3, 1.1], [.3, 1.1], [.52, .7], [.7, .2], [.72, -1.3], [.6, -1.9], [.45, -2.3], [-.45, -2.3], [-.6, -1.9], [-.72, -1.3], [-.7, .2], [-.52, .7]].map(([x, z]) => new THREE.Vector2(x, z)));
     const g = new THREE.ExtrudeGeometry(s, { depth: .02, bevelEnabled: false }); g.rotateX(Math.PI / 2); put(g, M.carbon, 0, .08, 0).castShadow = false; }
-  put(plate([[-2.2, .06], [-2.7, .26], [-2.7, .3], [-2.2, .1]], .9), M.carbon).castShadow = false;
+  put(plate([[-2.05, .085], [-2.55, .2], [-2.55, .23], [-2.05, .105]], .62), M.carbon).castShadow = false;
   // Cockpit, pilote et halo
   put(loft([[.35, .44, .08, .6], [-.5, .5, .08, .6]], 16, 4), M.dark);
   put(new THREE.SphereGeometry(.15, 18, 14), M.helm, 0, .77, -.28);
@@ -88,7 +88,7 @@ function arcCar(THREE, main, accent, ghost, number) {
   { const lamp = new THREE.Mesh(new THREE.BoxGeometry(.15, .055, .03), ghost ? ph(0) : new THREE.MeshBasicMaterial({ color: 0x4a0b0b })); lamp.position.set(0, .33, -2.64); car.add(lamp); car.userData.lamp = lamp; }
   put(new THREE.CylinderGeometry(.045, .055, .22, 12, 1, true), M.rim, 0, .56, -2.36, Math.PI / 2);
   put(new THREE.CylinderGeometry(.035, .035, .02, 12), M.dark, 0, .56, -2.47, Math.PI / 2);
-  for (let k = -2; k <= 2; k++) put(plate([[-2.15, .07], [-2.72, .07], [-2.72, .27 - Math.abs(k) * .025], [-2.3, .1]], .015), M.carbon, k * .19);
+  for (let k = -1; k <= 1; k++) put(plate([[-2.1, .1], [-2.55, .2], [-2.55, .27], [-2.2, .14]], .012), M.carbon, k * .2).castShadow = false;
   [-1, 1].forEach((s) => { put(new THREE.BoxGeometry(.05, .3, .42), M.carbon, s * .53, .38, -1.92); put(plate([[-2.38, .62], [-2.9, .62], [-2.9, .66], [-2.38, .66]], .03), M.carbon, s * .51); });
   // Roues : pneu arrondi, flanc jaune (medium), cache-jante de 18 pouces, triangles de suspension
   const wheels = [];
