@@ -40,10 +40,11 @@ function pkLoad() {
       const gold = Object.fromEntries(Object.entries(v.gold || {}).filter(([k, e]) => k && k !== "undefined" && e && e.name));
       const legends = Object.fromEntries(Object.entries(v.legends || {}).filter(([k]) => PK_LEGENDS[k]));
       const secret = Object.fromEntries(Object.entries(v.secret || {}).filter(([k]) => k === "arcade"));
-      return { drivers, gold, rares, legends, secret };
+      const trophies = Object.fromEntries(Object.entries(v.trophies || {}).filter(([k, e]) => k && e && e.gp && e.lvl >= 0 && e.lvl <= 2 && +e.t > 0));
+      return { drivers, gold, rares, legends, secret, trophies };
     }
   } catch {}
-  return { drivers: {}, gold: {}, rares: {}, legends: {}, secret: {} };
+  return { drivers: {}, gold: {}, rares: {}, legends: {}, secret: {}, trophies: {} };
 }
 function pkSave(c) { try { localStorage.setItem(PK.key, JSON.stringify(c)); } catch {} }
 const pkShade = (hex, k) => { const h = String(hex || "#888888").replace("#", ""), n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16) || 0; const f = (v) => Math.max(0, Math.min(255, Math.round(v * k))); return "#" + [f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, "0")).join(""); };
@@ -203,16 +204,72 @@ function pkCatch(who, from) {
 function pkStats(col = pkLoad()) {
   const grid = new Set(drivers.map((d) => d.code));
   Object.keys(col.drivers).forEach((c) => grid.add(c));
-  return { got: Object.keys(col.drivers).length, tot: Math.max(grid.size, Object.keys(col.drivers).length), gold: Object.keys(col.gold).length, rares: Object.keys(col.rares).length, legends: Object.keys(col.legends || {}).length, secret: Object.keys(col.secret || {}).length };
+  return { got: Object.keys(col.drivers).length, tot: Math.max(grid.size, Object.keys(col.drivers).length), gold: Object.keys(col.gold).length, rares: Object.keys(col.rares).length, legends: Object.keys(col.legends || {}).length, secret: Object.keys(col.secret || {}).length, trophies: Object.keys(col.trophies || {}).length };
 }
 // Figurine secrète gagnée au jeu « Bats le vainqueur » (arcade.js) : renvoie le bloc affiché à l'arrivée
 const PK_ARCADE = { name: "Pilote Arcade", color: "#14161a", number: "1UP" };
-function pkArcadeWin(gp) {
-  const col = pkLoad(), isNew = !col.secret.arcade; col.secret.arcade = { n: (col.secret.arcade?.n || 0) + 1, gp: col.secret.arcade?.gp || gp }; pkSave(col); pkFooter();
-  return `${figSvg({ color: PK_ARCADE.color, number: PK_ARCADE.number, arcade: true, pose: "wave", label: PK_ARCADE.name })}<div><b>${isNew ? "FIGURINE SECRÈTE DÉBLOQUÉE" : "FIGURINE SECRÈTE"}</b><span>${isNew ? "Le Pilote Arcade rejoint ta collection." : "Déjà dans ta collection : bravo encore !"}</span></div>`;
+// Gagner : un trophée chromé par circuit (niveau Rookie, Pilote ou Champion, le meilleur est gardé)
+// + la figurine secrète « Pilote Arcade » à la première victoire. Renvoie le bloc affiché à l'arrivée.
+const PK_LVL = ["Rookie", "Pilote", "Champion"];
+const pkTime = (s) => { const m = Math.floor(s / 60), r = s - m * 60; return `${m}:${r.toFixed(3).padStart(6, "0").replace(".", ",")}`; };
+// Tracé réduit à 48 points dans un carré 0–99, pour graver la coupe (et tenir dans le lien de sauvegarde)
+function pkTrophyTrace(trace) {
+  if (!trace || trace.length < 10) return [];
+  const xs = trace.map((p) => p[0]), ys = trace.map((p) => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), s = Math.max(Math.max(...xs) - x0, Math.max(...ys) - y0) || 1;
+  const ox = (s - (Math.max(...xs) - x0)) / 2, oy = (s - (Math.max(...ys) - y0)) / 2, out = [];
+  for (let k = 0; k < 48; k++) { const p = trace[Math.floor((k / 48) * trace.length)]; out.push(Math.round(((p[0] - x0 + ox) / s) * 99), Math.round(99 - ((p[1] - y0 + oy) / s) * 99)); }
+  return out;
+}
+let pkTrophyN = 0;
+function trophySvg({ tr = [], lvl = 1, ghost = false, label = "" } = {}) {
+  const id = "pkt" + ++pkTrophyN, anim = !matchMedia("(prefers-reduced-motion: reduce)").matches && !ghost;
+  // Chrome irisé : argent avec des reflets violet, cyan et rose qui glissent lentement
+  const chrome = ghost ? `<linearGradient id="${id}c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9dce2"/><stop offset="1" stop-color="#c3c7cf"/></linearGradient>`
+    : `<linearGradient id="${id}c" x1="0" y1="0" x2="1" y2=".35" spreadMethod="reflect">${[[0, "#eef2f8"], [.14, "#a9b1bf"], [.26, "#ffffff"], [.38, "#7d8595"], [.48, "#e6d4ff"], [.56, "#c6f0ff"], [.64, "#ffd9ec"], [.74, "#f7f9ff"], [.86, "#9aa2b2"], [1, "#e9edf4"]].map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}${anim ? `<animateTransform attributeName="gradientTransform" type="translate" values="-.5 0;.5 0;-.5 0" dur="7s" repeatCount="indefinite"/>` : ""}</linearGradient>`;
+  const plate = [["#8c5a32", "#d9a272"], ["#5b6474", "#c9d0db"], ["#a07a12", "#ffe48a"]][lvl] || ["#5b6474", "#c9d0db"];
+  let path = "";
+  if (tr.length >= 20 && !ghost) { const pts = []; for (let i = 0; i < tr.length; i += 2) pts.push([39 + tr[i] * 0.42, 28 + tr[i + 1] * 0.42]); path = "M" + pts.map((p) => p.map((v) => v.toFixed(1)).join(",")).join("L") + "Z"; }
+  const bowl = "M20 18H100C100 58 88 82 60 88C32 82 20 58 20 18Z";
+  return `<svg class="pk-trophy" viewBox="0 0 120 160" role="img" aria-label="${esc(label || "Trophée")}">
+  <defs>${chrome}
+    <linearGradient id="${id}p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${plate[1]}"/><stop offset="1" stop-color="${plate[0]}"/></linearGradient>
+    <radialGradient id="${id}s" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <clipPath id="${id}k"><path d="${bowl}"/></clipPath></defs>
+  <ellipse cx="60" cy="154" rx="38" ry="4" fill="url(#${id}s)"/>
+  <path d="M24 26C2 24 4 60 32 66" fill="none" stroke="url(#${id}c)" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M96 26C118 24 116 60 88 66" fill="none" stroke="url(#${id}c)" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="${bowl}" fill="url(#${id}c)" stroke="${ghost ? "#b7bcc5" : "#6c7484"}" stroke-width=".8"/>
+  ${ghost ? "" : `<g clip-path="url(#${id}k)"><path d="M30 18C30 50 38 72 52 84" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="4" stroke-linecap="round"/><path d="M88 22C88 50 82 70 70 82" fill="none" stroke="#3a4150" stroke-opacity=".25" stroke-width="6"/></g>`}
+  ${path ? `<path d="${path}" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.6" stroke-linejoin="round" transform="translate(.6 .8)"/><path d="${path}" fill="none" stroke="#2b3140" stroke-opacity=".75" stroke-width="1.8" stroke-linejoin="round"/>` : ""}
+  <ellipse cx="60" cy="18" rx="40" ry="5.5" fill="${ghost ? "#c9cdd4" : "#3a404c"}" stroke="url(#${id}c)" stroke-width="2"/>
+  <path d="M53 87H67L64.5 106H55.5Z" fill="url(#${id}c)"/><ellipse cx="60" cy="97" rx="7.5" ry="3" fill="url(#${id}c)" stroke="#6c7484" stroke-width=".5"/>
+  <path d="M40 108H80L85 116H35Z" fill="url(#${id}c)" stroke="#6c7484" stroke-width=".5"/>
+  <rect x="30" y="116" width="60" height="34" rx="3" fill="${ghost ? "#d4d7dd" : "#1d2027"}" stroke="${ghost ? "none" : "url(#" + id + "c)"}" stroke-width="1.2"/>
+  ${ghost ? "" : `<rect x="37" y="124" width="46" height="18" rx="2" fill="url(#${id}p)"/><text x="60" y="136.5" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-weight="800" font-size="${lvl === 2 ? 7 : 8.6}" letter-spacing=".6" fill="#14161b">${(PK_LVL[lvl] || "").toUpperCase()}</text>${lvl === 2 ? `<path d="M60 2l2.4 5 5.4.6-4 3.7 1.1 5.3L60 14l-4.9 2.6 1.1-5.3-4-3.7 5.4-.6z" fill="#ffd54a" stroke="#a07a12" stroke-width=".6"/>` : ""}`}
+</svg>`;
+}
+function pkArcadeWin(gp, info = {}) {
+  const col = pkLoad(), isNew = !col.secret.arcade; col.secret.arcade = { n: (col.secret.arcade?.n || 0) + 1, gp: col.secret.arcade?.gp || gp };
+  let msg = "", tro = null;
+  if (info.sk) {
+    const old = col.trophies[info.sk], lvl = info.lvl ?? 1;
+    if (!old || lvl > old.lvl || (lvl === old.lvl && info.t < old.t)) col.trophies[info.sk] = { gp, lvl, t: info.t, tr: old?.tr?.length ? old.tr : pkTrophyTrace(info.trace) };
+    tro = col.trophies[info.sk];
+    msg = !old ? `TROPHÉE ${PK_LVL[lvl].toUpperCase()} GAGNÉ` : lvl > old.lvl ? `TROPHÉE PASSÉ EN ${PK_LVL[lvl].toUpperCase()}` : `TROPHÉE ${PK_LVL[tro.lvl].toUpperCase()}`;
+  }
+  pkSave(col); pkFooter();
+  const fig = (pose) => figSvg({ color: PK_ARCADE.color, number: PK_ARCADE.number, arcade: true, pose, label: PK_ARCADE.name });
+  const figItem = { kind: "fig", kicker: "Figurine secrète débloquée", art: fig("wave"), title: PK_ARCADE.name, sub: "Elle rejoint ta collection, au rang Secrète.", colors: ["#e10600", "#f2c200", "#2a78d6", "#ffffff", "#4ade80"] };
+  if (!tro) return { html: `${fig("wave")}<div><b>${isNew ? "FIGURINE SECRÈTE DÉBLOQUÉE" : "FIGURINE SECRÈTE"}</b><span>${isNew ? "Le Pilote Arcade rejoint ta collection." : "Déjà dans ta collection : bravo encore !"}</span></div>`, reveal: isNew ? [figItem] : [] };
+  const next = tro.lvl < 2 ? ` Bats le fantôme en ${PK_LVL[tro.lvl + 1]} pour le faire monter d'un cran.` : " Le plus haut niveau : chapeau.";
+  const trophyArt = trophySvg({ tr: tro.tr, lvl: tro.lvl, label: `Trophée ${PK_LVL[tro.lvl]} ${gp}` });
+  const reveal = [];
+  if (msg !== `TROPHÉE ${PK_LVL[tro.lvl].toUpperCase()}`) reveal.push({ kind: "trophy", kicker: msg.startsWith("TROPHÉE PASSÉ") ? "Trophée amélioré" : "Nouveau trophée", art: trophyArt, title: `${PK_LVL[tro.lvl]} · ${gp}`, sub: `${pkTime(tro.t)}.${next}`, colors: ["#f7f9ff", "#c6f0ff", "#e6d4ff", "#ffd9ec", "#9aa2b2", tro.lvl === 2 ? "#ffd54a" : "#ffffff"] });
+  if (isNew) reveal.push(figItem);
+  return { reveal, html: `${trophyArt}<div><b>${msg}</b><span>${esc(gp)} · ${pkTime(tro.t)}.${next}${isNew ? " Et le Pilote Arcade, figurine secrète, rejoint ta collection." : ""}</span></div>` };
 }
 // Rangs : visibles sur la figurine attrapée et dans la collection
-const PK_RANK = { secret: { label: "Secrète", c: "#e10600" }, commun: { label: "Commun", c: "#8a9099" }, rare: { label: "Rare", c: "#1f63c4" }, tres: { label: "Très rare", c: "#6a2bd1" }, legend: { label: "Légendaire", c: "#E3B341" } };
+const PK_RANK = { trophy: { label: "Trophée", c: "#7d8595" }, secret: { label: "Secrète", c: "#e10600" }, commun: { label: "Commun", c: "#8a9099" }, rare: { label: "Rare", c: "#1f63c4" }, tres: { label: "Très rare", c: "#6a2bd1" }, legend: { label: "Légendaire", c: "#E3B341" } };
 const pkRankOf = (kind) => ({ driver: "commun", gold: "rare", rare: "tres", legend: "legend" })[kind] || "commun";
 const pkChip = (r) => `<span class="pk-rank r-${r}">${PK_RANK[r].label}</span>`;
 
@@ -234,6 +291,7 @@ function pkCollection() {
       <div class="r-rare">${pkChip("rare")}<b>${st.gold} <small>GP</small></b><span>Le vainqueur doré du GP</span></div>
       <div class="r-tres">${pkChip("tres")}<b>${st.rares} <small>/ 3</small></b><i><b style="width:${Math.round((st.rares / 3) * 100)}%"></b></i><span>Safety car, commissaire, mécanicien</span></div>
       <div class="r-legend">${pkChip("legend")}<b>${st.legends} <small>/ ${nL}</small></b><i><b style="width:${Math.round((st.legends / nL) * 100)}%"></b></i><span>Les champions d'hier</span></div></div>
+    ${st.trophies ? `<section class="pk-sec pk-trophies"><h3>${pkChip("trophy")} Les trophées <small>un par circuit où tu as battu le vainqueur au jeu caché</small></h3><div class="pk-cells wide">${Object.values(col.trophies).sort((a, b) => b.lvl - a.lvl || a.gp.localeCompare(b.gp)).map((t) => `<div class="pk-cell trophy">${trophySvg({ tr: t.tr, lvl: t.lvl, label: `Trophée ${PK_LVL[t.lvl]} ${t.gp}` })}<b>${esc(t.gp)}</b><small>${PK_LVL[t.lvl]} · ${pkTime(t.t)}</small></div>`).join("")}</div></section>` : ""}
     ${col.secret.arcade ? `<section class="pk-sec"><h3>${pkChip("secret")} Secrète <small>gagnée en battant un vainqueur</small></h3><div class="pk-cells wide"><div class="pk-cell secret">${figSvg({ color: PK_ARCADE.color, number: PK_ARCADE.number, arcade: true, label: PK_ARCADE.name })}<b>${PK_ARCADE.name}</b><small>${esc(col.secret.arcade.gp || "")}</small></div></div></section>` : ""}
     <section class="pk-sec pk-legends"><h3>${pkChip("legend")} Les légendes <small>sur les GP de la saison en cours seulement</small></h3>
       <div class="pk-cells wide">${Object.entries(PK_LEGENDS).map(([k, l]) => { const n = col.legends[k]; return `<div class="pk-cell ${n ? "leg" : "off"}">${figSvg({ color: l.color, color2: l.color2, number: k, legend: true, vintage: l.vintage, ghost: !n, label: n ? l.full : "Légende pas encore attrapée" })}<b>${n ? esc(l.name) : "???"}</b>${n ? `<small class="pk-nick">« ${esc(l.nick)} »</small><small>${esc(l.team)} · ×${l.titles}</small>` : `<small>pas encore vue</small>`}</div>`; }).join("")}</div></section>
@@ -261,7 +319,7 @@ function pkCollection() {
 function pkFooter() {
   const st = pkStats(), f = document.querySelector("footer"); if (!f) return;
   let a = $("#pk-link");
-  if (!st.got && !st.gold && !st.rares && !st.legends && !st.secret) { a?.remove(); return; }
+  if (!st.got && !st.gold && !st.rares && !st.legends && !st.secret && !st.trophies) { a?.remove(); return; }
   if (!a) { a = document.createElement("button"); a.id = "pk-link"; a.className = "linklike pk-link"; f.appendChild(a); a.addEventListener("click", pkCollection); }
   a.textContent = `Ta collection : ${st.got} pilote${st.got > 1 ? "s" : ""} attrapé${st.got > 1 ? "s" : ""} sur ${st.tot}`; a.title = "Des pilotes passent la tête en bas de l'écran pendant ta lecture : attrape-les pour compléter ta collection.";
 }
@@ -272,7 +330,7 @@ if (PK_TEST) setTimeout(() => toast("Mode test : un pilote passe toutes les 8 s 
 
 /* --- Sauvegarde : un lien qui contient la collection, à ouvrir sur un autre navigateur --- */
 function pkLink() {
-  const c = pkLoad(), z = { d: c.drivers, g: c.gold, r: c.rares, l: c.legends, s: c.secret };
+  const c = pkLoad(), z = { d: c.drivers, g: c.gold, r: c.rares, l: c.legends, s: c.secret, t: c.trophies };
   const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(z)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return location.origin + location.pathname + "#paddock=" + b64;
 }
@@ -285,6 +343,7 @@ function pkImport(code) {
     Object.entries(z.r || {}).forEach(([k, v]) => { if (PK_RARES[k]) { if (!c.rares[k]) added++; c.rares[k] = Math.max(+v || 0, c.rares[k] || 0); } });
     Object.entries(z.l || {}).forEach(([k, v]) => { if (PK_LEGENDS[k]) { if (!c.legends[k]) added++; c.legends[k] = Math.max(+v || 0, c.legends[k] || 0); } });
     if (z.s && z.s.arcade && !c.secret.arcade) { c.secret.arcade = z.s.arcade; added++; }
+    Object.entries(z.t || {}).forEach(([k, v]) => { if (!v || typeof v !== "object" || !(v.lvl >= 0 && v.lvl <= 2)) return; const cur = c.trophies[k]; if (!cur) added++; if (!cur || v.lvl > cur.lvl || (v.lvl === cur.lvl && v.t < cur.t)) c.trophies[k] = { ...v, tr: v.tr?.length ? v.tr : cur?.tr || [] }; });
     pkSave(c); pkFooter();
     setTimeout(() => toast(added ? `Collection récupérée : ${added} nouveau${added > 1 ? "x" : ""} personnage${added > 1 ? "s" : ""} ajouté${added > 1 ? "s" : ""}.` : "Collection déjà à jour."), 600);
   } catch { setTimeout(() => toast("Ce lien de sauvegarde n'est pas valide."), 600); }

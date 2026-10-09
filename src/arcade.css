@@ -87,3 +87,28 @@
 #arc .a-hint { margin: 0; font-size: 12px; color: var(--arc-mute); }
 /* Bords de l'image légèrement assombris, comme un objectif */
 #arc::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.28) 100%); z-index: 1; }
+/* Révélation d'une récompense */
+#arc .a-reveal { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 42%, #1e222c, #06070a 70%); overflow: hidden; animation: arcFade .35s ease both; }
+#arc .a-reveal.out { animation: arcFade .3s ease reverse both; }
+#arc .a-rays { position: absolute; left: 50%; top: 42%; width: 160vmax; height: 160vmax; transform: translate(-50%, -50%); background: repeating-conic-gradient(from 0deg, rgba(255,255,255,.07) 0deg 7deg, transparent 7deg 20deg); -webkit-mask: radial-gradient(circle, #000 0, transparent 55%); mask: radial-gradient(circle, #000 0, transparent 55%); animation: arcSpin 18s linear infinite; }
+#arc .a-reveal[data-kind="trophy"] .a-rays { background: repeating-conic-gradient(from 0deg, rgba(198,240,255,.10) 0deg 6deg, rgba(230,212,255,.06) 6deg 10deg, transparent 10deg 20deg); }
+#arc .a-confetti { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#arc .a-rv-card { position: relative; display: grid; justify-items: center; gap: 10px; text-align: center; max-width: 520px; }
+#arc .a-rv-kick { font: 11px var(--arc-pix); color: var(--arc-gold); letter-spacing: .1em; text-transform: uppercase; }
+#arc .a-rv-art { width: min(220px, 34vh); aspect-ratio: 3 / 4; display: grid; place-items: center; filter: drop-shadow(0 0 28px rgba(198,240,255,.35)); }
+#arc .a-rv-art svg { width: 100%; height: 100%; }
+#arc .a-rv-title { margin: 0; font: 22px/1.3 var(--arc-pix); color: #fff; text-shadow: 3px 3px 0 var(--arc-red); }
+#arc .a-rv-sub { margin: 0; color: var(--arc-mute); font-size: 15px; line-height: 1.5; }
+#arc .a-rv-card.in .a-rv-kick { animation: arcUp .4s .15s ease both; }
+#arc .a-rv-card.in .a-rv-art { animation: arcPop .9s cubic-bezier(.2,1.6,.4,1) both; }
+#arc .a-rv-card.in .a-rv-title { animation: arcUp .45s .55s ease both; }
+#arc .a-rv-card.in .a-rv-sub, #arc .a-rv-card.in .a-btn { animation: arcUp .45s .75s ease both; }
+#arc .a-rv-art { position: relative; overflow: visible; }
+#arc .a-rv-card.in .a-rv-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%); background-size: 250% 100%; mix-blend-mode: screen; -webkit-mask: radial-gradient(closest-side, #000 60%, transparent); mask: radial-gradient(closest-side, #000 60%, transparent); animation: arcShine 2.4s 1s ease-in-out infinite; pointer-events: none; }
+@keyframes arcFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes arcSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes arcPop { 0% { transform: scale(.15) rotate(-18deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; } }
+@keyframes arcUp { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes arcShine { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+@media (max-height: 460px) { #arc .a-rv-art { width: min(150px, 40vh); } #arc .a-rv-title { font-size: 16px; } #arc .a-rv-sub { font-size: 13px; } }
+@media (prefers-reduced-motion: reduce) { #arc .a-rays, #arc .a-rv-card.in *, #arc .a-rv-card.in .a-rv-art::after { animation: none !important; } }

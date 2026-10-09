@@ -24,6 +24,8 @@ async function api(endpoint, params) {
     if (res.ok) { const data = await res.json(); memo.set(url, data); return data; }
     if (res.status === 429) { await sleep(5000 * attempt); continue; } // trop d'appels : on attend sans rien afficher de plus
     if (res.status === 404) return [];
+    // Pendant une séance en direct, OpenF1 refuse les visiteurs gratuits (401 ou 403) : même message que quand il ne répond pas
+    if (res.status === 401 || res.status === 403) throw new Error("Les données ne sont pas disponibles en ce moment (une séance de F1 est peut-être en cours). Les GP s'afficheront de nouveau à la fin de la séance.");
     if (res.status >= 500) { await sleep(2000 * attempt); continue; }
     throw new Error("Les données de ce Grand Prix n'ont pas pu être chargées. Réessaie dans un moment.");
   }
@@ -1029,7 +1031,7 @@ async function fetchTrace(d, lap) {
   const iso = (ms) => new Date(ms).toISOString();
   const q = `session_key=${RACE.session_key}&driver_number=${d.dn}&date>${encodeURIComponent(iso(lap.ds - 300))}&date<${encodeURIComponent(iso(lap.ds + lap.t * 1000 + 300))}`;
   const pts = await api("location", q);
-  return pts.filter((p) => p.x != null && p.y != null && !(p.x === 0 && p.y === 0)).map((p) => ({ t: (Date.parse(p.date) - lap.ds) / 1000, x: p.x, y: p.y })).sort((a, b) => a.t - b.t);
+  return pts.filter((p) => p.x != null && p.y != null && !(p.x === 0 && p.y === 0)).map((p) => ({ t: (Date.parse(p.date) - lap.ds) / 1000, x: p.x, y: p.y, z: p.z })).sort((a, b) => a.t - b.t);
 }
 function setupCircuit() {
   // Le circuit vit dans l'Explorer : il rejoue les deux premiers pilotes choisis
@@ -1429,7 +1431,8 @@ async function fetchRace(sk) {
     setStatus("Chargement de la course…", "load");
     const a = await fromArchive(`${sk}.json`);
     if (a && a.pack) {
-      if (a.trace) try { localStorage.setItem(`f1duel:v4:trace:${sk}`, JSON.stringify(a.trace)); } catch {}
+      // On ne remplace pas un tracé en cache qui a l'altitude par un tracé archivé sans altitude
+      if (a.trace) try { const k = `f1duel:v4:trace:${sk}`, cur = JSON.parse(localStorage.getItem(k) || "null"); if (!cur || a.trace[0]?.length >= 3 || !(cur[0]?.length >= 3)) localStorage.setItem(k, JSON.stringify(a.trace)); } catch {}
       store.set(sk, a.pack);
       return a.pack;
     }

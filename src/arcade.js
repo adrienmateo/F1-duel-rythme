@@ -10,8 +10,9 @@ const ARC_DEFAULT_KEYS = { up: ["ArrowUp", "z", "w"], down: ["ArrowDown", "s"], 
 const arcKeyName = (k) => ({ ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→", " ": "Espace" })[k] || (k.length === 1 ? k.toUpperCase() : k);
 function arcLoadKeys() { try { const v = JSON.parse(localStorage.getItem(ARC.keysKey)); if (v && ARC_ACTIONS.every(([a]) => Array.isArray(v[a]))) return v; } catch {} return JSON.parse(JSON.stringify(ARC_DEFAULT_KEYS)); }
 function arcLoadSet() { const d = { sens: 1, mode: "boutons", inv: false, lvl: 1, gfx: null }; try { const v = JSON.parse(localStorage.getItem(ARC.setKey)); if (v) return { sens: +v.sens || 1, mode: v.mode === "inclinaison" ? "inclinaison" : "boutons", inv: !!v.inv, lvl: [0, 1, 2].includes(+v.lvl) ? +v.lvl : 1, gfx: ["standard", "ultra"].includes(v.gfx) ? v.gfx : null }; } catch {} return d; }
-// Niveaux : le fantôme roule au rythme du vainqueur, un peu ralenti en Rookie et Pilote (environ 6 s et 3 s sur un tour de 1:45)
-const ARC_LVLS = [["Rookie", 1.06], ["Pilote", 1.03], ["Champion", 1]];
+// Niveaux, calés sur un pilote automatique à trajectoire parfaite : Rookie = vainqueur un peu ralenti,
+// Pilote = son vrai meilleur tour, Champion = plus rapide que lui (le pilote automatique fait à peine jeu égal)
+const ARC_LVLS = [["Rookie", 1.05], ["Pilote", 1], ["Champion", 0.975]];
 function arcThree() {
   if (window.THREE) return Promise.resolve(window.THREE);
   if (ARC.three) return ARC.three;
@@ -78,9 +79,16 @@ function arcCar(THREE, main, accent, ghost, number) {
     m.position.set(0, .375, 1.75); m.rotation.x = -Math.PI / 2 + .2; car.add(m);
   }
   // Aileron arrière : plan principal, volet, dérives, aileron de poutre, mât central
-  put(wing(.36, .05, 1.0), M.carbon, 0, .9, -2.42, .1); put(wing(.24, .04, 1.0), M.acc, 0, 1.03, -2.72, .45);
+  put(wing(.36, .05, 1.0), M.carbon, 0, .9, -2.42, .1); put(wing(.24, .04, 1.0), M.body, 0, 1.03, -2.72, .45); put(new THREE.BoxGeometry(.98, .012, .02), M.acc, 0, 1.105, -2.95);
   [-1, 1].forEach((s) => put(plate([[-2.35, .55], [-2.95, .55], [-3.0, 1.08], [-2.85, 1.16], [-2.35, 1.1]], .025), M.body, s * .51));
   put(wing(.2, .03, .9), M.carbon, 0, .44, -2.45, .05); rod([0, .5, -2.45], [0, .95, -2.55], .03, M.carbon);
+  // Arrière : boîte de vitesses et structure anti-choc, feu de pluie, échappement, diffuseur à ailettes, ailettes de frein
+  put(loft([[-1.9, .3, .26, .16], [-2.3, .22, .2, .2], [-2.62, .14, .14, .26]], 14, 3), M.carbon);
+  { const lamp = new THREE.Mesh(new THREE.BoxGeometry(.15, .055, .03), ghost ? ph(0) : new THREE.MeshBasicMaterial({ color: 0x4a0b0b })); lamp.position.set(0, .33, -2.64); car.add(lamp); car.userData.lamp = lamp; }
+  put(new THREE.CylinderGeometry(.045, .055, .22, 12, 1, true), M.rim, 0, .56, -2.36, Math.PI / 2);
+  put(new THREE.CylinderGeometry(.035, .035, .02, 12), M.dark, 0, .56, -2.47, Math.PI / 2);
+  for (let k = -2; k <= 2; k++) put(plate([[-2.15, .07], [-2.72, .07], [-2.72, .27 - Math.abs(k) * .025], [-2.3, .1]], .015), M.carbon, k * .19);
+  [-1, 1].forEach((s) => { put(new THREE.BoxGeometry(.05, .3, .42), M.carbon, s * .53, .38, -1.92); put(plate([[-2.38, .62], [-2.9, .62], [-2.9, .66], [-2.38, .66]], .03), M.carbon, s * .51); });
   // Roues : pneu arrondi, flanc jaune (medium), cache-jante de 18 pouces, triangles de suspension
   const wheels = [];
   const tyreGeo = (r, w) => { const pts = []; const h = w / 2; [[r * .66, -h], [r * .9, -h], [r * .97, -h * .9], [r, -h * .6], [r, h * .6], [r * .97, h * .9], [r * .9, h], [r * .66, h]].forEach(([a, b]) => pts.push(new THREE.Vector2(a, b))); const g = new THREE.LatheGeometry(pts, 28); g.rotateZ(Math.PI / 2); return g; };
@@ -461,7 +469,7 @@ async function arcOpen(cfg) {
     a2.repeat.set(1, 1); bump.repeat.set(2, 2);
     // La voiture du joueur : carrosserie vernie, carbone tissé, pneus mats, jantes métal
     const carbon = canvasTex(64, 64, (c, w, h) => { c.fillStyle = "#16181c"; c.fillRect(0, 0, w, h); for (let y = 0; y < h; y += 8) for (let x = 0; x < w; x += 8) { const g = c.createLinearGradient(x, y, x + 8, y + 8), o = ((x + y) / 8) % 2; g.addColorStop(0, o ? "#2b2f36" : "#121418"); g.addColorStop(1, o ? "#121418" : "#2b2f36"); c.fillStyle = g; c.fillRect(x, y, 8, 8); } }, [6, 6]);
-    const R = { 0xd8231f: { roughness: .4, clearcoat: 1, clearcoatRoughness: .06 }, 0xf4f4f4: { roughness: .4, clearcoat: .8, clearcoatRoughness: .1 }, 0x17191e: { map: carbon, roughness: .42, metalness: .25, clearcoat: .7, clearcoatRoughness: .15 }, 0x0c0d10: { roughness: .6 }, 0x1a1b1e: { roughness: .92 }, 0x3a3d44: { metalness: .9, roughness: .28 }, 0xf2c200: { roughness: .7 }, 0x0e1320: { metalness: .9, roughness: .06 } };
+    const R = { 0xd8231f: { roughness: .4, clearcoat: 1, clearcoatRoughness: .06 }, 0xf4f4f4: { roughness: .4, clearcoat: .8, clearcoatRoughness: .1 }, 0x17191e: { map: carbon, roughness: .45, metalness: .2, clearcoat: .5, clearcoatRoughness: .2, envMapIntensity: .3 }, 0x0c0d10: { roughness: .6, envMapIntensity: .25 }, 0x1a1b1e: { roughness: .92, envMapIntensity: .12 }, 0x3a3d44: { metalness: .9, roughness: .28 }, 0xf2c200: { roughness: .7 }, 0x0e1320: { metalness: .9, roughness: .06 } };
     const pc = new Map();
     player.traverse((o) => { if (!o.isMesh || !o.material.isMeshPhongMaterial) return; const m = o.material, hex = m.color.getHex();
       if (!pc.has(m)) pc.set(m, new THREE.MeshPhysicalMaterial({ color: R[hex]?.map ? new THREE.Color(1, 1, 1) : lin(m.color), envMapIntensity: .45, ...(R[hex] || { roughness: .6 }) })); o.material = pc.get(m); o.receiveShadow = true; });
@@ -495,7 +503,7 @@ async function arcOpen(cfg) {
   let grassF = null;
   if (ULTRA) {
     sun.shadow.mapSize.set(2048, 2048);
-    try { new THREE.EXRLoader().load(cfg.hdri || "assets/park.exr", (tex) => { const pm = new THREE.PMREMGenerator(renderer), env = pm.fromEquirectangular(tex).texture; pm.dispose(); tex.dispose(); player.userData.paint.forEach((m) => { m.envMap = env; m.envMapIntensity = .8; m.needsUpdate = true; }); }, undefined, () => {}); } catch {}
+    try { new THREE.EXRLoader().load(cfg.hdri || "assets/park.exr", (tex) => { const pm = new THREE.PMREMGenerator(renderer), env = pm.fromEquirectangular(tex).texture; pm.dispose(); tex.dispose(); player.userData.paint.forEach((m) => { m.envMap = env; m.envMapIntensity *= 1.6; m.needsUpdate = true; }); }, undefined, () => {}); } catch {}
     if (!WET && THREE.Lensflare) { const fl = (r, a) => { const t = canvasTex(128, 128, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); g.addColorStop(0, `rgba(255,244,220,${a})`); g.addColorStop(r, `rgba(255,214,160,${a * .35})`); g.addColorStop(1, "rgba(255,200,140,0)"); c.fillStyle = g; c.fillRect(0, 0, w, h); }); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; };
       const lf = new THREE.Lensflare(); lf.addElement(new THREE.LensflareElement(fl(.2, 1), 380, 0)); [[.4, .22, 60, .5], [.5, .16, 90, .7], [.3, .12, 140, 1]].forEach(([r, a, s, d]) => lf.addElement(new THREE.LensflareElement(fl(r, a), s, d))); lf.userData.sun = true; scene.add(lf); lf.position.copy(SUN).multiplyScalar(4500); }
     // Herbe : tronçons de 60 m autour de la voiture, remplis de nouveau quand elle avance
@@ -636,8 +644,27 @@ async function arcOpen(cfg) {
     q("ediff").textContent = win ? `${fmtD(d)} sur ${cfg.ghostName}, niveau ${lvlN}` : `Raté de ${Math.abs(d).toFixed(2).replace(".", ",")} s en ${lvlN}${set.lvl ? " · essaie le niveau en dessous" : ""}`; q("ediff").style.color = win ? "var(--arc-good)" : "var(--arc-bad)";
     if (!best || t < best) { best = t; try { localStorage.setItem(cfg.recKey, String(t)); } catch {} q("rec").textContent = fmt(t); }
     const u = q("unlock"); u.hidden = true;
-    if (win && cfg.onWin) { const r = cfg.onWin(t, { lvl: set.lvl }); if (r) { u.innerHTML = r; u.hidden = false; } }
+    let items = [];
+    if (win && cfg.onWin) { const r = cfg.onWin(t, { lvl: set.lvl }); const html = typeof r === "string" ? r : r?.html; if (html) { u.innerHTML = html; u.hidden = false; } items = r?.reveal || []; }
     show("end"); root.querySelector('[data-s="end"] [data-a="restart"]').focus();
+    if (items.length) reveal(items);
+  }
+  // Récompense : écran de révélation animé (rayons, confetti, objet qui jaillit), une étape par récompense
+  function reveal(items) {
+    const rv = document.createElement("div"); rv.className = "a-reveal"; rv.setAttribute("role", "dialog"); rv.setAttribute("aria-label", "Récompense");
+    rv.innerHTML = `<div class="a-rays"></div><canvas class="a-confetti"></canvas><div class="a-rv-card"></div>`; root.appendChild(rv);
+    const cv = rv.querySelector("canvas"), cx = cv.getContext("2d"), card = rv.querySelector(".a-rv-card"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let parts = [], craf = 0;
+    const burst = (cols) => { cv.width = innerWidth; cv.height = innerHeight; if (still) return; for (let k = 0; k < 170; k++) parts.push({ x: innerWidth / 2 + (Math.random() - .5) * 80, y: innerHeight * .42, vx: (Math.random() - .5) * 15, vy: -Math.random() * 15 - 4, r: Math.random() * 6, w: 5 + Math.random() * 6, h: 3 + Math.random() * 4, c: cols[k % cols.length], s: (Math.random() - .5) * .4 });
+      cancelAnimationFrame(craf); const step = () => { cx.clearRect(0, 0, cv.width, cv.height); parts = parts.filter((p) => p.y < cv.height + 20); parts.forEach((p) => { p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.s; cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2))); cx.restore(); }); if (parts.length) craf = requestAnimationFrame(step); }; step(); };
+    let i = 0;
+    const next = () => { if (i >= items.length) { cancelAnimationFrame(craf); rv.classList.add("out"); setTimeout(() => rv.remove(), 300); root.querySelector('[data-s="end"] [data-a="restart"]').focus(); return; }
+      const it = items[i++]; card.classList.remove("in"); void card.offsetWidth;
+      card.innerHTML = `<div class="a-rv-kick">${esc2(it.kicker)}</div><div class="a-rv-art">${it.art}</div><h2 class="a-rv-title">${esc2(it.title)}</h2><p class="a-rv-sub">${esc2(it.sub || "")}</p><button class="a-btn" type="button">${i < items.length ? "SUITE" : "VOIR MON TOUR"}</button>`;
+      card.classList.add("in"); rv.dataset.kind = it.kind || ""; burst(it.colors || ["#f2c200", "#e10600", "#ffffff", "#c6f0ff", "#e6d4ff"]);
+      try { navigator.vibrate?.([40, 60, 90]); } catch {}
+      const b = card.querySelector("button"); b.addEventListener("click", next); setTimeout(() => b.focus(), 50); };
+    next();
   }
   function quit() {
     cancelAnimationFrame(raf); timers.forEach(clearTimeout);
@@ -647,7 +674,7 @@ async function arcOpen(cfg) {
   }
 
   /* Boucle : physique à pas fixe (1/60 s), pour que la voiture avance au même rythme que le chrono même si l'appareil affiche peu d'images */
-  const VMAX = 95, A_LAT = 32, GRAV = 9.81, camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), tmp = new THREE.Vector3();
+  const VMAX = 93, A_LAT = 32, GRAV = 9.81, camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), tmp = new THREE.Vector3();
   let last = performance.now(), raf = 0, ghostS = 0, camYaw = 0, camY = 0; const tmp2 = new THREE.Vector3();
   player.rotation.order = ghost.rotation.order = "YXZ";
   function step(h, inp) {
@@ -656,7 +683,7 @@ async function arcOpen(cfg) {
     const vmax = onTrack ? VMAX : inGravel ? 24 : 45;
     // En montée la voiture perd de la vitesse, en descente elle en prend
     // Moteur : forte poussée à basse vitesse, qui s'annule à la vitesse de pointe ; sans gaz, frein moteur et air
-    const a = (inp.thr ? 14 * (1 - (car.v / vmax) ** 2) : -(1.5 + 0.0009 * car.v * car.v)) - inp.brk * 38 - (onTrack ? 0 : 0.6 * Math.max(0, car.v - vmax)) - GRAV * gr;
+    const a = (inp.thr ? 13 * (1 - (car.v / vmax) ** 2) : -(1.5 + 0.0009 * car.v * car.v)) - inp.brk * 34 - (onTrack ? 0 : 0.6 * Math.max(0, car.v - vmax)) - GRAV * gr;
     car.v = Math.max(0, car.v + a * h);
     steerS += (Math.max(-1.5, Math.min(1.5, inp.steer)) - steerS) * Math.min(1, h * 7);
     car.h += steerS * Math.min(1.6, A_LAT / Math.max(car.v, 8)) * Math.min(1, car.v / 6) * h;
@@ -707,6 +734,7 @@ async function arcOpen(cfg) {
     const kmh = Math.round(car.v * 3.6); q("spd").textContent = kmh; q("gear").textContent = car.v < 0.5 ? "N" : String(Math.min(8, 1 + Math.floor(kmh / 42)));
     drawMap(player.position, ghost.position);
     if (grassF) { grassF.t.value = now / 1000; grassF.update(car.i); }
+    if (WET && player.userData.lamp) player.userData.lamp.material.color.setHex(Math.floor(now / 240) % 2 ? 0xff2a2a : 0x4a0b0b);
     if (rain) { const pa = rain.geometry.attributes.position.array, d = rain.userData.drop, n = d.length / 3, fall = 26 * dt;
       for (let k = 0; k < n; k++) { d[k * 3 + 1] -= fall; if (d[k * 3 + 1] < -3) d[k * 3 + 1] += 26; const x = camPos.x + d[k * 3], y = camPos.y + d[k * 3 + 1] - 4, z = camPos.z + d[k * 3 + 2]; pa[k * 6] = x; pa[k * 6 + 1] = y; pa[k * 6 + 2] = z; pa[k * 6 + 3] = x - fwd.x * car.v * .012; pa[k * 6 + 4] = y + .9; pa[k * 6 + 5] = z - fwd.z * car.v * .012; }
       rain.geometry.attributes.position.needsUpdate = true; }
