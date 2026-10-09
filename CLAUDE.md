@@ -66,6 +66,7 @@ Dépôt : https://github.com/adrienmateo/F1-duel-rythme. L'ancienne adresse Netl
 - Ne jamais pousser un dossier `data/` ni `gp/` produit par les tests (données factices).
 - iPhone (Safari et Chrome, même moteur) : le défilement natif + aimantation sautait la carte du milieu des carrousels. `makeSwipe` gère désormais le geste lui-même (événements pointer, `touch-action: pan-y`, cartes décalées par `--sx`) : une carte au plus par geste, hauteur ajustée une fois la carte posée, clic annulé après un glissement, un élément qui défile à l'horizontale ou un curseur garde le geste. L'onde au toucher est coupée au doigt (souris seulement).
 - Three.js `CatmullRomCurve3` : par défaut 200 divisions pour l'abscisse curviligne, trop grossier pour un circuit de 5 km (le fantôme avançait par à-coups, impression de téléportation). `arcade.js` fixe `arcLengthDivisions = 8000` avant `getLength` / `getSpacedPoints` / `getPointAt`.
+- Tracés OpenF1 (meilleur tour) : la fin dépasse la ligne et repasse sur les premiers points. Refermée telle quelle, la courbe fait un demi-tour au départ (dans le jeu : voiture et fantôme en sens inverse, pas d'écart affiché, cas de Kuala Lumpur). `arcTrimLoop` coupe cette fin et les points à moins de 1 m.
 - Rythme vérifié sur Kuala Lumpur 2026 (11731, départ sous SC + départ arrêté, piste qui sèche) : tours 1 à 7 écartés (départ + peloton ralenti), SC 9–13, VSC/SC 43–52. Médiane gardée ; filtre drapeaux jaunes jugé inutile (épisodes courts, absorbés par la médiane).
 
 ## Tests

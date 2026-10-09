@@ -4545,6 +4545,16 @@ function arcCar(THREE, main, accent, ghost, number) {
   return car;
 }
 
+function arcTrimLoop(t) {
+  const tr = t.slice(), d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  // Fin du tracé qui repasse sur ses premiers points : on la coupe juste avant le point le plus proche du départ
+  let cut = -1, bd = Infinity;
+  for (let j = Math.floor(tr.length * 0.75); j < tr.length; j++) { for (let k = 0; k < 6; k++) { const dd = d(tr[j], tr[k]); if (dd < bd) { bd = dd; cut = j - k; } } }
+  if (cut > tr.length * 0.75 && bd < 400) tr.length = cut;
+  // Doublons et points trop serrés (moins de 1 m) qui font hoqueter la spline
+  return tr.filter((p, i) => i === 0 || d(p, tr[i - 1]) > 10);
+}
+
 /* --- Le jeu --- */
 async function arcOpen(cfg) {
   if (ARC.open) return;
@@ -4607,7 +4617,10 @@ async function arcOpen(cfg) {
   keyHelp();
 
   /* Piste : spline fermée rééchantillonnée tous les 3 m */
-  const W = 12.5, raw = cfg.trace.map(([x, y]) => [x / 10, -y / 10]);
+  // Le tour enregistré dépasse souvent un peu la ligne : on coupe ce qui revient sur le début du tracé,
+  // sinon la courbe refermée fait un aller-retour au départ (voiture et fantôme dans le mauvais sens)
+  const tr = arcTrimLoop(cfg.trace);
+  const W = 12.5, raw = tr.map(([x, y]) => [x / 10, -y / 10]);
   const cx = raw.reduce((s, p) => s + p[0], 0) / raw.length, cz = raw.reduce((s, p) => s + p[1], 0) / raw.length;
   const curve = new THREE.CatmullRomCurve3(raw.map(([x, z]) => new THREE.Vector3(x - cx, 0, z - cz)), true, "centripetal");
   // Abscisse curviligne fine : sinon la conversion distance → point est grossière et le fantôme avance par à-coups
